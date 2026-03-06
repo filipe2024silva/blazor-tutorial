@@ -1,0 +1,64 @@
+﻿@page "/noticias"
+@attribute [StreamRendering]
+@attribute [ExcludeFromInteractiveRouting]
+
+<h1>Últimas Notícias</h1>
+
+@if (noticias == null)
+{
+    <p>Carregando notícias...</p>
+}
+else
+{
+    <div class="noticias-container">
+        @foreach (var item in noticias)
+        {
+            <article class="noticias-item">
+                <h3>@item.Titulo</h3>
+                <p class="date">@item.DataPublicacao.ToShortDateString()</p>
+                <p>@item.Resumo</p>
+            </article>
+        }
+    </div>
+    <button class="btn btn-danger" onclick="HandleClick">Clique</button>
+}
+@code {
+
+    private List<Noticia>? noticias;
+    public class Noticia
+    {
+        public string Titulo { get; set; }
+        public DateTime DataPublicacao { get; set; }
+        public string Resumo { get; set; }
+
+        public Noticia(string titulo, DateTime data, string resumo)
+        {
+            Titulo = titulo;
+            DataPublicacao = data;
+            Resumo = resumo;
+        }
+    }
+    private List<Noticia> GetNoticias()
+    {
+        return new List<Noticia>
+        {
+            new Noticia("Blazor 9.0 Lançado", DateTime.Now.AddDays(-190),
+                "A Microsoft anunciou o lançamento do Blazor 9.0 com novos recursos de renderização."),
+            new Noticia(".NET 9 Preview", DateTime.Now.AddDays(-420),
+                "A preview do .NET 9 está disponível para testes com melhorias de performance."),
+            new Noticia("Novos Templates", DateTime.Now.AddDays(-300),
+                "Novos templates para Blazor Web App simplificam o desenvolvimento.")
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simula chamada assíncrona a uma API
+        await Task.Delay(3000);
+        noticias = GetNoticias();
+    }
+    private void HandleClick(MouseEventArgs args)
+    {
+        Console.WriteLine("Cliquei no botão");
+    }
+}

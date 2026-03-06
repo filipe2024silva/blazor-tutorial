@@ -1,0 +1,47 @@
+﻿@page "/"
+
+<PageTitle>Home</PageTitle>
+
+<div class="alert alert-info mt-4">
+    <h4>Informações de Renderização</h4>
+    <ul>
+        <li>
+            <strong>Onde estou executando agora?</strong>
+            <span>No <strong>@RendererInfo.Name</strong>.</span>
+        </li>
+        <li>
+            <strong>Estou interativo neste momento?</strong>
+            <span>@(RendererInfo.IsInteractive ? "Sim" : "Não, estou em pré-renderização ou sou estático.")</span>
+        </li>
+        <li>
+            <strong>Modo de renderização atribuído:</strong>
+            @if (AssignedRenderMode is not null)
+            {
+                <span>O modo <strong>@AssignedRenderMode.GetType().Name</strong> foi atribuído.</span>
+            }
+            else
+            {
+                <span>Nenhum modo interativo foi atribuído (Estático).</span>
+            }
+        </li>
+    </ul>
+</div>
+
+<h1>Hello, world!</h1>
+
+<h2>Renderização Static Server Rendering(SSR)</h2>
+
+<h5 class="mb-4">
+    Ocorre quando o HTML dos componentes é gerado no servidor e <br />
+    enviado ao navegador já pronto para exibição. Isso proporciona <br />
+    carregamento rápido inicial e melhor SEO, pois o conteúdo já <br />
+    vem renderizado. <br />
+    <br />
+    Ela acontece automaticamente em páginas marcadas<br />
+    com a diretiva <b>page</b> que não especificam um <b>rendermode</b> ou <br />
+    usam <b>[StreamRendering]</b>. Nenhuma interatividade Blazor é <br />
+    ativada no cliente nesse momento. O componente é estático,<br />
+    sem reconexão ou eventos interativos.<br />
+</h5>
+
+

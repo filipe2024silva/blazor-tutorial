@@ -1,0 +1,121 @@
+﻿@page "/tarefas"
+@page "/tarefas/{status}"
+@page "/lista"
+@rendermode InteractiveServer
+
+<button class="btn btn-link mb-3" @onclick="IrParaResumo">
+    <i class="bi bi-bar-chart-line"></i>
+    Ver resumo
+</button>
+
+<!-- INÍCIO DA SEÇÃO DE DIAGNÓSTICO -->
+<div class="alert alert-info mt-4 p-3" style="border-left: 5px solid #0dcaf0;">
+    <h5 class="alert-heading fw-bold">Diagnóstico de Renderização</h5>
+    <hr>
+    <dl class="row">
+        <dt class="col-sm-4">Local de Execução:</dt>
+        <dd class="col-sm-8"><code>@RendererInfo.Name</code></dd>
+
+        <dt class="col-sm-4">É Interativo (agora):</dt>
+        <dd class="col-sm-8"><code>@RendererInfo.IsInteractive</code></dd>
+
+        <dt class="col-sm-4">Modo Atribuído:</dt>
+        <dd class="col-sm-8"><code>@(AssignedRenderMode?.ToString() ?? "Nenhum (Estático/SSR)")</code></dd>
+    </dl>
+</div>
+<!-- FIM DA SEÇÃO CORRIGIDA -->
+
+@if (RendererInfo?.Name == "Static")
+{
+    <p>Este componente foi renderizado estaticamente e não é interativo.</p>
+}
+else if (RendererInfo?.IsInteractive == true)
+{
+    <p>Este componente foi renderizado no @RendererInfo.Name , agora é interativo.</p>
+}
+
+<h1>Lista de Tarefas</h1>
+<h5>
+    Usando <b>rendermode InteractiveServer</b>
+</h5>
+<br />
+
+@if (tarefas == null)
+{
+    <img src="https://media.giphy.com/media/qHOf8vC1ppFQs/giphy.gif" width="100" class="icone-carregando" />
+    <p>Carregando tarefas...</p>
+}
+else if (!tarefas.Any())
+{
+    <img src="icons/erro-404.png" class="icone-carregando" />
+    <p>Ainda não existem tarefas...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Ação</th>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Concluída</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in tarefas)
+            {
+                <tr>
+                    <td>
+                        <button class="btn btn-danger btn-sm" @onclick="() => RemoverTarefa(item.ID)"><i class="bi bi-trash"></i> Remover</button>
+                    </td>
+                    <td>@item.DataCriacao.ToShortDateString()</td>
+                    <td>@item.Descricao</td>
+                    <td>
+                        <input type="checkbox" checked="@item.Concluida" @onchange="() => AlternarConclusao(item.ID)" />
+                    </td>
+                </tr>
+            }
+        </tbody>
+
+    </table>
+}
+@code {
+    private List<Tarefa>? tarefas;
+
+    [Parameter]
+    public string? Status { get; set; }
+
+    [Inject]
+    private NavigationManager Nav { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(1000);
+        var todas = TarefaDados.ObterTarefas();
+
+        tarefas = Status?.ToLower() switch
+        {
+            "concluidas" => todas.Where(t => t.Concluida).ToList(),
+            "pendentes" => todas.Where(t => !t.Concluida).ToList(),
+            _ => todas
+        };
+    }
+
+    private void RemoverTarefa(Guid id)
+    {
+        tarefas?.RemoveAll(t => t.ID == id);
+    }
+
+    private void AlternarConclusao(Guid id)
+    {
+        var tarefa = tarefas?.FirstOrDefault(t => t.ID == id);
+
+        if (tarefa != null)
+            tarefa.Concluida = !tarefa.Concluida;
+    }      
+
+    private void IrParaResumo()
+    {
+       Nav.NavigateTo("/tarefas-resumo") ;
+    }
+}

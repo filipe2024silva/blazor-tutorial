@@ -1,0 +1,73 @@
+﻿@page "/tarefas-teste"
+@implements IDisposable
+@inject PersistentComponentState ApplicationState
+@inject NavigationManager Nav
+
+@* Força a pré-renderização para este componente *@
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: true))
+
+<h3>Demonstrando a Dupla Execução (com Estado Persistido)</h3>
+<p>
+    Este componente agora usa <code>PersistentComponentState</code> para "lembrar" o log gerado durante a pré-renderização.
+</p>
+
+<div class="my-4">
+    <button class="btn btn-primary" @onclick="RecarregarComPreRenderizacao">
+        <i class="bi bi-arrow-clockwise"></i> Recarregar e Ver a Pré-renderização
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-header fw-bold">
+        Log de Eventos do Ciclo de Vida
+    </div>
+    <ul class="list-group list-group-flush">
+        @foreach (var evento in logEventos)
+        {
+            <li class="list-group-item">@evento</li>
+        }
+    </ul>
+</div>
+
+@code {
+    private List<string> logEventos = new();
+    private PersistingComponentStateSubscription persistindoSubscricao;
+
+    protected override void OnInitialized()
+    {
+        // Registra o método que salvará os dados ANTES da pré-renderização terminar.
+        persistindoSubscricao = ApplicationState.RegisterOnPersisting(SalvarLogDeEventos);
+
+        // Tenta recuperar o log que foi salvo no servidor.
+        if (ApplicationState.TryTakeFromJson<List<string>>("logEventos", out var logPersistido))
+        {
+            // Se conseguiu, significa que estamos no WebAssembly.
+            // Usamos o log que veio do servidor.
+            logEventos = logPersistido!;
+        }
+
+        // Adiciona o evento da execução atual à lista.
+        logEventos!.Add($"OnInitialized executado em: {RendererInfo.Name} às {DateTime.Now:HH:mm:ss.fff}");
+    }
+
+    private Task SalvarLogDeEventos()
+    {
+        // Salva a lista de log atual como um JSON na página.
+        // Isso acontece apenas na pré-renderização no servidor.
+        ApplicationState.PersistAsJson("logEventos", logEventos);
+        return Task.CompletedTask;
+    }
+
+    private void RecarregarComPreRenderizacao()
+    {
+        // Recarregue a página atual a partir do zero,
+        // fazendo uma nova requisição ao servidor
+        Nav.NavigateTo(Nav.Uri, forceLoad: true);
+    }
+
+    // Limpa a subscrição para evitar vazamento de memória.
+    public void Dispose()
+    {
+        persistindoSubscricao.Dispose();
+    }
+}

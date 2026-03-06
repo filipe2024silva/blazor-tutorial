@@ -1,0 +1,92 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Blazor Tarefas</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home (SSR)
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="counter">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter (Auto)
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="contador">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Contador (Auto)
+            </NavLink>
+        </div>
+
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="weather">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather (Stream)
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="weather-persistent">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather Persist (Stream)
+            </NavLink>
+        </div>
+
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/weather-dupla-execucao">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Tempo (Stream)
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/weather-persistent">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather Persistent (Stream)
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="tarefas">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Tarefas (Server)
+            </NavLink>
+        </div>
+
+        <!-- Tarefas pendentes -->
+        <div class="nav-item ms-4">
+            @* margem‑start adicional *@
+            <NavLink class="nav-link text-warning"
+                     href="tarefas/pendentes"
+                     Match="NavLinkMatch.All">
+                <i class="bi bi-hourglass-split"></i> Pendentes
+            </NavLink>
+        </div>
+
+        <!-- Tarefas concluídas -->
+        <div class="nav-item ms-4">
+            <NavLink class="nav-link text-success"
+                     href="tarefas/concluidas"
+                     Match="NavLinkMatch.All">
+                <i class="bi bi-check-circle"></i> Concluídas
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="tarefas-resumo">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Resumo (Wasm)
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="tarefas-teste">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Teste (Wasm)
+            </NavLink>
+        </div>
+    </nav>
+</div>
+

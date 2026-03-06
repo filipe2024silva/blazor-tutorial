@@ -1,0 +1,13 @@
+﻿<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(Layout.MainLayout)">
+            <h1 class="text-danger">Página não encontrada</h1>
+            <p>A URL não corresponde a nenhuma rota válida.</p>
+            <p><a class="btn btn-primary" href="/">Voltar para a Home</a></p>
+        </LayoutView>
+    </NotFound>
+</Router>

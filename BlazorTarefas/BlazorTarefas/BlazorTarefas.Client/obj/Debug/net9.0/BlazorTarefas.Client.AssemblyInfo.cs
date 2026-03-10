@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BlazorTarefas.Client")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9c909f9409a286593711459ae4f4a7c2e5a5e3ea")]
 [assembly: System.Reflection.AssemblyProductAttribute("BlazorTarefas.Client")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BlazorTarefas.Client")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

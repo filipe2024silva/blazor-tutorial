@@ -51,6 +51,7 @@ else
 
         Console.WriteLine($"OnInitializedAsync (PersistentState) chamado. Contagem: {iniciaContadorOnInit}. É interativo: {InteratividadeDisponivel}. Renderizador: {RendererInfo?.Name}");
 
+		//Registo de callback para persistência dos dados quando o Blazor decidir persistir o estado do componente (ex: durante a prerenderização ou quando o usuário navega para outra página)
         persistingSubscription = ApplicationState.RegisterOnPersisting(PersistirDados);
 
         if (!ApplicationState.TryTakeFromJson<WeatherForecast[]>("weatherData", out forecasts))

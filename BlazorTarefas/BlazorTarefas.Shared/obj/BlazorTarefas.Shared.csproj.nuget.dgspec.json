@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\FilipeSilva\\Documents\\Blazor Tutorial\\BlazorTarefas\\BlazorTarefas.Shared\\BlazorTarefas.Shared.csproj": {}
+    "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\BlazorTarefas\\BlazorTarefas.Shared\\BlazorTarefas.Shared.csproj": {}
   },
   "projects": {
-    "C:\\Users\\FilipeSilva\\Documents\\Blazor Tutorial\\BlazorTarefas\\BlazorTarefas.Shared\\BlazorTarefas.Shared.csproj": {
+    "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\BlazorTarefas\\BlazorTarefas.Shared\\BlazorTarefas.Shared.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\FilipeSilva\\Documents\\Blazor Tutorial\\BlazorTarefas\\BlazorTarefas.Shared\\BlazorTarefas.Shared.csproj",
+        "projectUniqueName": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\BlazorTarefas\\BlazorTarefas.Shared\\BlazorTarefas.Shared.csproj",
         "projectName": "BlazorTarefas.Shared",
-        "projectPath": "C:\\Users\\FilipeSilva\\Documents\\Blazor Tutorial\\BlazorTarefas\\BlazorTarefas.Shared\\BlazorTarefas.Shared.csproj",
+        "projectPath": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\BlazorTarefas\\BlazorTarefas.Shared\\BlazorTarefas.Shared.csproj",
         "packagesPath": "C:\\Users\\FilipeSilva\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\FilipeSilva\\Documents\\Blazor Tutorial\\BlazorTarefas\\BlazorTarefas.Shared\\obj\\",
+        "outputPath": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\BlazorTarefas\\BlazorTarefas.Shared\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

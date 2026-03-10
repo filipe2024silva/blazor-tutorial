@@ -1,0 +1,88 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@inject HttpClient http
+@inject NavigationManager navManager
+
+<PageTitle>Home</PageTitle>
+<Aviso Mensagem="Lista de Tarefas"/>
+
+@if (tarefas == null)
+{
+    <img src="https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif" />
+    <Aviso Mensagem="Carregando..." />
+}
+else if (!tarefas.Any())
+{
+    <Aviso Mensagem="Ainda não existem tarefas..." />
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Ação</th>
+                <th>Data</th>
+                <th>Descriçao</th>
+                <th>Concluida</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in tarefas)
+            {
+                <tr>
+                    <td>
+                        <button @onclick="@(() => RemoveTarefa(item.ID))">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                    <td>@item.DataCriacao</td>
+                    <td>@item.Descricao</td>
+                    <td><input type="checkbox" @bind="item.Concluida" />@item.Concluida</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (tarefas != null)
+    {
+        <div class="form-group">
+            <label>Tarefa</label>
+            <input type="Text" placeholder="Informe a tarefa" @bind="novaTarefa" />
+            <button class="btn btn-primary" @onclick="AdicionarNovaTarefa">Registrar Tarefa</button>
+        </div>
+    }
+}
+
+@code{
+    List<Tarefa> tarefas = new List<Tarefa>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        //obtem a url base
+        var url = navManager.BaseUri + "Dados/tarefas.json";
+        var resultado = await http.GetFromJsonAsync<List<Tarefa>>(url);
+        tarefas = resultado ?? new List<Tarefa>();
+    }
+
+    private string novaTarefa = "";
+
+    void AdicionarNovaTarefa()
+    {
+        if (!string.IsNullOrWhiteSpace(novaTarefa))
+        {
+            tarefas.Add(new Tarefa
+            {
+                DataCriacao = DateTime.Now,
+                Descricao = novaTarefa,
+                ID = Guid.NewGuid()
+            });
+            novaTarefa = "";
+        }
+    }
+    private void RemoveTarefa(Guid id)
+    {
+        tarefas.Remove(tarefas.First(x => x.ID == id));
+    }
+
+
+}

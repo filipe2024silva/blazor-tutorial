@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "+1PmbflZXxI=",
+  "dgSpecHash": "fuK/As3sRYE=",
   "success": true,
-  "projectFilePath": "C:\\Users\\FilipeSilva\\Documents\\Blazor Tutorial\\BlazorTarefas\\BlazorTarefas\\BlazorTarefas\\BlazorTarefas.csproj",
+  "projectFilePath": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\BlazorTarefas\\BlazorTarefas\\BlazorTarefas\\BlazorTarefas.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\FilipeSilva\\.nuget\\packages\\microsoft.aspnetcore.authorization\\9.0.5\\microsoft.aspnetcore.authorization.9.0.5.nupkg.sha512",
     "C:\\Users\\FilipeSilva\\.nuget\\packages\\microsoft.aspnetcore.components\\9.0.5\\microsoft.aspnetcore.components.9.0.5.nupkg.sha512",

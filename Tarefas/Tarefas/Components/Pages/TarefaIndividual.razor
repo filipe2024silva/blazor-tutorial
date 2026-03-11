@@ -1,0 +1,24 @@
+﻿<tr>
+    <td>
+        <button @onclick="@(() => RemoveTarefa(item.ID))">
+            <i class="bi bi-trash"></i>
+        </button>
+    </td>
+    <td>@item.DataCriacao</td>
+    <td>@item.Descricao</td>
+    <td><input type="checkbox" @bind="item.Concluida" />@item.Concluida</td>
+</tr>
+
+@code {
+    [Parameter, EditorRequired]
+    public Tarefa item { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<Guid> OnRemoverTarefa { get; set; }
+
+    public async Task RemoveTarefa(Guid id)
+    {
+        await OnRemoverTarefa.InvokeAsync(id);
+    }
+
+}

@@ -1,0 +1,18 @@
+﻿@page "/one-way"
+@rendermode  InteractiveServer
+
+<h3>Exemplo OneWay DataBinding</h3>
+
+<p><b>Ao clicar no botão o nome será alterado para João</b></p>
+
+<p style="font-size: 40px;"><b>Nome: @nome</b></p>
+
+<button @onclick="TrocarNome">Trocar Nome</button>
+
+@code {
+	private string nome = "Maria";
+	private void TrocarNome()
+	{
+		nome = "João";
+	}
+}

@@ -1,0 +1,73 @@
+﻿@page "/eventos-demo"
+@rendermode InteractiveServer
+
+<h3>Demonstraçao de Eventos</h3>
+
+<h4>1. Evento com Método Nomeado</h4>
+<button class="btn btn-primary" @onclick="HandleClick">Clique aqui</button>
+<p>Mensagem: <strong>@mensagem</strong></p>
+<hr />
+<h4>1. Evento com Método Nomeado</h4>
+<button class="btn btn-success" @onclick="@(()=>mensagemLambda="Botao verde clicado")">Clique aqui</button>
+<p>Mensagem: <strong>@mensagemLambda</strong></p>
+
+<hr/>
+
+<h4>3. Acessando MouseEventArgs</h4>
+<div class="alert alert-info" @onclick="HandleDivClick">
+	Clique em qualquer lugar dentro desta área azul.
+</div>
+<p>@mensagemCoordenadas</p>
+
+<hr />
+
+<h4>4. EventCallBack - Comunicação Filho -> Pai</h4>
+<BotaoFilho OnClicouNoFilho="HandleCliqueDoFilho" />
+<p>@mensagemDoFilho</p>
+
+<hr />
+
+<h4>5. Modificadores de Evento</h4>
+<div class="alert alert-success" @onclick="@(()=> logEventos.Add("Evento da Div externa dispardo"))">
+	Div Externa
+	<div class="alert alert-warning p-3" onclick="@(()=> logEventos.Add("Evento Div interna disparado"))">
+		Div Interna
+		<button class="btn btn-danger" @onclick="HandleBotaoComStop" @onclick:stopPropagation>
+			Clique (Com StopPropagation)
+		</button>
+		<button class="btn btn-secondary" @onclick="@(()=>logEventos.Add("Evento do botão normal disparado"))">
+			Clique (Normal)
+		</button>
+	</div>
+</div>
+<ul>
+	@foreach(var log in logEventos)
+	{
+		<li>@log</li>
+	}
+</ul>
+
+@code {
+	private string mensagem = "Aguardando um clique ...";
+	private string mensagemLambda = "Aguardando (lambda) ...";
+	private string mensagemCoordenadas = "Aguardando clique na área azul ...";
+	private string mensagemDoFilho = "Aguardando mensagem do filho ...";
+	private List<string> logEventos = new();
+	private void HandleClick()
+	{
+		mensagem = $"O botao foi clicado{DateTime.Now:HH:mm:ss}";
+	}
+	private void HandleDivClick(MouseEventArgs e)
+	{
+		mensagemCoordenadas = $"Coordenadas do clique: X={e.ClientX}, Y={e.ClientY}";
+	}
+
+	private void HandleCliqueDoFilho()
+	{
+		mensagemDoFilho = "Recebi o evento do componente filho!";
+	}
+	private void HandleBotaoComStop()
+	{
+		logEventos.Add("Evento do botão com STOP disparado");
+	}
+}

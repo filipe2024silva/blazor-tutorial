@@ -1,0 +1,13 @@
+﻿@page "/estilo-cascading"
+
+<h3 style="@Estilo">Componente Pai</h3>
+<CascadingValue Value="Estilo">
+	<CascadingValue Value="DataAtual">
+		<ComponenteFilho />
+	</CascadingValue>
+</CascadingValue>
+
+@code {
+	public string Estilo { get; set; } = "color:blue;font-weight:bold";
+	public DateTime DataAtual { get; set; } = DateTime.Now;
+}

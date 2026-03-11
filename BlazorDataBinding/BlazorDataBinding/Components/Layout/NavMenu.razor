@@ -1,0 +1,60 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">BlazorDataBinding</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="one-way">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> One-Way
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="two-way">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Two-Way
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="bind">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Bind
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="bind-get-set">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Bind Get/Set
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="bind-event">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Bind Event
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="bind-after">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Bind After
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="bind-format">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Bind Format
+            </NavLink>
+        </div>
+    </nav>
+</div>
+

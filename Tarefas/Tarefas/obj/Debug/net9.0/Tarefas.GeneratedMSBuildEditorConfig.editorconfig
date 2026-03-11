@@ -24,6 +24,10 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xBcHAucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/ComponentePai.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb21wb25lbnRlUGFpLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Counter.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb3VudGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -32,12 +36,44 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xFcnJvci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/EventosDemo.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xFdmVudG9zRGVtby5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIb21lLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Lista.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xMaXN0YS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/ListaTarefas.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xMaXN0YVRhcmVmYXMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Shared/Aviso.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTaGFyZWRcQXZpc28ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Shared/BotaoFilho.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTaGFyZWRcQm90YW9GaWxoby5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Shared/ComponenteFilho.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTaGFyZWRcQ29tcG9uZW50ZUZpbGhvLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Shared/ListaGenerica.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTaGFyZWRcTGlzdGFHZW5lcmljYS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Shared/Painel.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTaGFyZWRcUGFpbmVsLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/TarefaIndividual.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUYXJlZmFJbmRpdmlkdWFsLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Weather.razor]

@@ -1,0 +1,52 @@
+﻿@if (ListaDeTarefas == null)
+{
+    
+    <Aviso>
+        <Conteudo1><img src="https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif" /></Conteudo1>
+        <Conteudo2>
+            <span style="color:blue"><h3>Carregando Tarefas ...</h3></span>
+        </Conteudo2>
+    </Aviso>
+}
+else if (!ListaDeTarefas.Any())
+{
+    <Aviso>
+	    <Conteudo1><img src="images/duvida1.png"/></Conteudo1 >
+        <Conteudo2>
+                <span style="color:red"><h3>Carregando Tarefas ...</h3></span>
+         </Conteudo2>
+
+   </Aviso >
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Ação</th>
+                <th>Data</th>
+                <th>Descriçao</th>
+                <th>Concluida</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in ListaDeTarefas)
+            {
+				<TarefaIndividual item="item" OnRemoverTarefa="HandleRemoveTarefa" />
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public List<Tarefa> ListaDeTarefas { get; set; } = new();
+
+    [Parameter]
+	public EventCallback<Guid> OnRemoverTarefa { get; set; }
+
+    private async Task HandleRemoveTarefa(Guid id)
+    {
+        await OnRemoverTarefa.InvokeAsync(id);
+    }
+}

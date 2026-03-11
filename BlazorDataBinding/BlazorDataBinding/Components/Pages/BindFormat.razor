@@ -1,0 +1,25 @@
+﻿@page "/bind-format"
+@rendermode InteractiveServer
+
+<h3>Exemplo de <code>@("@bind:format")</code> com Data</h3>
+
+<p>
+	<label>
+		Data de nascimento:
+		<input type="text" @bind="dataNascimento" @bind:format="dd/MM/yyyy" />
+	</label>
+</p>
+
+<p>
+	<b>Data no modelo: @dataNascimento.ToString("dd/MM/yyyy")</b>
+	<h6>Este é o valor formatado com ToString("dd/MM/yyyy")</h6>
+</p>
+
+<p>
+	<b>Data completa (para debug): @dataNascimento</b>
+	<h6>Este é o valor armazenado com hh:mm:ss - 00:00:00</h6>
+</p>
+
+@code {
+	private DateTime dataNascimento = new DateTime(2025, 8, 25);
+}

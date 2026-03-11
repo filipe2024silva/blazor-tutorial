@@ -1,0 +1,17 @@
+﻿@page "/bind-get-set"
+@rendermode InteractiveServer
+
+<h4>Usando <code>@("@bind:get")</code> e <code>@("@bind:set")</code></h4>
+
+<h5>Usa o evento onchange por padrão (ao perder o foco)</h5>
+
+<input @bind:get="texto" @bind:set="AtualizaTexto" />
+
+@code {
+	private string texto = "inicial";
+
+	private void AtualizaTexto(string? valor)
+	{
+		texto = string.IsNullOrEmpty(valor) ? "Valor inválido" : valor.Trim().ToUpper();
+	}
+}

@@ -1,0 +1,53 @@
+﻿@page "/perfil/{NomeUtilizador}"
+@rendermode RenderMode.InteractiveServer
+
+<PageTitle>Perfil de @NomeUtilizador</PageTitle>
+
+<h2>Perfil Utilizador</h2>
+
+@if (carregando)
+{
+	<p><em>Carregando perfil de @NomeUtilizador...</em></p>
+}
+else
+{
+	<div class="alert alert-success">
+		<p>@mensagem</p>
+	</div>
+}
+
+<hr />
+<h4>Navegue para outros perfis:</h4>
+<a href="/perfil/Ana" class="btn btn-primary">Ver Perfil de Ana</a>
+<a href="/perfil/Bruno" class="btn btn-secondary">Ver Perfil de Bruno</a>
+<a href="/perfil/Carla" class="btn btn-info">Ver Perfil de Carla</a>
+
+@code {
+    private bool carregando = true;
+    private string mensagem = string.Empty;
+
+    // 1. O PARÂMETRO: Este valor vem diretamente da URL.
+    // Ex: /perfil/Ana -> NomeUtilizador será "Ana".
+    [Parameter]
+    public string NomeUtilizador { get; set; } = string.Empty;
+
+    // 2. O MÉTODO EM FOCO: OnParametersSetAsync
+    // Este método é chamado pelo Blazor toda vez que um parâmetro (como 'NomeUtilizador')
+    // é recebido ou alterado.
+    protected override async Task OnParametersSetAsync()
+    {
+        // A. Inicia o carregamento
+        carregando = true;
+        mensagem = string.Empty; // Limpa a mensagem antiga
+
+        // B. Simula uma busca de dados na rede (ex: buscar no banco de dados)
+        // Usamos o valor do parâmetro 'NomeUtilizador' para a busca.
+        await Task.Delay(1000); // Espera 1 segundo para simular a latência
+
+        // C. Prepara a mensagem com os dados "carregados"
+        mensagem = $"Bem-vindo(a) ao perfil de {NomeUtilizador}! Os dados foram carregados.";
+
+        // D. Finaliza o carregamento
+        carregando = false;
+    }
+}

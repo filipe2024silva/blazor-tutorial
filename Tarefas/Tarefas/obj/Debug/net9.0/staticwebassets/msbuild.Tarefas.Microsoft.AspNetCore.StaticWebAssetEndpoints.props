@@ -16,13 +16,13 @@
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\dados\tarefas.json'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>
       <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"336ejvmzbb"},{"Name":"integrity","Value":"sha256-sfrPH6h/bJqxFlkCbOmyqu7ZS\u002BbJDB\u002BtMcRAfeTexeY="},{"Name":"label","Value":"_content/Tarefas/dados/tarefas.json"}]]]></EndpointProperties>
-      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"324"},{"Name":"Content-Type","Value":"application/json"},{"Name":"ETag","Value":"\u0022sfrPH6h/bJqxFlkCbOmyqu7ZS\u002BbJDB\u002BtMcRAfeTexeY=\u0022"},{"Name":"Last-Modified","Value":"Tue, 10 Mar 2026 15:12:54 GMT"}]]]></ResponseHeaders>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"324"},{"Name":"Content-Type","Value":"application/json"},{"Name":"ETag","Value":"\u0022sfrPH6h/bJqxFlkCbOmyqu7ZS\u002BbJDB\u002BtMcRAfeTexeY=\u0022"},{"Name":"Last-Modified","Value":"Wed, 11 Mar 2026 15:15:04 GMT"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="_content/Tarefas/dados/tarefas.json">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\dados\tarefas.json'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>
       <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-sfrPH6h/bJqxFlkCbOmyqu7ZS\u002BbJDB\u002BtMcRAfeTexeY="}]]]></EndpointProperties>
-      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"324"},{"Name":"Content-Type","Value":"application/json"},{"Name":"ETag","Value":"\u0022sfrPH6h/bJqxFlkCbOmyqu7ZS\u002BbJDB\u002BtMcRAfeTexeY=\u0022"},{"Name":"Last-Modified","Value":"Tue, 10 Mar 2026 15:12:54 GMT"}]]]></ResponseHeaders>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"324"},{"Name":"Content-Type","Value":"application/json"},{"Name":"ETag","Value":"\u0022sfrPH6h/bJqxFlkCbOmyqu7ZS\u002BbJDB\u002BtMcRAfeTexeY=\u0022"},{"Name":"Last-Modified","Value":"Wed, 11 Mar 2026 15:15:04 GMT"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="_content/Tarefas/favicon.ifv42okdf2.png">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\favicon.png'))</AssetFile>
@@ -35,6 +35,18 @@
       <Selectors><![CDATA[[]]]></Selectors>
       <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-4mWsDy3aHl36ZbGt8zByK7Pvd4kRUoNgTYzRnwmPHwg="}]]]></EndpointProperties>
       <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=3600, must-revalidate"},{"Name":"Content-Length","Value":"1148"},{"Name":"Content-Type","Value":"image/png"},{"Name":"ETag","Value":"\u00224mWsDy3aHl36ZbGt8zByK7Pvd4kRUoNgTYzRnwmPHwg=\u0022"},{"Name":"Last-Modified","Value":"Tue, 10 Mar 2026 15:12:54 GMT"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
+    <StaticWebAssetEndpoint Include="_content/Tarefas/images/duvida1.gf1es13i3h.png">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\duvida1.png'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"gf1es13i3h"},{"Name":"integrity","Value":"sha256-RBFpPd5nS5TUJlH/IRmjEiD3tuI99owW5Ci\u002Bc/6xNjU="},{"Name":"label","Value":"_content/Tarefas/images/duvida1.png"}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"1813"},{"Name":"Content-Type","Value":"image/png"},{"Name":"ETag","Value":"\u0022RBFpPd5nS5TUJlH/IRmjEiD3tuI99owW5Ci\u002Bc/6xNjU=\u0022"},{"Name":"Last-Modified","Value":"Wed, 11 Mar 2026 12:53:34 GMT"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
+    <StaticWebAssetEndpoint Include="_content/Tarefas/images/duvida1.png">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\images\duvida1.png'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-RBFpPd5nS5TUJlH/IRmjEiD3tuI99owW5Ci\u002Bc/6xNjU="}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=3600, must-revalidate"},{"Name":"Content-Length","Value":"1813"},{"Name":"Content-Type","Value":"image/png"},{"Name":"ETag","Value":"\u0022RBFpPd5nS5TUJlH/IRmjEiD3tuI99owW5Ci\u002Bc/6xNjU=\u0022"},{"Name":"Last-Modified","Value":"Wed, 11 Mar 2026 12:53:34 GMT"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="_content/Tarefas/lib/bootstrap/dist/css/bootstrap-grid.bqjiyaj88i.css">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\lib\bootstrap\dist\css\bootstrap-grid.css'))</AssetFile>

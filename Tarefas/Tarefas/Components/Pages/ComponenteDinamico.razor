@@ -1,0 +1,37 @@
+﻿@page "/cascata-dinamica"
+@rendermode InteractiveServer
+
+<h3>Exemplo de Cascata Dinâmica</h3>
+
+<CascadingValue Value="@informacoesTema" IsFixed>
+	<div style="border: 2px solid black; padding: 15px;">
+		<h2>Eu sou o componente Pai</h2>
+		<button @onclick="TrocarTema">Trocar Tema</button>
+		<p>tema atual do Pai: <strong>@informacoesTema.Nome</strong></p>
+
+		<PainelDeControlo/>
+	</div>
+</CascadingValue>
+
+@code {
+	private TemaInfo informacoesTema = new TemaInfo { Nome = "dark", CorFundo = "#333", CorTexto = "#FFF" };
+
+	private void TrocarTema(){
+		if(informacoesTema.Nome == "dark")
+		{
+			informacoesTema = new TemaInfo { Nome = "light", CorFundo = "#EEE", CorTexto = "#000" };
+		}
+		else
+		{
+			informacoesTema = new TemaInfo { Nome = "dark", CorFundo = "#333", CorTexto = "#FFF" };
+		}
+	}
+
+	public class TemaInfo
+	{
+		public string Nome { get; set; } = "light";
+		public string CorFundo { get; set; } = "#EEE";
+		public string CorTexto { get; set; } = "#000";
+	}
+}
+

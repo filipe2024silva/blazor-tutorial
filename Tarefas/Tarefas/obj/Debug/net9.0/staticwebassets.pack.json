@@ -17,6 +17,10 @@
       "PackagePath": "staticwebassets\\favicon.png"
     },
     {
+      "Id": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\wwwroot\\images\\duvida1.png",
+      "PackagePath": "staticwebassets\\images\\duvida1.png"
+    },
+    {
       "Id": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css"
     },

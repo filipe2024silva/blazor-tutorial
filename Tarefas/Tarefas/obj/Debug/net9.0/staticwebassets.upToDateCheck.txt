@@ -47,6 +47,7 @@ C:\Users\FilipeSilva\Documents\blazor-tutorial\Tarefas\Tarefas\wwwroot\lib\boots
 wwwroot\app.css
 wwwroot\dados\tarefas.json
 wwwroot\favicon.png
+wwwroot\images\duvida1.png
 wwwroot\lib\bootstrap\dist\css\bootstrap.css
 wwwroot\lib\bootstrap\dist\css\bootstrap.css.map
 wwwroot\lib\bootstrap\dist\css\bootstrap.min.css

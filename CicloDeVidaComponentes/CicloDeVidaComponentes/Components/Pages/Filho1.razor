@@ -1,0 +1,28 @@
+﻿<h4>Filho com 2 Parâmetros</h4>
+
+@if(ItemId <= 0 || string.IsNullOrEmpty(Nome))
+{
+	<p style="color: red;font-size: 30px">X Dados Inválidos</p>
+	<p style="font-size: 30px">ID: @ItemId, Nome: '@Nome'</p>
+}
+else
+{
+	<p style="color: green;font-size: 30px">✓ Dados Válidos</p>
+	<p style="font-size: 30px">ID: @ItemId, Nome: @Nome</p>
+}
+@code {
+	[Parameter]
+	public int ItemId { get; set; }
+
+	[Parameter]
+	public string? Nome { get; set; }
+
+	public override async Task SetParametersAsync(ParameterView parameters)
+	{
+		Console.WriteLine($"SetParametersAsync chamado!");
+		parameters.SetParameterProperties(this);
+		Console.WriteLine($"ID: {ItemId}, Nome: {Nome}");
+		await base.SetParametersAsync(ParameterView.Empty);
+		Console.WriteLine("Processamento completo!");
+	}
+}

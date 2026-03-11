@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{3621E017-6979-4C53-98E6-B7DD8213808E}|Tarefas\\Tarefas.csproj|c:\\users\\filipesilva\\documents\\blazor-tutorial\\tarefas\\tarefas\\components\\pages\\shared\\componentefilho.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{3621E017-6979-4C53-98E6-B7DD8213808E}|Tarefas\\Tarefas.csproj|solutionrelative:tarefas\\components\\pages\\shared\\componentefilho.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{3621E017-6979-4C53-98E6-B7DD8213808E}|Tarefas\\Tarefas.csproj|c:\\users\\filipesilva\\documents\\blazor-tutorial\\tarefas\\tarefas\\components\\pages\\cascatauserpai.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{3621E017-6979-4C53-98E6-B7DD8213808E}|Tarefas\\Tarefas.csproj|solutionrelative:tarefas\\components\\pages\\cascatauserpai.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{3621E017-6979-4C53-98E6-B7DD8213808E}|Tarefas\\Tarefas.csproj|c:\\users\\filipesilva\\documents\\blazor-tutorial\\tarefas\\tarefas\\components\\pages\\componentepai.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{3621E017-6979-4C53-98E6-B7DD8213808E}|Tarefas\\Tarefas.csproj|solutionrelative:tarefas\\components\\pages\\componentepai.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{3621E017-6979-4C53-98E6-B7DD8213808E}|Tarefas\\Tarefas.csproj|c:\\users\\filipesilva\\documents\\blazor-tutorial\\tarefas\\tarefas\\components\\pages\\shared\\cascatautilizadorfilho.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{3621E017-6979-4C53-98E6-B7DD8213808E}|Tarefas\\Tarefas.csproj|solutionrelative:tarefas\\components\\pages\\shared\\cascatautilizadorfilho.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -26,28 +26,28 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "ComponenteFilho.razor",
-              "DocumentMoniker": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\Components\\Pages\\Shared\\ComponenteFilho.razor",
-              "RelativeDocumentMoniker": "Tarefas\\Components\\Pages\\Shared\\ComponenteFilho.razor",
-              "ToolTip": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\Components\\Pages\\Shared\\ComponenteFilho.razor",
-              "RelativeToolTip": "Tarefas\\Components\\Pages\\Shared\\ComponenteFilho.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "CascataUtilizadorFilho.razor",
+              "DocumentMoniker": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\Components\\Pages\\Shared\\CascataUtilizadorFilho.razor",
+              "RelativeDocumentMoniker": "Tarefas\\Components\\Pages\\Shared\\CascataUtilizadorFilho.razor",
+              "ToolTip": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\Components\\Pages\\Shared\\CascataUtilizadorFilho.razor",
+              "RelativeToolTip": "Tarefas\\Components\\Pages\\Shared\\CascataUtilizadorFilho.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-03-11T15:04:14.746Z",
+              "WhenOpened": "2026-03-11T16:12:48.375Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ComponentePai.razor",
-              "DocumentMoniker": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\Components\\Pages\\ComponentePai.razor",
-              "RelativeDocumentMoniker": "Tarefas\\Components\\Pages\\ComponentePai.razor",
-              "ToolTip": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\Components\\Pages\\ComponentePai.razor",
-              "RelativeToolTip": "Tarefas\\Components\\Pages\\ComponentePai.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAACAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "CascataUserPai.razor",
+              "DocumentMoniker": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\Components\\Pages\\CascataUserPai.razor",
+              "RelativeDocumentMoniker": "Tarefas\\Components\\Pages\\CascataUserPai.razor",
+              "ToolTip": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\Components\\Pages\\CascataUserPai.razor",
+              "RelativeToolTip": "Tarefas\\Components\\Pages\\CascataUserPai.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-03-11T15:01:15.314Z",
+              "WhenOpened": "2026-03-11T16:06:32.946Z",
               "EditorCaption": ""
             }
           ]

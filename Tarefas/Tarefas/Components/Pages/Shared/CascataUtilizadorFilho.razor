@@ -1,0 +1,15 @@
+﻿@using static CascataUserPai
+
+@if (UtilizadorAtual?.Autenticado == true)
+{
+	<p>Bem-vindo, @UtilizadorAtual.Nome!</p>
+}
+else
+{
+	<p>Utilizador não autenticao</p>
+}
+
+@code {
+	[CascadingParameter]
+	public Utilizador? UtilizadorAtual { get; set; }
+}

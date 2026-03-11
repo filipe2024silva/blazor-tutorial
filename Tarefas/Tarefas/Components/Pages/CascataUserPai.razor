@@ -1,0 +1,11 @@
+﻿@page "/cascata-user-pai"
+<h3>Cascata de Utilizador Pai</h3>
+
+<CascadingValue Value="@utilizador" TValue="Utilizador">
+	<CascataUtilizadorFilho/>
+</CascadingValue>
+
+@code {
+	private Utilizador utilizador = new("Filipe", true);
+	public record Utilizador(string Nome, bool Autenticado);
+}

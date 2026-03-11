@@ -24,6 +24,14 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xBcHAucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/CascataUserPai.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXNjYXRhVXNlclBhaS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/ComponenteDinamico.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb21wb25lbnRlRGluYW1pY28ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/ComponentePai.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb21wb25lbnRlUGFpLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -60,6 +68,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTaGFyZWRcQm90YW9GaWxoby5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Shared/CascataUtilizadorFilho.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTaGFyZWRcQ2FzY2F0YVV0aWxpemFkb3JGaWxoby5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Shared/ComponenteFilho.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTaGFyZWRcQ29tcG9uZW50ZUZpbGhvLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -70,6 +82,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Shared/Painel.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTaGFyZWRcUGFpbmVsLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/Shared/PainelDeControlo.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTaGFyZWRcUGFpbmVsRGVDb250cm9sby5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/FilipeSilva/Documents/blazor-tutorial/Tarefas/Tarefas/Components/Pages/TarefaIndividual.razor]

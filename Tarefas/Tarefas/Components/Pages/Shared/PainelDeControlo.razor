@@ -1,0 +1,11 @@
+﻿@using static ComponenteDinamico // Importa a classe TemaInfo aninhada
+
+<div style="background-color: @Tema.CorFundo; color: @Tema.CorTexto; border: 2px solid red; padding: 15px;">
+	<h4>Eu sou o Paine Controlo</h4>
+	<p>Tema atual do Painel de Controlo: <strong>@Tema.Nome</strong></p>
+</div>
+
+@code {
+	[CascadingParameter]
+	private TemaInfo Tema { get; set; } = new();
+}

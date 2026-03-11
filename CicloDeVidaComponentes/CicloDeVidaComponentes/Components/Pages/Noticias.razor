@@ -1,0 +1,42 @@
+﻿@page "/noticias"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<h3>Noticias</h3>
+
+@if(isLoading)
+{
+	<p>Carregando...</p>
+}
+else
+{
+	<p>Noticias:(@noticias.Count)</p>
+	<ul>
+		@foreach (var noticia in noticias)
+		{
+			<li>@noticia.Titulo - @noticia.Data</li>
+		}
+	</ul>
+}
+
+@code {
+	private bool isLoading = true;
+	private List<Noticia> noticias = new();
+
+	// Definição record para representar uma notícia
+	public record Noticia(string Titulo, string Data);
+
+	protected override async Task OnInitializedAsync()
+	{
+		//Simula um atraso para carregar as notícias
+		await Task.Delay(2000);
+
+		noticias = new List<Noticia>
+		{
+			new Noticia("Notícia 1", DateTime.Now.ToString("dd/MM/yyyy")),
+			new Noticia("Notícia 2", DateTime.Now.AddDays(-1).ToString("dd/MM/yyyy")),
+			new Noticia("Notícia 3", DateTime.Now.AddDays(-2).ToString("dd/MM/yyyy"))
+		};
+
+		isLoading = false;
+	}
+}

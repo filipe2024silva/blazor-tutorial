@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "VBLz51IEsj1pV9HfdwDyIS2Ukcn8gEXkQN21X2Zv1nA=",
+  "Hash": "PkOmXxKVYrCGWycx1JKvBedfBSM2LJvMmy9M1LNlxi0=",
   "Source": "Tarefas",
   "BasePath": "_content/Tarefas",
   "Mode": "Default",
@@ -1128,6 +1128,27 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\favicon.png"
+    },
+    {
+      "Identity": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\wwwroot\\images\\duvida1.png",
+      "SourceId": "Tarefas",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\wwwroot\\",
+      "BasePath": "_content/Tarefas",
+      "RelativePath": "images/duvida1#[.{fingerprint}]?.png",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "gf1es13i3h",
+      "Integrity": "RBFpPd5nS5TUJlH/IRmjEiD3tuI99owW5Ci+c/6xNjU=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\images\\duvida1.png"
     },
     {
       "Identity": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css",
@@ -2378,7 +2399,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 10 Mar 2026 15:12:54 GMT"
+          "Value": "Wed, 11 Mar 2026 15:15:04 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -2439,7 +2460,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 10 Mar 2026 15:12:54 GMT"
+          "Value": "Wed, 11 Mar 2026 15:15:04 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -2484,7 +2505,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 10 Mar 2026 15:12:54 GMT"
+          "Value": "Wed, 11 Mar 2026 15:15:04 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -2539,7 +2560,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 10 Mar 2026 15:12:54 GMT"
+          "Value": "Wed, 11 Mar 2026 15:15:04 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -2592,7 +2613,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 10 Mar 2026 15:12:54 GMT"
+          "Value": "Wed, 11 Mar 2026 15:15:04 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -2629,7 +2650,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 10 Mar 2026 15:12:54 GMT"
+          "Value": "Wed, 11 Mar 2026 15:15:04 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -2730,6 +2751,88 @@
         {
           "Name": "integrity",
           "Value": "sha256-4mWsDy3aHl36ZbGt8zByK7Pvd4kRUoNgTYzRnwmPHwg="
+        }
+      ]
+    },
+    {
+      "Route": "images/duvida1.gf1es13i3h.png",
+      "AssetFile": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\wwwroot\\images\\duvida1.png",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "1813"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/png"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"RBFpPd5nS5TUJlH/IRmjEiD3tuI99owW5Ci+c/6xNjU=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 11 Mar 2026 12:53:34 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "gf1es13i3h"
+        },
+        {
+          "Name": "label",
+          "Value": "images/duvida1.png"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-RBFpPd5nS5TUJlH/IRmjEiD3tuI99owW5Ci+c/6xNjU="
+        }
+      ]
+    },
+    {
+      "Route": "images/duvida1.png",
+      "AssetFile": "C:\\Users\\FilipeSilva\\Documents\\blazor-tutorial\\Tarefas\\Tarefas\\wwwroot\\images\\duvida1.png",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "1813"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/png"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"RBFpPd5nS5TUJlH/IRmjEiD3tuI99owW5Ci+c/6xNjU=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 11 Mar 2026 12:53:34 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=3600, must-revalidate"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-RBFpPd5nS5TUJlH/IRmjEiD3tuI99owW5Ci+c/6xNjU="
         }
       ]
     },

@@ -1,13 +1,17 @@
 ﻿@page "/estilo-cascading"
 
 <h3 style="@Estilo">Componente Pai</h3>
-<CascadingValue Value="Estilo">
-	<CascadingValue Value="DataAtual">
-		<ComponenteFilho />
+<CascadingValue Value="@Estilo" Name="Estilo">
+	<CascadingValue Value="@DataAtual">
+		<CascadingValue Value="@Fonte" Name="Fonte">
+			<ComponenteFilho />
+		</CascadingValue>
 	</CascadingValue>
 </CascadingValue>
 
 @code {
 	public string Estilo { get; set; } = "color:blue;font-weight:bold";
 	public DateTime DataAtual { get; set; } = DateTime.Now;
+	public string Fonte { get; set; } = "font-family:Courier New;font-size:26px;";
 }
+

@@ -1,0 +1,1399 @@
+﻿@page "/linha1/relatorio/{id}"
+@using f10.pulsar.mes.Data
+@inject NavigationManager NavigationManager
+@inject Utils utils
+@inject IJSRuntime JSRuntime
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="() => { dbcheckedoff = false; GetDB(); }" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("RPL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - Relatório de Produção</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+                        @* <button @onclick="@(() => { PopupEmail = true; })" title="Enviar Relatório por Email"><i class="icon style1 fa-envelope"></i></button> *@
+                        <button style="margin-left:0.5em" @onclick="@(() => { PopupNotas = true; })" title="Adicionar Notas"><i class="icon style1 fa-sticky-note"></i></button>
+                        <button style="margin-left:0.5em" @onclick="BackStreetButton" title="Voltar"><i class="icon style1 fa-arrow-left"></i></button>
+                    </div>
+                </div>
+
+
+                @if (isupdating == false)
+                {
+                    <div class="row uniform">
+                        <div class="12u">
+                            <SfTab>
+                                <TabEvents Selected="RenderReportViewer"></TabEvents>
+                                <TabItems>
+                                    <TabItem>
+                                        <ChildContent>
+                                            <TabHeader Text="HISTÓRICO DE TRATAMENTO"></TabHeader>
+                                        </ChildContent>
+                                        <ContentTemplate>
+                                            @if (bigalarm == false)
+                                            {
+                                                @*CABEÇALHO*@
+                                                <div class="row" style="margin-top:40px">
+                                                    @if (bigrect == false)
+                                                    {
+                                                        <div class="3u 12u$(medium) align-self-end" style="height:550px;display: flex;justify-content:space-between;flex-direction:column;margin-bottom:40px;">
+                                                            @if (Report != null)
+                                                            {
+                                                                <ul class="alt" style="margin-bottom:1em">
+                                                                    <li style="padding:0;">Referência: @Report.Referencia</li>
+                                                                    <li style="padding:0;">Lote: @Report.Lote</li>
+                                                                    <li style="padding:0;">Operador: @Report.Operador</li>
+                                                                    <li style="padding:0;">Ordem Tratamento: @Report.OF</li>
+                                                                    <li style="padding:0;">Bastidor: @Report.Suspensao</li>
+                                                                    <li style="padding:0; color: red; font-weight: bold; visibility: @IsVisible">Motivo: @Report.Motivo</li>
+                                                                    <li style="padding:0;">Programa: @Report.Programa</li>
+                                                                    <li style="padding:0;">Nº Peças: @(Report.Unidades) </li>
+                                                                    <li style="padding:0;">Prioridade: @Report.Prioridade</li>
+                                                                </ul>
+
+                                                                <ul class="alt">
+                                                                    <li style="padding:0;">Inicio: @dtini</li>
+                                                                    <li style="padding:0;">Fim: @dtfin</li>
+                                                                    <li style="padding:0;">Total: @dtt.Value.ToString("hh\\:mm\\:ss")</li>
+                                                                </ul>
+                                                            }
+                                                            @if (Alarmes != null && Alarmes.Count > 0)
+                                                            {
+                                                                <div class="card text-white bg-danger" @onclick="@(e => AbraAlarm(e))" style="cursor:pointer">
+                                                                    <div class="card-body">
+                                                                        <p style="margin:0; font-size:16px;"><i class="icon style1 fa-exclamation-triangle"></i> @Alarmes.Count() alarmes durante o tratamento</p>
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="card text-dark bg-light">
+                                                                    <div class="card-body">
+                                                                        <p style="margin:0; font-size:16px;">Sem alarmes durante o tratamento</p>
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                        @if (bigqual == false)
+                                                        {
+                                                            <div class="3u 12u$(medium)" style="height:500px;display: flex;justify-content:space-between;flex-direction:column;margin-bottom:40px;">
+                                                                @if (Qualidade != null && Qualidade.Count > 0)
+                                                                {
+                                                                    <div style="display: flex; justify-content: space-evenly;">
+                                                                        <p style="margin: 0.5em 0 0 0;">Qualidade</p>
+                                                                        <button style="margin-left:0.5em" @onclick="@(e => AbracudabracomQualidade(e))" title="Gerir Qualidade"><i class="icon style1 fa-arrow-right"></i></button>
+                                                                    </div>
+                                                                    <SfAccumulationChart Title="" Width="100%" Height="300" Theme="@utils.ctheme">
+                                                                        <AccumulationChartLegendSettings Visible="true" Position="Syncfusion.Blazor.Charts.LegendPosition.Bottom">
+                                                                        </AccumulationChartLegendSettings>
+                                                                        <AccumulationChartTooltipSettings Enable="false"></AccumulationChartTooltipSettings>
+                                                                        <AccumulationChartSeriesCollection>
+                                                                            <AccumulationChartSeries DataSource="@Qualidade" XName="Key" YName="Value" Radius="70%" InnerRadius="60%" Explode="true" ExplodeOffset="10%" ExplodeIndex="3">
+                                                                                <AccumulationDataLabelSettings Visible="true" Name="text" Position="AccumulationLabelPosition.Outside">
+                                                                                    <AccumulationChartDataLabelFont FontWeight="600"></AccumulationChartDataLabelFont>
+                                                                                </AccumulationDataLabelSettings>
+                                                                            </AccumulationChartSeries>
+                                                                        </AccumulationChartSeriesCollection>
+                                                                    </SfAccumulationChart>
+                                                                    <div class="card text-dark bg-light">
+                                                                        <div class="card-body">
+                                                                            <p style="margin:0; font-size:16px;">Qualidade: @Qualidade.First().Value % | Conf: @Report.Boas | NConf: @Report.Mas</p>
+                                                                        </div>
+                                                                    </div>
+                                                                }
+                                                            </div>
+                                                            <div class="6u 12u$(medium)" style="height:500px;display: flex;justify-content:space-between;flex-direction:column;margin-bottom:40px;">
+                                                                @if (Rectificador != null && Rectificador.Count > 0)
+                                                                {
+                                                                    <SfChart Title="Rectificador" Width="100%" Height="400" Theme="@utils.ctheme">
+                                                                        <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                                        <ChartTooltipSettings Enable="true" Shared="true" Header="<b>${point.x}H</b>" Format="<b>${point.y} </b>"></ChartTooltipSettings>
+                                                                        <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime" IntervalType="Syncfusion.Blazor.Charts.IntervalType.Minutes" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                                                                        </ChartPrimaryXAxis>
+                                                                        <ChartPrimaryYAxis Title="Volts" LabelFormat="{value}" Minimum="0" Maximum="30" Interval="3">
+                                                                        </ChartPrimaryYAxis>
+                                                                        <ChartAxes>
+                                                                            <ChartAxis Name="b" Title="Amps" LabelFormat="{value}" Minimum="0" Maximum="2000" Interval="400" OpposedPosition="true">
+                                                                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                                                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                                                            </ChartAxis>
+                                                                        </ChartAxes>
+                                                                        <ChartSeriesCollection>
+                                                                            <ChartSeries DataSource="@Rectificador" Name="Volts" XName="Data" YName="Tensao" Type="ChartSeriesType.Line" Width="3"></ChartSeries>
+                                                                            <ChartSeries DataSource="@Rectificador" Name="Amps" XName="Data" YName="Corrente" Type="ChartSeriesType.Line" Width="3" YAxisName="b"></ChartSeries>
+                                                                        </ChartSeriesCollection>
+                                                                    </SfChart>
+                                                                }
+                                                                <div style="display: flex; justify-content: space-between; margin-bottom:10px">
+                                                                    <div style="margin-left:1em;">
+                                                                        @foreach (var item in Tinas)
+                                                                        {
+                                                                            if (item.Value == SelectedRect)
+                                                                            {
+                                                                                <button @onclick="@(e => LoadRect(e, item.Key, item.Value))" class="special" style="margin-right:10px;">@item.Value</button>
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                <button @onclick="@(e => LoadRect(e, item.Key, item.Value))" style="margin-right:10px;">@item.Value</button>
+                                                                            }
+                                                                        }
+                                                                    </div>
+                                                                    <button @onclick="@(e => Abracudabra(e))" title="Aumentar Gráfico"><i class="icon style1 fa-expand"></i></button>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="3u 12u$(medium)" style="height:500px;display: flex;justify-content:space-between;flex-direction:column;margin-bottom:40px;">
+                                                                @if (Qualidade != null && Qualidade.Count > 0)
+                                                                {
+                                                                    <div style="display: flex; justify-content: space-evenly;">
+                                                                        <p style="margin: 0.5em 0 0 0;">Qualidade</p>
+                                                                    </div>
+                                                                    <SfAccumulationChart Title="" Width="100%" Height="300" Theme="@utils.ctheme">
+                                                                        <AccumulationChartLegendSettings Visible="true" Position="Syncfusion.Blazor.Charts.LegendPosition.Bottom">
+                                                                        </AccumulationChartLegendSettings>
+                                                                        <AccumulationChartTooltipSettings Enable="false"></AccumulationChartTooltipSettings>
+                                                                        <AccumulationChartSeriesCollection>
+                                                                            <AccumulationChartSeries DataSource="@Qualidade" XName="Key" YName="Value" Radius="70%" InnerRadius="80%" Explode="true" ExplodeOffset="10%" ExplodeIndex="3">
+                                                                                <AccumulationDataLabelSettings Visible="true" Name="text" Position="AccumulationLabelPosition.Outside">
+                                                                                    <AccumulationChartDataLabelFont FontWeight="600"></AccumulationChartDataLabelFont>
+                                                                                </AccumulationDataLabelSettings>
+                                                                            </AccumulationChartSeries>
+                                                                        </AccumulationChartSeriesCollection>
+                                                                    </SfAccumulationChart>
+                                                                    <div class="card text-dark bg-light">
+                                                                        <div class="card-body">
+                                                                            <p style="margin:0; font-size:16px;">Qualidade: @Qualidade.First().Value % | Conf: @Report.Boas | NConf: @Report.Mas</p>
+                                                                        </div>
+                                                                    </div>
+                                                                }
+                                                            </div>
+                                                            <div class="6u 12u$(medium)" style="height:500px;display: flex;justify-content:space-between;flex-direction:column;margin-bottom:40px;">
+                                                                <div style="display: flex; justify-content: flex-end;">
+                                                                    <button @onclick="@(() => { PopupListaDefeitos = true; })" title="Lista de Defeitos"><i class="icon style1 fa-chain-broken"></i></button>
+                                                                    <button style="margin-left:0.5em" @onclick="@(e => AbracudabracomQualidade(e))" title="Fechar"><i class="icon style1 fa-arrow-left"></i></button>
+                                                                </div>
+                                                                <div class="row" style="display: flex; justify-content: flex-end; margin:0">
+                                                                    <div class="6u 12u$(medium)">
+                                                                        @if (qTopChart != null && qTopChart.Count > 0)
+                                                                        {
+                                                                            //TOP DEFEITOS
+                                                                            <SfChart Title="" Width="100%" Height="300" Theme="@utils.ctheme">
+                                                                                <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                                                <ChartArea>
+                                                                                    <ChartAreaBorder Width="0"></ChartAreaBorder>
+                                                                                </ChartArea>
+                                                                                <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                                                                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                                                                </ChartPrimaryXAxis>
+                                                                                <ChartPrimaryYAxis Title="" LabelFormat="{value}" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                                                                                    <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                                                                    <ChartAxisLabelStyle Color="transparent"></ChartAxisLabelStyle>
+                                                                                    <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                                                                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                                                                </ChartPrimaryYAxis>
+                                                                                <ChartSeriesCollection>
+                                                                                    <ChartSeries DataSource="@qTopChart" Name="" XName="Defeito" YName="Num" Type="ChartSeriesType.Bar">
+                                                                                        <ChartMarker>
+                                                                                            <ChartDataLabel Visible="true" Position="Syncfusion.Blazor.Charts.LabelPosition.Top"></ChartDataLabel>
+                                                                                        </ChartMarker>
+                                                                                    </ChartSeries>
+                                                                                </ChartSeriesCollection>
+                                                                            </SfChart>
+                                                                        }
+                                                                    </div>
+                                                                    <div class="6u 12u$(medium)">
+                                                                        <SfGrid DataSource="@TabelaListaNconf" AllowFiltering="false" AllowSorting="false" AllowGrouping="false" Width="100%" Height="250">
+                                                                            <GridColumns>
+                                                                                <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="70">
+                                                                                    <Template>
+                                                                                        @{
+                                                                                            var whois = (context as Qld);
+                                                                                            <div style="display: flex; justify-content: space-between;">
+                                                                                                <p @onclick="@(() => { Edit_Nconf(whois.Id.ToString()); })" class="icon style1 fa-edit" style="cursor:pointer;margin:1em 0 1em 0;"><span class="label">Editar Não Conformidade</span></p>
+                                                                                                <p @onclick="@(() => { Delete_Nconf(whois.Id.ToString()); })" class="icon style1 fa-times" style="cursor:pointer;margin:1em 0 1em 0;"><span class="label">Eliminar Não Conformidade</span></p>
+                                                                                            </div>
+                                                                                        }
+                                                                                    </Template>
+                                                                                </GridColumn>
+                                                                                <GridColumn Field="Defeito" HeaderText="Defeito"></GridColumn>
+                                                                                <GridColumn Field="Num" HeaderText="Unidades"></GridColumn>
+                                                                            </GridColumns>
+                                                                        </SfGrid>
+                                                                    </div>
+                                                                </div>
+                                                                <div style="display: flex; justify-content: flex-end;">
+                                                                    <button class="button special pull-right" @onclick="@(() => { PopupNewNconf = true; })" style="margin:10px">Adicionar</button>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="12u 12u$(medium)" style="height:700px;display: flex;justify-content:space-between;flex-direction:column">
+                                                            @if (Rectificador != null && Rectificador.Count > 0)
+                                                            {
+                                                                <SfChart Title="Rectificador" Width="100%" Height="600" Theme="@utils.ctheme">
+                                                                    <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                                    <ChartTooltipSettings Enable="true" Shared="true" Header="<b>${point.x}H</b>" Format="<b>${point.y} </b>"></ChartTooltipSettings>
+                                                                    <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime" IntervalType="Syncfusion.Blazor.Charts.IntervalType.Minutes" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                                                                    </ChartPrimaryXAxis>
+                                                                    <ChartPrimaryYAxis Title="Volts" LabelFormat="{value}" Minimum="0" Maximum="15" Interval="3">
+                                                                    </ChartPrimaryYAxis>
+                                                                    <ChartAxes>
+                                                                        <ChartAxis Name="b" Title="Amps" LabelFormat="{value}" Minimum="0" Maximum="2000" Interval="400" OpposedPosition="true">
+                                                                            <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                                                            <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                                                        </ChartAxis>
+                                                                    </ChartAxes>
+                                                                    <ChartSeriesCollection>
+                                                                        <ChartSeries DataSource="@Rectificador" Name="Volts" XName="Data" YName="Tensao" Type="ChartSeriesType.Line" Width="3"></ChartSeries>
+                                                                        <ChartSeries DataSource="@Rectificador" Name="Amps" XName="Data" YName="Corrente" Type="ChartSeriesType.Line" Width="3" YAxisName="b"></ChartSeries>
+                                                                    </ChartSeriesCollection>
+                                                                </SfChart>
+                                                            }
+                                                            <div style="display: flex; justify-content: space-between; margin-bottom:10px">
+                                                                <div style="margin-left:1em;">
+                                                                    @foreach (var item in Tinas)
+                                                                    {
+                                                                        if (item.Value == SelectedRect)
+                                                                        {
+                                                                            <button @onclick="@(e => LoadRect(e, item.Key, item.Value))" class="special" style="margin-right:10px;">@item.Value</button>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <button @onclick="@(e => LoadRect(e, item.Key, item.Value))" style="margin-right:10px;">@item.Value</button>
+                                                                        }
+                                                                    }
+                                                                </div>
+                                                                <button @onclick="@(e => Abracudabra(e))"><i class="icon style1 fa-compress"></i></button>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                @*TABELA*@
+                                                <div>
+                                                    @if (THistory != null && THistory.Count > 0)
+                                                    {
+                                                        <SfGrid DataSource="@THistory" AllowExcelExport="true" AllowResizing="true">
+                                                            <GridColumns>
+                                                                <GridColumn Field="Tina" HeaderText="Tina" Width="70"></GridColumn>
+                                                                <GridColumn Field="Designacao" HeaderText="Designação" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                                                <GridColumn HeaderText="TEMPOS">
+                                                                    <GridColumns>
+                                                                        <GridColumn Field="Tini" HeaderText="Inicial" HideAtMedia="(min-width: 700px)" Width="160"></GridColumn>
+                                                                        <GridColumn Field="Tfin" HeaderText="Final" HideAtMedia="(min-width: 700px)" Width="160"></GridColumn>
+                                                                        <GridColumn Field="Ttotal" HeaderText="Total" Format="T" TextAlign="TextAlign.Center" Width="100"></GridColumn>
+                                                                    </GridColumns>
+                                                                </GridColumn>
+                                                                <GridColumn HeaderText="TEMPERATURA">
+                                                                    <GridColumns>
+                                                                        <GridColumn Field="TempSP" HeaderText="SP" HideAtMedia="(min-width: 700px)" TextAlign="TextAlign.Center" Width="70"></GridColumn>
+                                                                        <GridColumn Field="TempMed" HeaderText="Med" TextAlign="TextAlign.Center" Width="70"></GridColumn>
+                                                                    </GridColumns>
+                                                                </GridColumn>
+                                                                <GridColumn HeaderText="RECTIFICADOR">
+                                                                    <GridColumns>
+                                                                        <GridColumn Field="Corrente" HeaderText="A" TextAlign="TextAlign.Center" Width="70"></GridColumn>
+                                                                        <GridColumn Field="Tensao" HeaderText="V" TextAlign="TextAlign.Center" Width="70"></GridColumn>
+                                                                    </GridColumns>
+                                                                </GridColumn>
+                                                                <GridColumn Field="Utilizador" HeaderText="Utilizador" HideAtMedia="(min-width: 700px)" Width="100"></GridColumn>
+                                                                <GridColumn Field="Estado" HeaderText="Estado" HideAtMedia="(min-width: 700px)" Width="100"></GridColumn>
+                                                            </GridColumns>
+                                                        </SfGrid>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                @*ALARMES*@
+                                                <div style="margin-top: 40px">
+                                                    @if (Alarmes != null && Alarmes.Count > 0)
+                                                    {
+                                                        <div style="display: flex; justify-content: space-between; margin-bottom:10px">
+                                                            <div style="display: flex; justify-content:center;">
+                                                                <p style="margin-top:1em;margin-bottom:0">@Alarmes.Count() alarmes durante o tratamento</p>
+                                                            </div>
+                                                            <button @onclick="@(e => AbraAlarm(e))"><i class="icon style1 fa-times"></i></button>
+                                                        </div>
+                                                        <SfGrid DataSource="@Alarmes">
+                                                            <GridColumns>
+                                                                <GridColumn Field="DataInicio" HeaderText="Data Início" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                                                <GridColumn Field="DataFim" HeaderText="Data Fim" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                                                <GridColumn Field="Equip" HeaderText="Equipamento"></GridColumn>
+                                                                <GridColumn Field="Ocorrencia" HeaderText="Ocorrência"></GridColumn>
+                                                                <GridColumn Field="ReconhecidoPor" HeaderText="Reconhecido por" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                                                <GridColumn Field="ReconhecidoEm" HeaderText="Reconhecido em" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                                            </GridColumns>
+                                                        </SfGrid>
+                                                    }
+                                                </div>
+                                            }
+                                        </ContentTemplate>
+                                    </TabItem>
+                                    <TabItem>
+                                        <ChildContent>
+                                            <TabHeader Text="RELATÓRIO"></TabHeader>
+                                        </ChildContent>
+                                        <ContentTemplate>
+                                            @*Tive de isolar num IFrame porque aplicava o Css do Report em toda a página*@
+                                            <div style="margin-top:20px">
+                                                <iframe id="reportFrame" style="width:100%; height:1200px; border:none;"></iframe>
+                                            </div>
+                                        </ContentTemplate>
+                                    </TabItem>
+
+                                </TabItems>
+                            </SfTab>
+                        </div>
+                    </div>
+
+                    @*NOVO NCONF*@
+                    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupNewNconf">
+                        <DialogTemplates>
+                            <Header>Inserir Não Conformidade</Header>
+                            <Content>
+                                <SfDropDownList TValue="string" TItem="Dft" Placeholder="Defeito" DataSource="@TabelaListaDefeitos.AsEnumerable()" Width="100%" Style="height:100%;margin-bottom: 10px">
+                                    <DropDownListEvents OnValueSelect="@SelDefeito_SelectionChanged" TValue="string" TItem="Dft"></DropDownListEvents>
+                                    <DropDownListFieldSettings Value="Defeito" Text="Defeito"></DropDownListFieldSettings>
+                                </SfDropDownList>
+                                <SfNumericTextBox Placeholder="Unidades" @bind-Value="@uNconf" style="margin-bottom: 10px"></SfNumericTextBox>
+                                <SfButton class="button special pull-right" @onclick="@(() => { Add_Nconf(""); })" style="margin:10px">Inserir</SfButton>
+                                <SfButton class="button pull-right" @onclick="@(() => { PopupNewNconf = false; idNconf = ""; uNconf = 0; })" style="margin:10px">Cancelar</SfButton>
+                            </Content>
+                        </DialogTemplates>
+                    </SfDialog>
+                    @*EDIT NCONF*@
+                    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupEditNconf">
+                        <DialogTemplates>
+                            <Header>Editar Não Conformidade '@idNconf'</Header>
+                            <Content>
+                                <SfNumericTextBox Placeholder="Unidades" @bind-Value="@uNconf" style="margin-bottom: 10px"></SfNumericTextBox>
+                                <SfButton class="button special pull-right" @onclick="@(() => { Add_Nconf(idNconf); })" style="margin:10px">Guardar</SfButton>
+                                <SfButton class="button pull-right" @onclick="@(() => { PopupEditNconf = false; idNconf = ""; uNconf = 0; })" style="margin:10px">Cancelar</SfButton>
+                            </Content>
+                        </DialogTemplates>
+                    </SfDialog>
+
+
+                    @*LISTA DEFEITOS*@
+                    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupListaDefeitos">
+                        <DialogTemplates>
+                            <Header>LISTA DE DEFEITOS</Header>
+                            <Content>
+                                <SfGrid DataSource="@TabelaListaDefeitos" AllowFiltering="false" AllowSorting="false" AllowGrouping="false">
+                                    <GridColumns>
+                                        <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="70">
+                                            <Template>
+                                                @{
+                                                    var whois = (context as Dft);
+                                                    <div style="display: flex; justify-content: space-between;">
+                                                        <p @onclick="@(() => { Edit_Defeito(whois.Id.ToString()); })" class="icon style1 fa-edit" style="cursor:pointer;margin:1em 0 1em 0;"><span class="label">Editar Defeito</span></p>
+                                                        <p @onclick="@(() => { Delete_defeito(whois.Id.ToString()); })" class="icon style1 fa-times" style="cursor:pointer;margin:1em 0 1em 0;"><span class="label">Eliminar Defeito</span></p>
+                                                    </div>
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                        <GridColumn Field="Defeito" HeaderText="Defeito"></GridColumn>
+                                    </GridColumns>
+                                </SfGrid>
+                                <SfButton class="button special pull-right" @onclick="@(() => { PopupNewDefeitos = true; })" style="margin:10px">Adicionar</SfButton>
+                                <SfButton class="button pull-right" @onclick="@(() => { PopupListaDefeitos = false; })" style="margin:10px">Fechar</SfButton>
+                            </Content>
+                        </DialogTemplates>
+                    </SfDialog>
+                    @*NOVO DEFEITO*@
+                    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupNewDefeitos">
+                        <DialogTemplates>
+                            <Header>Inserir Defeito</Header>
+                            <Content>
+                                <SfTextBox Multiline=false Placeholder="Defeito" @bind-Value="@uDefeito"></SfTextBox>
+                                <SfButton class="button special pull-right" @onclick="@(() => { Add_Defeito(idDefeito); })" style="margin:10px">Inserir</SfButton>
+                                <SfButton class="button pull-right" @onclick="@(() => { PopupNewDefeitos = false; idDefeito = ""; uDefeito = ""; })" style="margin:10px">Cancelar</SfButton>
+                            </Content>
+                        </DialogTemplates>
+                    </SfDialog>
+                    @*EDITAR DEFEITO*@
+                    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupEditDefeitos">
+                        <DialogTemplates>
+                            <Header>Editar Defeito</Header>
+                            <Content>
+                                <SfTextBox Multiline=false Placeholder="Defeito" @bind-Value="@uDefeito"></SfTextBox>
+                                <SfButton class="button special pull-right" @onclick="@(() => { Add_Defeito(idDefeito); })" style="margin:10px">Guardar</SfButton>
+                                <SfButton class="button pull-right" @onclick="@(() => { PopupEditDefeitos = false; idDefeito = ""; uDefeito = ""; })" style="margin:10px">Cancelar</SfButton>
+                            </Content>
+                        </DialogTemplates>
+                    </SfDialog>
+
+
+                    @*EMAIL*@
+                    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupMailSend">
+                        <DialogTemplates>
+                            <Header>A enviar relatório por Email...</Header>
+                        </DialogTemplates>
+                    </SfDialog>
+                    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupEmail">
+                        <DialogTemplates>
+                            <Header>Enviar Relatório por Email</Header>
+                            <Content>
+                                <p style="margin:0;">Lista de Emails</p>
+                                <SfTextBox Multiline=false Placeholder="Ao inserir mais do que um email, separe com ;" @bind-Value="@uEmailList"></SfTextBox>
+                                <p style="margin:0;margin-top:2em;">Mensagem de Email</p>
+                                <SfTextBox Multiline=true Placeholder="Mensagem" @bind-Value="@uMessage" style="height:300px"></SfTextBox>
+                                <SfButton class="button special pull-right" @onclick="Send_Email" style="margin:10px">Enviar</SfButton>
+                                <SfButton class="button pull-right" @onclick="@(() => { PopupEmail = false; })" style="margin:10px">Cancelar</SfButton>
+                            </Content>
+                        </DialogTemplates>
+
+                    </SfDialog>
+
+
+                    @*NOTAS*@
+                    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupNotas">
+                        <DialogTemplates>
+                            <Header>Notas</Header>
+                            <Content>
+                                <SfTextBox Multiline=true Placeholder="Insira as notas" @bind-Value="@Notas" style="height:300px"></SfTextBox>
+                                <SfButton class="button special pull-right" @onclick="Add_Nota" style="margin:10px">Guardar</SfButton>
+                                <SfButton class="button pull-right" @onclick="@(() => { PopupNotas = false; })" style="margin:10px">Cancelar</SfButton>
+
+                            </Content>
+                        </DialogTemplates>
+
+                    </SfDialog>
+
+                    @*ERRO*@
+                    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupErro">
+                        <DialogTemplates>
+                            <Header>@ErroTitle</Header>
+                            <Content>
+                                <p>@ErroMsg</p>
+                                <SfButton class="button special pull-right" @onclick="@(() => { PopupErro = false; })" style="margin:10px">OK</SfButton>
+                            </Content>
+                        </DialogTemplates>
+                    </SfDialog>
+
+                }
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+    SfSpinner SpinnerObj = new SfSpinner();
+    SfPdfViewerServer Viewer;
+    SfChart tpdefeitos;
+
+    bool dbchecked = false, dbcheckedoff = false, PopupErro = false;
+    public bool isupdating = false;
+    private bool bigalarm = false;
+    private bool bigrect = false;
+    private bool bigqual = false;
+    private string ErroTitle = "";
+    private string ErroMsg = "";
+    private string SelectedRect = "";
+    private string IsVisible = "collapse";
+
+    private DateTime? dtini;
+    private DateTime? dtfin;
+    private TimeSpan? dtt = TimeSpan.FromSeconds(0);
+    string lote = "";
+    string refer = "";
+    public rept? Report = null;
+    public List<regs> THistory = new List<regs>() { };
+    public List<Alm> Alarmes = new List<Alm>() { };
+    public List<KVPStringDecimal> Qualidade = new List<KVPStringDecimal>() { };
+    public List<Qld> qTopChart = new List<Qld>() { };
+    public Dictionary<int, string> Tinas = new Dictionary<int, string>() { };
+    public ObservableCollection<pulsar.sv.data.Rectificador> Rectificador = new ObservableCollection<pulsar.sv.data.Rectificador>() { };
+
+    string docPath = "";
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            utils.Refresh = false;
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            GetReport();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+    private async void GetReport()
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            isupdating = true;
+            await SpinnerObj.ShowAsync();
+
+            uMessage = "Segue em anexo o relatório de tratamento do lote " + lote + " com a referência " + refer;
+
+            //INFORMAÇÃO
+            int qid = Convert.ToInt32(id);
+            var preport = from inf in dl.db.ReferenciaTrabalhos
+                          join progs in dl.db.PlcProgramas on inf.Campo1 equals progs.Num.ToString()
+                          where inf.Id == qid
+                          select new rept
+                          {
+                              Lote = inf.Lote,
+                              Referencia = inf.Referencia,
+                              Operador = inf.Operador,
+                              Notas = inf.Notas,
+                              Unidades = inf.Unidades,
+                              Boas = inf.Unidades - inf.UnidadesMas,
+                              Mas = inf.UnidadesMas,
+                              Teoricas = inf.UnidadesTeoricas,
+                              OF = inf.Ordemfabrico,
+                              Suspensao = inf.Suspensao,
+                              Programa = progs.Nome,
+                              Prioridade = inf.Prioridade,
+                              Motivo = inf.Opcao4,
+                              Opcao1 = inf.Opcao1,
+                              Opcao4 = inf.Opcao4
+                          };
+            var dadosReport = await preport.ToListAsync();
+            Report = dadosReport.First();
+            if (Report.Notas != null)
+            {
+                Notas = Report.Notas;
+            }
+
+            if (Report.Referencia != "" && Report.Opcao1 == true)
+            {
+                Report.Suspensao = "Reprocessado";
+                Report.Motivo = Report.Opcao4;
+                IsVisible = "visible";
+            }
+
+            if (Report.Referencia == "" && Report.Opcao1 == false)
+            {
+                Report.Suspensao = "Vazio";
+                Report.Motivo = Report.Opcao4;
+                IsVisible = "visible";
+            }
+
+            if (dadosReport.Count > 0)
+            {
+                lote = dadosReport[0].Lote;
+                refer = dadosReport[0].Referencia;
+            }
+
+            //TABELA
+            var phistory = from rg in dl.db.Registos
+                           where rg.Lote == lote
+                           orderby rg.TempoInicial
+                           select new regs
+                           {
+                               Tina = rg.Tina,
+                               Designacao = rg.Posicao,
+                               Tini = rg.TempoInicial,
+                               Tfin = rg.TempoFinal,
+                               Ttotal = rg.TempoTotal,
+                               TempSP = rg.TemperaturaDesejada,
+                               TempMin = rg.TemperaturaMin,
+                               TempMax = rg.TemperaturaMax,
+                               TempMed = rg.TemperaturaMed,
+                               Ph = rg.Ph,
+                               Corrente = rg.Corrente,
+                               Tensao = rg.Tensao,
+                               Utilizador = rg.Operador,
+                               Estado = rg.Estado
+                           };
+            var dadosHist = await phistory.ToListAsync();
+            THistory = dadosHist;
+
+
+            //ALARMES
+            dtini = dadosHist.First().Tini;
+            dtfin = dadosHist.Last().Tfin;
+            if (dtini != null && dtfin != null)
+            {
+                dtt = dtfin - dtini;
+            }
+            var pAlarmes = from al in dl.db.Alarmes
+                           where (al.DataInicio >= dtini && al.DataInicio <= dtfin) || (al.DataFim >= dtini && al.DataFim <= dtfin) || (al.DataInicio <= dtini && al.DataFim >= dtfin) || (al.DataInicio <= dtini && al.DataFim == null)
+                           orderby al.DataInicio
+                           select new Alm { Id = al.Id, DataInicio = al.DataInicio, Ocorrencia = al.Ocorrencia, DataFim = al.DataFim, Prioridade = al.Prioridade, ReconhecidoPor = al.ReconhecidoPor, ReconhecidoEm = al.ReconhecidoData };
+            var dadosAlarmes = await pAlarmes.ToListAsync();
+            Alarmes = dadosAlarmes;
+
+
+            //RECTIFICADORES
+            Tinas.Clear();
+            foreach (var rtina in dl.db.Tinas.Where(r => r.Rectificador == true).ToList())
+            {
+                var regt = dl.db.Registos.FirstOrDefault(l => l.Tina == rtina.Tina1.ToString() && l.Lote == lote);
+                if (regt != null)
+                {
+                    Tinas.Add(rtina.Num.Value, rtina.Tina1);
+                }
+            }
+            if (Tinas != null && Tinas.Count > 0)
+            {
+                LoadRect(null, Tinas.First().Key, Tinas.First().Value);
+            }
+
+            //QUALIDADE
+            try
+            {
+                //QUALIDADE
+                var pquality = from ql in dl.db.Qualidade
+                               where ql.Lote == lote && ql.Referencia == refer
+                               select new pulsar.sv.data.Qualidade { Id = ql.Id, Descricao = ql.Descricao, Unidades = ql.Unidades };
+                var dadosQualidade = await pquality.ToListAsync();
+                Qualidade.Clear();
+                var rep = Report;
+                if (rep.Unidades != null && rep.Unidades > 0)
+                {
+                    var t = (Convert.ToDecimal(rep.Boas) / Convert.ToDecimal(rep.Unidades)) * (decimal)100.0;
+                    Qualidade.Add(new KVPStringDecimal("% Conforme", Math.Round(t, 1)));
+                    Qualidade.Add(new KVPStringDecimal("% Não Conforme", 100 - Math.Round(t, 1)));
+                }
+                else
+                {
+                    Qualidade.Add(new KVPStringDecimal("% Conforme", 100));
+                    Qualidade.Add(new KVPStringDecimal("% Não Conforme", 0));
+                }
+                TabelaListaNconf.Clear();
+                foreach (pulsar.sv.data.Qualidade nconfor in dadosQualidade)
+                {
+                    Qld nitem = new Qld() { };
+                    nitem.Id = nconfor.Id;
+                    nitem.Defeito = nconfor.Descricao;
+                    nitem.Num = (int)nconfor.Unidades;
+                    TabelaListaNconf.Add(nitem);
+                }
+                qTopChart = TabelaListaNconf.OrderBy(x => x.Num).ToList();
+
+                //DEFEITOS
+                var pListDefeitos = from Qld in dl.db.QualidadeDefeitos
+                                    select new Dft { Defeito = Qld.Defeito, Id = Qld.Id };
+                TabelaListaDefeitos = await pListDefeitos.ToListAsync();
+
+                dl.Dispose();
+            }
+            catch (Exception)
+            {
+            }
+
+            await SpinnerObj.HideAsync();
+            isupdating = false;
+            StateHasChanged();
+            dl.Dispose();
+        }
+        catch (Exception)
+        {
+            await SpinnerObj.HideAsync();
+            isupdating = false;
+            StateHasChanged();
+            dl.Dispose();
+        }
+    }
+    private async void LoadRect(Microsoft.AspNetCore.Components.Web.MouseEventArgs e, int ntina, string tina)
+    {
+        DataLink_L1 dlrect = new DataLink_L1();
+        dlrect.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var reg = dlrect.db.Registos.FirstOrDefault(l => l.Tina == tina && l.Lote == lote);
+        DateTime? di = reg.TempoInicial;
+        DateTime? df = reg.TempoFinal;
+        if (df == null)
+        {
+            df = dlrect.db.Registos.Where(l => l.Lote == lote && l.TempoFinal != null).ToList().Last().TempoFinal;
+        }
+        var pRect = from rec in dlrect.db.Rectificadors
+                    where rec.Data > di && rec.Data < df && rec.Tina == ntina.ToString()
+                    orderby rec.Data
+                    select new pulsar.sv.data.Rectificador { Tina = rec.Tina, Data = rec.Data, Tensao = rec.Tensao, Corrente = rec.Corrente };
+        var dadosRectificador = await pRect.ToListAsync();
+        Rectificador = new ObservableCollection<pulsar.sv.data.Rectificador>(dadosRectificador);
+        await Task.Delay(100);
+
+        SelectedRect = tina;
+        StateHasChanged();
+        dlrect.Dispose();
+    }
+    private async void LoadPdf(Syncfusion.Blazor.Navigations.SelectEventArgs args)
+    {
+        if (args.SelectedIndex == 1)
+        {
+            await SpinnerObj.ShowAsync();
+            string base64String = "";
+            await Task.Run(() =>
+            {
+                try
+                {
+                    f10.networking.tcp.basicTcpClient reportServer = new f10.networking.tcp.basicTcpClient();
+                    reportServer.Connect(Utils.IP_RS_L1, Utils.PORTA_RS_L1); //no futuro o IP do reportServer deve vir das configs/local settings
+                    reportServer.TcpClient.NoDelay = true;
+                    byte[] Buffer = reportServer.WriteLineAndGetReply($"RelatorioTratamento|pdf|{lote + "|" + refer}|", TimeSpan.FromSeconds(20)).Data;
+                    reportServer.Disconnect();
+                    base64String = Convert.ToBase64String(Buffer);
+                }
+                catch (Exception)
+                {
+                    ErroTitle = "ERRO";
+                    ErroMsg = "Sem ligação ao reportserver";
+                    PopupErro = true;
+                }
+            });
+            docPath = "data:application/pdf;base64," + base64String;
+
+            await SpinnerObj.HideAsync();
+            StateHasChanged();
+        }
+    }
+
+
+    private bool PopupNewNconf = false;
+    private bool PopupEditNconf = false;
+    private string idNconf = "";
+    private int uNconf = 0;
+    public ObservableCollection<Qld> TabelaListaNconf = new ObservableCollection<Qld>() { };
+    public void SelDefeito_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<Dft> args)
+    {
+        idNconf = args.ItemData.Defeito;
+    }
+    private async void Add_Nconf(string tipo)
+    {
+        if (idNconf != "" && uNconf != 0)
+        {
+            await SpinnerObj.ShowAsync();
+            DataLink_L1 dl = new DataLink_L1();
+
+            if (tipo == "")
+            {
+                var checknconf = dl.db.Qualidade.FirstOrDefault(x => x.Lote == lote && x.Referencia == refer && x.Descricao == idNconf);
+                if (checknconf == null)
+                {
+                    dl.db.Qualidade.Add(new sv.data.Qualidade { Lote = lote, Referencia = refer, Descricao = idNconf, Unidades = uNconf });
+                    await dl.db.SaveChangesAsync();
+                    dl.db.ReferenciaTrabalhos.First(x => x.Lote == lote && x.Referencia == refer).UnidadesMas = dl.db.Qualidade.Where(x => x.Lote == lote && x.Referencia == refer).Sum(h => h.Unidades);
+                    await dl.db.SaveChangesAsync();
+                    utils.UserLog($"Adicionou {uNconf} unidades não conformes do tipo '{idNconf}' à referência '{refer}' do lote '{lote}'", "DataLink_L1");
+                }
+                else
+                {
+                    dl.db.Qualidade.First(x => x.Lote == lote && x.Referencia == refer && x.Descricao == idNconf).Unidades += uNconf;
+                    await dl.db.SaveChangesAsync();
+                    dl.db.ReferenciaTrabalhos.First(x => x.Lote == lote && x.Referencia == refer).UnidadesMas = dl.db.Qualidade.Where(x => x.Lote == lote && x.Referencia == refer).Sum(h => h.Unidades);
+                    await dl.db.SaveChangesAsync();
+                    utils.UserLog($"Adicionou {uNconf} unidades não conformes do tipo '{idNconf}' à referência '{refer}' do lote '{lote}'", "DataLink_L1");
+                }
+            }
+            else
+            {
+                dl.db.Qualidade.First(x => x.Lote == lote && x.Referencia == refer && x.Descricao == idNconf).Unidades = uNconf;
+                await dl.db.SaveChangesAsync();
+                dl.db.ReferenciaTrabalhos.First(x => x.Lote == lote && x.Referencia == refer).UnidadesMas = dl.db.Qualidade.Where(x => x.Lote == lote && x.Referencia == refer).Sum(h => h.Unidades);
+                await dl.db.SaveChangesAsync();
+                utils.UserLog($"Alterou as unidades não conformes do tipo '{idNconf}' à referência '{refer}' do lote '{lote}'", "DataLink_L1");
+            }
+            PopupNewNconf = false;
+            PopupEditNconf = false;
+            idNconf = "";
+            uNconf = 0;
+            await SpinnerObj.HideAsync();
+            GetReport();
+            StateHasChanged();
+            dl.Dispose();
+        }
+        else
+        {
+            ErroTitle = "Erro ao inserir não conformidade";
+            ErroMsg = "Deve selecionar um defeito válido e deve inserir um valor nas unidades";
+            PopupErro = true;
+            StateHasChanged();
+        }
+    }
+    private void Edit_Nconf(string Id)
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        idNconf = dl.db.Qualidade.First(x => x.Id == int.Parse(Id)).Descricao;
+        uNconf = (int)dl.db.Qualidade.First(x => x.Id == int.Parse(Id)).Unidades;
+        PopupEditNconf = true;
+        StateHasChanged();
+        dl.Dispose();
+    }
+    private async void Delete_Nconf(string id)
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        utils.UserLog($"Eliminou a não conformidade do tipo '{idNconf}' à referência '{refer}' do lote '{lote}'", "DataLink_L1");
+        dl.db.Qualidade.Remove(dl.db.Qualidade.First(x => x.Id == int.Parse(id)));
+        await dl.db.SaveChangesAsync();
+        dl.db.ReferenciaTrabalhos.First(x => x.Lote == lote && x.Referencia == refer).UnidadesMas = dl.db.Qualidade.Where(x => x.Lote == lote && x.Referencia == refer).Sum(h => h.Unidades);
+        await dl.db.SaveChangesAsync();
+        GetReport();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+
+    private bool PopupListaDefeitos = false;
+    private bool PopupNewDefeitos = false;
+    private bool PopupEditDefeitos = false;
+    private string idDefeito = "";
+    private string uDefeito = "";
+    public List<Dft> TabelaListaDefeitos = new List<Dft>() { };
+    private async void Add_Defeito(string tipo)
+    {
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (tipo == "")
+        {
+            dl.db.QualidadeDefeitos.Add(new sv.data.QualidadeDefeito { Defeito = uDefeito });
+            utils.UserLog($"Adicionou o defeito {uDefeito} à lista de defeitos", "DataLink_L1");
+        }
+        else
+        {
+            string olddefeito = dl.db.QualidadeDefeitos.First(x => x.Id == int.Parse(tipo)).Defeito;
+            dl.db.QualidadeDefeitos.First(x => x.Id == int.Parse(tipo)).Defeito = uDefeito;
+            utils.UserLog($"Alterou o nome do defeito '{olddefeito}' para '{uDefeito}' na lista de defeitos", "DataLink_L1");
+        }
+        await dl.db.SaveChangesAsync();
+        PopupNewDefeitos = false;
+        PopupEditDefeitos = false;
+        GetReport();
+        StateHasChanged();
+        dl.Dispose();
+    }
+    private void Edit_Defeito(string Id)
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        idDefeito = Id;
+        uDefeito = dl.db.QualidadeDefeitos.First(x => x.Id == int.Parse(Id)).Defeito;
+        PopupEditDefeitos = true;
+        StateHasChanged();
+        dl.Dispose();
+    }
+    private async void Delete_defeito(string id)
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        utils.UserLog($"Eliminou o defeito {dl.db.QualidadeDefeitos.First(x => x.Id == int.Parse(id)).Defeito} da lista de defeitos", "DataLink_L1");
+        dl.db.QualidadeDefeitos.Remove(dl.db.QualidadeDefeitos.First(x => x.Id == int.Parse(id)));
+
+        await dl.db.SaveChangesAsync();
+        GetReport();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+
+    private bool PopupNotas = false;
+    private string Notas = "";
+    private async void Add_Nota()
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ReferenciaTrabalhos.First(x => x.Lote == lote && x.Referencia == refer).Notas = Notas;
+        await dl.db.SaveChangesAsync();
+        utils.UserLog($"Adicionou notas à Ref '{refer}' do lote '{lote}'", "DataLink_L1");
+        PopupNotas = false;
+        GetReport();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+
+    private bool PopupEmail = false;
+    private string uEmailList = "";
+    private string uMessage = "";
+    bool PopupMailSend = false;
+    private async void Send_Email()
+    {
+        PopupMailSend = true;
+        f10.pulsar.mes.data.User who = (f10.pulsar.mes.data.User)utils.f10session["user"];
+
+        byte[] Buffer = null;
+        string base64String = "";
+        await Task.Run(() =>
+        {
+            try
+            {
+                f10.networking.tcp.basicTcpClient reportServer = new f10.networking.tcp.basicTcpClient();
+                reportServer.Connect(Utils.IP_RS_L1, Utils.PORTA_RS_L1); //no futuro o IP do reportServer deve vir das configs/local settings
+                reportServer.TcpClient.NoDelay = true;
+                Buffer = reportServer.WriteLineAndGetReply($"RelatorioTratamento|pdf|{lote + "|" + refer}|", TimeSpan.FromSeconds(20)).Data;
+                reportServer.Disconnect();
+            }
+            catch (Exception)
+            {
+                ErroTitle = "ERRO";
+                ErroMsg = "Sem ligação ao reportserver";
+                PopupErro = true;
+            }
+        });
+
+        if (Buffer != null)
+        {
+            Dictionary<string, string> from = new Dictionary<string, string>();
+            from.Add("Pulsar - Formula Decimal", "pulsar@fdecimal.com");
+
+            Dictionary<string, string> parato = new Dictionary<string, string>();
+            if (uEmailList != "")
+            {
+                if (uEmailList.Contains(";"))
+                {
+                    foreach (string mail in uEmailList.Split(";"))
+                    {
+                        parato.Add(mail, mail);
+                    }
+                }
+                else
+                {
+                    parato.Add(uEmailList, uEmailList);
+                }
+
+
+                String body = @"
+                    <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+                    <html xmlns='http://www.w3.org/1999/xhtml' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:o='urn:schemas-microsoft-com:office:office'>
+                    <head>
+                        <meta http-equiv='Content-Type' content='text/html; charset=UTF-8' />
+                        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+                        <title>Relatório de Tratamento</title>
+                        <style type='text/css'>
+                                       /* ----- Custom Font Import ----- */
+                                       @import url(https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic&subset=latin,latin-ext);
+
+                                       /* ----- Text Styles ----- */
+                                       table{
+                                        font-family: 'Lato', Arial, sans-serif;
+                                        -webkit-font-smoothing: antialiased;
+                                        font-smoothing: antialiased;
+                                        -moz-font-smoothing: antialiased;
+                                       }
+
+                                       @media only screen and (max-width: 700px){
+                                        /* ----- Base styles ----- */
+                                        .full-width-container{
+                                         padding: 0 !important;
+                                        }
+
+                                        .container{
+                                         width: 100% !important;
+                                        }
+
+                                        /* ----- Header ----- */
+                                        .header td{
+                                         padding: 30px 15px 30px 15px !important;
+                                        }
+
+                                        /* ----- Projects list ----- */
+                                        .projects-list{
+                                         display: block !important;
+                                        }
+
+                                        .projects-list tr{
+                                         display: block !important;
+                                        }
+
+                                        .projects-list td{
+                                         display: block !important;
+                                        }
+
+                                        .projects-list tbody{
+                                         display: block !important;
+                                        }
+
+                                        .projects-list img{
+                                         margin: 0 auto 25px auto;
+                                        }
+
+                                        /* ----- Half block ----- */
+                                        .half-block{
+                                         display: block !important;
+                                        }
+
+                                        .half-block tr{
+                                         display: block !important;
+                                        }
+
+                                        .half-block td{
+                                         display: block !important;
+                                        }
+
+                                        .half-block__image{
+                                         width: 100% !important;
+                                         background-size: cover;
+                                        }
+
+                                        .half-block__content{
+                                         width: 100% !important;
+                                         box-sizing: border-box;
+                                         padding: 25px 15px 25px 15px !important;
+                                        }
+
+                                        /* ----- Hero subheader ----- */
+                                        .hero-subheader__title{
+                                         padding: 80px 15px 15px 15px !important;
+                                         font-size: 35px !important;
+                                        }
+
+                                        .hero-subheader__content{
+                                         padding: 0 15px 90px 15px !important;
+                                        }
+
+                                        /* ----- Title block ----- */
+                                        .title-block{
+                                         padding: 0 15px 0 15px;
+                                        }
+
+                                        /* ----- Paragraph block ----- */
+                                        .paragraph-block__content{
+                                         padding: 25px 15px 18px 15px !important;
+                                        }
+
+                                        /* ----- Info bullets ----- */
+                                        .info-bullets{
+                                         display: block !important;
+                                        }
+
+                                        .info-bullets tr{
+                                         display: block !important;
+                                        }
+
+                                        .info-bullets td{
+                                         display: block !important;
+                                        }
+
+                                        .info-bullets tbody{
+                                         display: block;
+                                        }
+
+                                        .info-bullets__icon{
+                                         text-align: center;
+                                         padding: 0 0 15px 0 !important;
+                                        }
+
+                                        .info-bullets__content{
+                                         text-align: center;
+                                        }
+
+                                        .info-bullets__block{
+                                         padding: 25px !important;
+                                        }
+
+                                        /* ----- CTA block ----- */
+                                        .cta-block__title{
+                                         padding: 35px 15px 0 15px !important;
+                                        }
+
+                                        .cta-block__content{
+                                         padding: 20px 15px 27px 15px !important;
+                                        }
+
+                                        .cta-block__button{
+                                         padding: 0 15px 0 15px !important;
+                                        }
+                                       }
+                        </style>
+
+                        <!--[if gte mso 9]><xml>
+                            <o:OfficeDocumentSettings>
+                                <o:AllowPNG/>
+                                <o:PixelsPerInch>96</o:PixelsPerInch>
+                            </o:OfficeDocumentSettings>
+                        </xml><![endif]-->
+                    </head>
+
+                    <body style='padding: 0; margin: 0;' bgcolor='#eeeeee'>
+                        <span style='color:transparent !important; overflow:hidden !important; display:none !important; line-height:0px !important; height:0 !important; opacity:0 !important; visibility:hidden !important; width:0 !important; mso-hide:all;'>Relatório de Tratamento - Linha 4</span>
+
+                        <!-- / Full width container -->
+                        <table class='full-width-container' border='0' cellpadding='0' cellspacing='0' height='100%' width='100%' bgcolor='#eeeeee' style='width: 100%; height: 100%; padding: 30px 0 30px 0;'>
+                            <tr>
+                                <td align='center' valign='top'>
+                                    <!-- / 700px container -->
+                                    <table class='container' border='0' cellpadding='0' cellspacing='0' width='700' bgcolor='#ffffff' style='width: 700px;'>
+                                        <tr>
+                                            <td align='center' valign='top'>
+                                                <!-- / Header -->
+                                                <table class='container header' border='0' cellpadding='0' cellspacing='0' width='620' style='width: 620px;'>
+                                                    <tr>
+                                                        <td style='padding: 30px 0 30px 0; border-bottom: solid 1px #eeeeee;' align='left'>
+                                                            <img src='https://cloud.fdecimal.com/template/img/pulsarblk.png'>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                <!-- /// Header -->
+                                                <!-- / Hero subheader -->
+                                                <table class='container hero-subheader' border='0' cellpadding='0' cellspacing='0' width='620' style='width: 620px;'>
+                                                    <tr>
+                                                        <td class='hero-subheader__title' style='font-size: 43px; font-weight: bold; padding: 80px 0 15px 0;' align='left'>Relatório de Tratamento</td>
+                                                    </tr>
+
+                                                    <tr>
+                                                        <td class='hero-subheader__content' style='font-size: 16px; line-height: 27px; color: #969696; padding: 0 60px 90px 0;' align='left'>Foi-lhe enviado um relatório de tratamento da Linha 1 através do MES, com a seguinte mensagem:<br /><br />" + uMessage.Replace("\n", "<br/>") + @"</td>
+                                                    </tr>
+                                                </table>
+                                                <!-- /// Hero subheader -->
+                                                <!-- / Footer -->
+                                                <table class='container' border='0' cellpadding='0' cellspacing='0' width='100%' align='center'>
+                                                    <tr>
+                                                        <td align='center'>
+                                                            <table class='container' border='0' cellpadding='0' cellspacing='0' width='620' align='center' style='border-top: 1px solid #eeeeee; width: 620px;'>
+                                                                <tr>
+                                                                    <td style='text-align: center; padding: 50px 0 10px 0;'>Enviado por " + who.name + " em " + DateTime.Now.ToString() + @"</td>
+                                                                </tr>
+
+                                                                <tr>
+                                                                    <td style='color: #d5d5d5; text-align: center; font-size: 15px; padding: 10px 0 60px 0; line-height: 22px;'>Powered by <a href='http://www.fdecimal.com/' target='_blank' style='text-decoration: none; border-bottom: 1px solid #d5d5d5; color: #d5d5d5;'>Formula Decimal</a>.</td>
+                                                                </tr>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                <!-- /// Footer -->
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </body>
+                    </html>
+                    ";
+
+                Dictionary<string, byte[]> anexos = new Dictionary<string, byte[]>();
+                anexos.Add(lote.Replace("/", "-") + " - " + refer + ".pdf", Buffer);
+                await f10.core.api.Client.MailService.sendmail(from, parato, "Relatório de Tratamento - Linha 1", body, null, null, anexos);
+                PopupEmail = false;
+
+                ErroTitle = "Enviar Relatório";
+                ErroMsg = "O relatório foi enviado por email com sucesso!";
+                PopupMailSend = false;
+                PopupErro = true;
+            }
+            else
+            {
+                ErroTitle = "ERRO ao Enviar Relatório";
+                ErroMsg = "Deve inserir pelo menos um email na Lista de Emails para que possa ser enviado o relatório!";
+                PopupMailSend = false;
+                PopupErro = true;
+            }
+        }
+
+        PopupMailSend = false;
+        StateHasChanged();
+    }
+
+
+    private async void Abracudabra(Microsoft.AspNetCore.Components.Web.MouseEventArgs e)
+    {
+        if (bigrect == false)
+        {
+            bigrect = true;
+        }
+        else
+        {
+            bigrect = false;
+        }
+        StateHasChanged();
+    }
+    private async void AbracudabracomQualidade(Microsoft.AspNetCore.Components.Web.MouseEventArgs e)
+    {
+        if (bigqual == false)
+        {
+            bigqual = true;
+        }
+        else
+        {
+            bigqual = false;
+        }
+        StateHasChanged();
+    }
+    private async void AbraAlarm(Microsoft.AspNetCore.Components.Web.MouseEventArgs e)
+    {
+        if (bigalarm == false)
+        {
+            bigalarm = true;
+        }
+        else
+        {
+            bigalarm = false;
+        }
+        StateHasChanged();
+    }
+
+    #region BoldReports
+
+    BoldReportViewerOptions viewerOptions = new BoldReportViewerOptions();
+
+    public async Task RenderReportViewer(Syncfusion.Blazor.Navigations.SelectEventArgs args)
+    {
+        if (args.SelectedIndex == 1)
+        {
+            // Define as opções do viewer
+            viewerOptions.ReportPath = "JSONReport.rdl";
+            viewerOptions.ReportServiceUrl = "/api/ReportViewer"; //retirar "https://localhost:7035" para consumir o interno
+            viewerOptions.IdTratamento = id;
+
+            await JSRuntime.InvokeVoidAsync("BoldReports.RenderViewerInIframe", "reportFrame", viewerOptions);
+        }
+    }
+    #endregion
+    private void BackStreetButton()
+    {
+
+        //NavigationManager.NavigateTo("/linha1/relatorios");
+        JSRuntime.InvokeVoidAsync("history.back");
+    }
+
+    public class rept
+    {
+        public string Referencia { get; set; }
+        public string Lote { get; set; }
+        public string Operador { get; set; }
+        public string Notas { get; set; }
+        public int? Unidades { get; set; }
+        public int? Boas { get; set; }
+        public int? Mas { get; set; }
+        public int? Teoricas { get; set; }
+        public string OF { get; set; }
+        public string Suspensao { get; set; }
+        public string Programa { get; set; }
+        public byte Prioridade { get; set; }
+        public string Motivo { get; set; }
+        public bool Opcao1 { get; set; }
+        public string Opcao4 { get; set; }
+    }
+    public class regs
+    {
+        public string Tina { get; set; }
+        public string Designacao { get; set; }
+        public DateTime? Tini { get; set; }
+        public DateTime? Tfin { get; set; }
+        public DateTime? Ttotal { get; set; }
+        public decimal? TempMin { get; set; }
+        public decimal? TempMed { get; set; }
+        public decimal? TempMax { get; set; }
+        public decimal? TempSP { get; set; }
+        public decimal? Ph { get; set; }
+        public decimal? Corrente { get; set; }
+        public decimal? Tensao { get; set; }
+        public string Utilizador { get; set; }
+        public string Estado { get; set; }
+    }
+    public class Alm
+    {
+        public int Id { get; set; }
+        public DateTime? DataInicio { get; set; }
+        public string Ocorrencia { get; set; }
+        public DateTime? DataFim { get; set; }
+        public string Prioridade { get; set; }
+        public string ReconhecidoPor { get; set; }
+        public DateTime? ReconhecidoEm { get; set; }
+        public string Equip { get; set; }
+        public string Counter { get; set; }
+    }
+
+    public class Dft
+    {
+        public int Id { get; set; }
+        public string Defeito { get; set; }
+    }
+
+    public class Qld
+    {
+        public int Id { get; set; }
+        public string Defeito { get; set; }
+        public int Num { get; set; }
+    }
+
+    public class KVPStringDecimal
+    {
+        public string Key { get; set; }
+        public decimal Value { get; set; }
+
+        public KVPStringDecimal(string k, decimal v)
+        {
+            Key = k;
+            Value = v;
+        }
+    }
+}

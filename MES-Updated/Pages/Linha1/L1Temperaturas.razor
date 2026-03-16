@@ -1,0 +1,287 @@
+﻿@page "/linha1/temperaturas"
+@using f10.pulsar.mes.Components
+
+@implements IDisposable
+@inject NavigationManager NavigationManager
+@inject Utils utils
+@inject IJSRuntime JSRuntime
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("TL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - TEMPERATURAS</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+                        <button @onclick="Update" title="Atualizar"><i class="icon style1 fa-refresh"></i></button>
+                        <button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                    </div>
+                </div>
+
+                @if (tinas != null)
+                {
+                    if (showchart == false)
+                    {
+                        <div class="row uniform">
+                            @if (tinas.Count == tempDB.Count)
+                            {
+                                @for (int i = 0; i < tinas.Count; i++)
+                                {
+                                    <div class="3u 6u(medium) 12u$(small)">
+                                        <Temperatura Title="@($"{tinas[i].Num} - {tinas[i].Tina1} - {tinas[i].Designacao}")" hist_temp="1" sp_temp="(int)tempDB[i].Temperatura_desejada" Temp="(int)tempDB[i].Temperatura"></Temperatura>
+                                        @{
+                                            var whois = tinas[i].Num.Value.ToString();
+                                            <div style="text-align:right;margin-top:-45px;margin-right:20px;font-size: 13px">
+                                                <button class="button small special" @onclick="@(() => OpenChart(whois))" title="Ver Gráfico"><i class='icon style1 fa-line-chart'></i></button>
+                                            </div>
+                                        }
+                                        <hr />
+                                    </div>
+                                }
+                            }
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row uniform">
+                            <div class="4u 12u$(medium)">
+                                <SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+                            </div>
+                            <div class="4u 12u$(medium)">
+                                <SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+                            </div>
+                            <div class="4u 12u$(medium)">
+                                <SfButton @onclick="SearchData">Pesquisar</SfButton>
+                                <SfButton @onclick="@(() => { showchart = false;  })" CssClass="pull-right" title="Voltar"><i class='icon style1 fa-arrow-left'></i></SfButton>
+                            </div>
+                        </div>
+
+                        @if (tempdt != null && tempdt.Count > 0)
+                        {
+                            <SfChart Title="Histórico de Temperatura" Width="100%" Height="600" Theme="@utils.ctheme">
+                                <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                <ChartTooltipSettings Enable="true" Shared="true" Header="<b>${point.x}H</b>" Format="<b>${point.y} </b>"></ChartTooltipSettings>
+                                <ChartZoomSettings EnableMouseWheelZooming="true" EnablePinchZooming="true" EnableSelectionZooming="true"></ChartZoomSettings>
+                                <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime" IntervalType="Syncfusion.Blazor.Charts.IntervalType.Minutes" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                                </ChartPrimaryXAxis>
+                                <ChartPrimaryYAxis Title="Temperatura (ºC)" LabelFormat="{value}">
+                                </ChartPrimaryYAxis>
+                                <ChartAxes>
+                                    <ChartAxis Name="b" Title="" LabelFormat="{value}" Minimum="0" Maximum="1" Interval="1" OpposedPosition="true" Visible="false">
+                                        <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                        <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                    </ChartAxis>
+                                </ChartAxes>
+                                <ChartSeriesCollection>
+                                    <ChartSeries DataSource="@tempdt" Name="Aquecimento ON" XName="Data" YName="Estado_aquecimento" Type="ChartSeriesType.Area" YAxisName="b" Opacity="0.2"></ChartSeries>
+                                    <ChartSeries DataSource="@tempdt" Name="Temperatura" XName="Data" YName="Temperatura" Type="ChartSeriesType.Line" Width="3"></ChartSeries>
+                                    <ChartSeries DataSource="@tempdt" Name="Setpoint" XName="Data" YName="Temperatura_desejada" Type="ChartSeriesType.Line" Width="3"></ChartSeries>
+                                </ChartSeriesCollection>
+                            </SfChart>
+                        }
+                    }
+                }
+
+
+
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+@code {
+    SfSpinner SpinnerObj = new SfSpinner();
+
+    bool dbchecked = false, dbcheckedoff = false;
+    public ushort[] temp_calib = new ushort[10];
+    public ushort[] sp_temp = new ushort[10];
+    public ushort[] hist_temp = new ushort[10];
+    public string[] Temp_color = new string[10] { "red", "red", "red", "red", "red", "red", "red", "red", "red", "red" };
+
+    private bool monitor;
+    private bool showchart = false;
+    public DateTime? dti { get; set; } = DateTime.Today;
+    public DateTime? dtf { get; set; } = DateTime.Today;
+    public List<sv.data.Tina> tinas;
+
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        GetDB();
+    }
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            DataFromDB();
+            //DataFromPLC();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+    void IDisposable.Dispose()
+    {
+        monitor = false;
+    }
+
+    public List<Temprt> tempDB = new List<Temprt>() { };
+    private async void DataFromDB()
+    {
+        DataLink_L1 dlink = new DataLink_L1();
+        tinas = dlink.db.Tinas.Where(x => x.Temp == true).ToList();
+
+        //BASE DADOS
+        List<Temprt> tempDB2 = new List<Temprt>() { };
+        foreach (var item in tinas)
+        {
+            var dang = dlink.db.TemperaturaLogs.OrderBy(x => x.Data).LastOrDefault(x => x.Tina == item.Num.ToString());
+            if (dang != null)
+            {
+                Temprt itt = new Temprt()
+                {
+                    Tina = item.Tina1,
+                    Temperatura = dang.Temperatura * 10,
+                    Temperatura_desejada = dang.TemperaturaDesejada * 10,
+                };
+                tempDB2.Add(itt);
+            }
+            else
+            {
+                Temprt itt = new Temprt()
+                {
+                    Tina = item.Tina1,
+                    Temperatura = 0,
+                    Temperatura_desejada = 0,
+                };
+                tempDB2.Add(itt);
+            }
+        }
+        tempDB = tempDB2;
+        StateHasChanged();
+        await Task.Delay(500);
+        await JSRuntime.InvokeVoidAsync("termometrocolor");
+    }
+
+    public List<Temprt> tempdt = new List<Temprt>() { };
+    private string tina = "";
+    private async Task OpenChart(string numtina)
+    {
+        tina = numtina;
+        showchart = true;
+        monitor = false;
+        SearchData();
+    }
+    private async void SearchData()
+    {
+        await SpinnerObj.ShowAsync();
+
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var dados = dl.db.TemperaturaLogs.
+                    Where(u => u.Tina == tina && u.Data >= dti && u.Data <= dtf.Value.AddDays(1)).
+                    Select(x => new Temprt { Id = x.Id, Data = x.Data, Tina = x.Tina, Temperatura = x.Temperatura, Temperatura_desejada = x.TemperaturaDesejada, Estado_aquecimento = x.EstadoAquecimento }).
+                    OrderByDescending(l => l.Data);
+        tempdt = await dados.ToListAsync();
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+    private void Update()
+    {
+        DataFromDB();
+    }
+
+
+    public class Temprt
+    {
+        public int Id { get; set; }
+        public string Tina { get; set; }
+        public DateTime? Data { get; set; }
+        public decimal? Temperatura { get; set; }
+        public decimal? Temperatura_desejada { get; set; }
+        public bool? Estado_aquecimento { get; set; }
+    }
+
+
+}

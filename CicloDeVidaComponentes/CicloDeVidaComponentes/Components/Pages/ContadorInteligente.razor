@@ -1,0 +1,43 @@
+﻿@page "/contador-inteligente"
+@rendermode RenderMode.InteractiveServer
+
+<PageTitle>Contador Inteligente</PageTitle>
+
+<h1>Contador Inteligente com <code>ShouldRender</code></h1>
+
+<div class="alert alert-warning">
+    <p>O valor na tela só será atualizado quando o contador for <strong>PAR</strong></p>
+
+    <p>
+        Abra o <strong>Console de saída</strong> do seu editor para ver o valor real do contador a cada clique.
+    </p>
+</div>
+
+<h2>Valor na Tela: @valorNaTela</h2>
+
+<button class="btn btn-primary" @onclick="IncrementarContador">
+    Clique Aqui
+</button>
+
+@code {
+    private int contador = 0;
+    private int valorNaTela = 0;
+
+	private void IncrementarContador()
+	{
+		contador++;
+		// Após este m+etodo, o Blazor automaticamente chama ShouldRender e depois atualiza a tela (se o ShouldRender permitir). O console sempre será atualizado, independentemente da UI.
+		Console.WriteLine($"Clique! Valor interno real agora é: {contador}");
+	}
+
+	protected override bool ShouldRender()
+	{
+		// Atualiza o valor na tela apenas se o contador for par
+		if (contador % 2 == 0)
+		{
+			valorNaTela = contador; // Atualiza o valor que será mostrado na tela
+			return true; // Permite que a UI seja atualizada
+		}
+		return false; // Impede que a UI seja atualizada
+	}
+}

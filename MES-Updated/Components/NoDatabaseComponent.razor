@@ -1,0 +1,37 @@
+﻿@* NoDataBasePage *@
+<div class="row uniform" style="margin-top:20px">
+    <div class="12u 12u$(medium)">
+        <div class="card text-dark bg-light">
+            <div class="card-body">
+                <p style="margin:0;">
+                    Sem ligação à base de dados.
+                </p>
+
+                @if (ShowRetry)
+                {
+                    <button class="special button"
+                            style="margin-top:1em"
+                            @onclick="OnRetry">
+                        Tentar novamente
+                    </button>
+
+                    <div>
+                        <a href="/" style="margin-top:1em">
+                            Voltar
+                        </a>
+                    </div>
+                    
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public bool ShowRetry { get; set; } = false;
+
+    [Parameter]
+    public EventCallback OnRetry { get; set; }
+
+}

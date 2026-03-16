@@ -1,0 +1,97 @@
+﻿@using Syncfusion.Blazor.LinearGauge
+@inject Utils utils
+
+<SfLinearGauge Height="400px" Title="@Title" Theme="@utils.ctheme">
+    <LinearGaugeTitleStyle Color="Gray"
+                           Size="15px"
+                           Opacity="0.8">
+    </LinearGaugeTitleStyle>
+
+    <LinearGaugeContainer Width="30" Type="ContainerType.RoundedRectangle" >
+        
+    </LinearGaugeContainer>
+    <LinearGaugeAxes>
+        <LinearGaugeAxis Minimum="0" Maximum="14">
+            <LinearGaugePointers>
+                <LinearGaugePointer PointerValue="@(ph_calib / 10.0)" Width="15" Type="Syncfusion.Blazor.LinearGauge.Point.Bar" Color="@Ph_color">
+                </LinearGaugePointer>
+            </LinearGaugePointers>
+        </LinearGaugeAxis>
+    </LinearGaugeAxes>
+</SfLinearGauge>
+<div style="text-align:center;margin-top:-50px; font-size: 2em">@($"{ph_calib / 10.0}" )</div>
+
+
+@code {
+    [Parameter]
+    public string Title { get; set; }
+    [Parameter]
+    public int sp_ph { get; set; }
+    [Parameter]
+    public int hist_ph { get; set; }
+
+    private string Ph_color = "red";
+    private int ph_calib;
+
+    [Parameter]
+    public int ph
+    {
+        get { return ph_calib; }
+        set
+        {
+            ph_calib = value;
+
+            switch (value)
+            {
+                case > 0 and <= 10:
+                    Ph_color = "#ee3722";
+                    break;
+                case > 10 and <= 20:
+                    Ph_color = "#ee3479";
+                    break;
+                case > 20 and <= 30:
+                    Ph_color = "#f57e26";
+                    break;
+                case > 30 and <= 40:
+                    Ph_color = "#fba923";
+                    break;
+                case > 40 and <= 50:
+                    Ph_color = "#f4ec08";
+                    break;
+                case > 50 and <= 60:
+                    Ph_color = "#a3cd39";
+                    break;
+                case > 60 and <= 70:
+                    Ph_color = "#4db847";
+                    break;
+                case > 70 and <= 80:
+                    Ph_color = "#019247";
+                    break;
+                case > 80 and <= 90:
+                    Ph_color = "#059495";
+                    break;
+                case > 90 and <= 100:
+                    Ph_color = "#5175ba";
+                    break;
+                case > 100 and <= 110:
+                    Ph_color = "#454a9f";
+                    break;
+                case > 110 and <= 120:
+                    Ph_color = "#2a2f84";
+                    break;
+                case > 120 and <= 130:
+                    Ph_color = "#94248c";
+                    break;
+                case > 130 and <= 140:
+                    Ph_color = "#7b2779";
+                    break;
+                default:
+                    break;
+
+            }
+
+            StateHasChanged();
+        }
+    }
+
+}

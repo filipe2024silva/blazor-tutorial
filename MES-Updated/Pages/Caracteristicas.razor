@@ -1,0 +1,262 @@
+﻿@page "/caracteristicas"
+@using MySqlConnector
+@using f10.pulsar.mes.Components
+@using f10.pulsar.mes.Enums
+
+@inject NavigationManager NavigationManager
+@inject Utils Utils
+@inject CaracteristicasService CaracteristicasService
+
+<BasePage State="State" LoadingText="A carregar características..." OnReload="LoadAsync">
+
+    <div class="row">
+        <div class="8u 12u$(medium)">
+            <h1>Gestão de Características</h1>
+        </div>
+        <div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+            <button class="noprint" @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+            <button class="noprint" onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+            <button @onclick="@(() => { PopupNewCara = true; })" title="Inserir Característica"><i class="icon style1 fa-plus"></i></button>
+        </div>
+    </div>
+
+    <div class="row uniform">
+        <SfTab>
+            <TabItems>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="ATIVAS"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+                        <SfGrid @ref="@Grid" DataSource="@CaracteristicasON" AllowFiltering="true" AllowSorting="true" AllowGrouping="true">
+                            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                            <GridColumns>
+                                <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+                                    <Template>
+                                        @{
+                                            var whois = (context as pulsar.mes.data.Caracteristicas);
+                                            <div style="display: flex; justify-content: space-between;">
+                                                <p @onclick="@(() => { EditCaracteristicaAsync(whois.IdCaracteristica); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label">Editar</span></p>
+                                            </div>
+                                        }
+                                    </Template>
+                                </GridColumn>
+                                <GridColumn Field="Caracteristica" HeaderText="Caracteristica" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                <GridColumn Field="Valor" HeaderText="Valor" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                <GridColumn Field="Unidade" HeaderText="Unidade" HideAtMedia="(min-width: 700px)"></GridColumn>
+                            </GridColumns>
+
+                            <GridTemplates>
+                                <EmptyRecordTemplate>
+                                    <div class="row uniform" style="margin-top:20px">
+                                        <div class="12u 12u$(medium)">
+                                            <div class="card text-dark bg-light">
+                                                <div class="card-body">
+                                                    <p style="margin:0;">Sem características registadas.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </EmptyRecordTemplate>
+                            </GridTemplates>
+                        </SfGrid>
+                    </ContentTemplate>
+                </TabItem>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="INATIVAS"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+
+                        <SfGrid @ref="@Grid" DataSource="@CaracteristicasOFF" AllowFiltering="true" AllowSorting="true" AllowGrouping="true">
+                            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                            <GridColumns>
+                                <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+                                    <Template>
+                                        @{
+                                            var whois = (context as pulsar.mes.data.Caracteristicas);
+                                            <div style="display: flex; justify-content: space-between;">
+                                                <p @onclick="@(() => { EditCaracteristicaAsync(whois.IdCaracteristica); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label">Editar</span></p>
+                                            </div>
+                                        }
+                                    </Template>
+                                </GridColumn>
+                                <GridColumn Field="Caracteristica" HeaderText="Caracteristica" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                <GridColumn Field="Valor" HeaderText="Valor" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                <GridColumn Field="Unidade" HeaderText="Unidade" HideAtMedia="(min-width: 700px)"></GridColumn>
+                            </GridColumns>
+
+                            <GridTemplates>
+                                <EmptyRecordTemplate>
+                                    <div class="row uniform" style="margin-top:20px">
+                                        <div class="12u 12u$(medium)">
+                                            <div class="card text-dark bg-light">
+                                                <div class="card-body">
+                                                    <p style="margin:0;">Sem características registadas.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </EmptyRecordTemplate>
+                            </GridTemplates>
+                        </SfGrid>
+
+                    </ContentTemplate>
+                </TabItem>
+            </TabItems>
+        </SfTab>
+    </div>
+
+    @*ADICIONAR*@
+    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupNewCara">
+        <DialogTemplates>
+            <Header>Adicionar Característica</Header>
+            <Content>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Característica</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selecara.Caracteristica" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Valor</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selecara.Valor" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Unidade</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selecara.Unidade" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <SfButton class="button special pull-right" @onclick="@(() => { SaveCaracteristicaAsync(0); })" style="margin:10px">Guardar</SfButton>
+                <SfButton class="button pull-right" @onclick="@(() => { PopupNewCara = false; idCara = 0; selecara = new pulsar.mes.data.Caracteristicas() { }; })" style="margin:10px">Cancelar</SfButton>
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
+
+    @*EDITAR*@
+    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupEditCara">
+        <DialogTemplates>
+            <Header>Editar Característica</Header>
+            <Content>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Característica</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selecara.Caracteristica" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Valor</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selecara.Valor" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Unidade</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selecara.Unidade" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:6.5em;margin:0;margin-top:10px;">Ativo</p>
+                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                        <SfSwitch @bind-Checked="@selecara.Ativo"></SfSwitch>
+                    </div>
+                </div>
+                <SfButton class="button special pull-right" @onclick="@(() => { SaveCaracteristicaAsync(idCara); })" style="margin:10px">Guardar</SfButton>
+                <SfButton class="button pull-right" @onclick="@(() => { PopupEditCara = false; idCara = 0; selecara = new pulsar.mes.data.Caracteristicas() { }; })" style="margin:10px">Cancelar</SfButton>
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
+
+</BasePage>
+
+@code {
+    SfGrid<pulsar.mes.data.Caracteristicas> Grid;
+
+    List<pulsar.mes.data.Caracteristicas> CaracteristicasON = new();
+    List<pulsar.mes.data.Caracteristicas> CaracteristicasOFF = new();
+
+    bool PopupNewCara = false, PopupEditCara = false;
+    int idCara = 0;
+
+    pulsar.mes.data.Caracteristicas selecara = new();
+
+    PageState State = PageState.Loading;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Utils.CanAccess("C"))
+        {
+            State = PageState.NoAccess;
+            StateHasChanged();
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        State = PageState.Loading;
+        StateHasChanged();
+
+        try
+        {
+            (CaracteristicasON, CaracteristicasOFF) =
+                await CaracteristicasService.GetAllAsync();
+
+            State = PageState.Ready;
+        }
+        catch (Exception ex) when (ex.InnerException is MySqlException)
+        {
+            State = PageState.NoDatabase;
+        }
+        catch (MySqlException)
+        {
+            State = PageState.NoDatabase;
+        }
+        catch
+        {
+            State = PageState.Error;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task EditCaracteristicaAsync(int id)
+    {
+        selecara = await CaracteristicasService.GetByIdAsync(id) ?? new pulsar.mes.data.Caracteristicas();
+
+        idCara = id;
+        PopupEditCara = true;
+    }
+
+    private async Task SaveCaracteristicaAsync(int id)
+    {
+        if (string.IsNullOrWhiteSpace(selecara.Caracteristica))
+            return;
+
+        State = PageState.Loading;
+        StateHasChanged();
+
+        try
+        {
+            await CaracteristicasService.SaveAsync(selecara, id);
+
+            PopupNewCara = false;
+            PopupEditCara = false;
+            selecara = new();
+            idCara = 0;
+
+            await LoadAsync();
+
+            State = PageState.Ready;
+        }
+        catch
+        {
+            State = PageState.Error;
+        }
+
+        StateHasChanged();
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+}

@@ -1,0 +1,15 @@
+﻿@page "/alerta"
+@rendermode RenderMode.InteractiveServer
+@inject IJSRuntime JSRuntime
+
+<h3>Alerta</h3>
+
+@code {
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+			await JSRuntime.InvokeVoidAsync("alert", "Componente renderizado!");
+		}
+	}
+}

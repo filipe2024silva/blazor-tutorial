@@ -1,0 +1,1498 @@
+﻿@page "/linha1/manutencao"
+@using System.Globalization
+
+@using pulsar.sv.data
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject Utils utils
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("ML1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - MANUTENÇÃO</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+                        <button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                    </div>
+                </div>
+
+                if (PopupDocs == false)
+                {
+                    <div class="row uniform">
+                        <div class="4u 12u$(medium)">
+                            <SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+                        </div>
+                        <div class="4u 12u$(medium)">
+                            <SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+                        </div>
+                        <div class="4u 12u$(medium)">
+                            <SfButton @onclick="SearchData" Title="Pesquisar"><i class='icon style1 fa-search'></i></SfButton>
+                            <SfButton @onclick="@(() => { PopupTask = true; seltask.Id = 0; seltask.Notas = ""; seltask.AllDay = false; Urgente = false; seltask.Inicio = DateTime.Now; seltask.Fim = DateTime.Now.AddMinutes(30); seltask.Recorrente = false; seltask.Recorrencia = "Diário"; seltask.Exceptions = ""; Eternal = true; })" CssClass="pull-right" Title="Agendar Manutenção"><i class='icon style1 fa-calendar-plus-o'></i></SfButton>
+                            <SfButton @onclick="@(() => { PopupManutencao = true; selmanutencao.Id = 0; selmanutencao.Notas = ""; selmanutencao.Inicio = DateTime.Now; })" CssClass="pull-right" style="margin-right:1em;" Title="Registar Manutenção"><i class='icon style1 fa-industry'></i></SfButton>
+                            <SfButton @onclick="@(() => { NavigationManager.NavigateTo("linha1/equipamentos"); })" CssClass="pull-right" style="margin-right:1em;" Title="Gerir Equipamentos"><i class='icon style1 fa-list'></i></SfButton>
+                        </div>
+                    </div>
+
+                    //ESTATISTICAS
+                    <div class="row uniform">
+                        @if (Manutencoes != null && Manutencoes.Count() > 0)
+                        {
+                            <div class="3u 12u$(medium)" style="height:450px;">
+                                @if (Manutencoes != null && Manutencoes.Count() > 0)
+                                {
+                                    <SfAccumulationChart Title="Tipo de Operação" Width="100%" Height="400" Theme="@utils.ctheme">
+                                        <AccumulationChartLegendSettings Visible="true" Position="Syncfusion.Blazor.Charts.LegendPosition.Bottom">
+                                        </AccumulationChartLegendSettings>
+                                        <AccumulationChartTooltipSettings Enable="false"></AccumulationChartTooltipSettings>
+                                        <AccumulationChartSeriesCollection>
+                                            <AccumulationChartSeries DataSource="@RoundChartData" XName="Dia" YName="Num" Radius="70%" InnerRadius="40%" Explode="true" ExplodeOffset="10%" ExplodeIndex="3" Palettes="@chartpalettes">
+                                                <AccumulationDataLabelSettings Visible="true" Name="text">
+                                                    <AccumulationChartDataLabelFont FontWeight="600" Color="white"></AccumulationChartDataLabelFont>
+                                                </AccumulationDataLabelSettings>
+                                            </AccumulationChartSeries>
+                                        </AccumulationChartSeriesCollection>
+                                    </SfAccumulationChart>
+                                }
+                            </div>
+                            <div class="6u 12u$(medium)" style="height:450px;">
+                                @if (Manutencoes != null && Manutencoes.Count() > 0)
+                                {
+                                    <SfChart Title="Top Equipamentos" Width="100%" Height="400" Theme="@utils.ctheme">
+                                        <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                        <ChartArea>
+                                            <ChartAreaBorder Width="0"></ChartAreaBorder>
+                                        </ChartArea>
+                                        <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                            <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                        </ChartPrimaryXAxis>
+                                        <ChartPrimaryYAxis Title="" LabelFormat="{value}" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                                            <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                            <ChartAxisLabelStyle Color="transparent"></ChartAxisLabelStyle>
+                                            <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                            <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                        </ChartPrimaryYAxis>
+                                        <ChartSeriesCollection>
+                                            <ChartSeries DataSource="@ChartData" Name="" XName="Dia" YName="Num" Type="ChartSeriesType.Bar">
+                                                <ChartMarker>
+                                                    <Char Visible="true" Position="Syncfusion.Blazor.Charts.LabelPosition.Top"></Char ftDataLabel>
+                                                </ChartMarker>
+                                            </ChartSeries>
+                                        </ChartSeriesCollection>
+                                    </SfChart>
+                                }
+                            </div>
+                            <div class="3u 12u$(medium)" style="height:450px;">
+                                <div style="display: flex; flex-direction:column; justify-content:center; height:450px;">
+                                    <ul class="alt">
+                                        <li><i class="icon style1 fa-wrench"></i> <strong> @diassman</strong> Dias sem manutenção</li>
+                                        <li><i class="icon style1 fa-list"></i> <strong> @opefetuadas</strong> Operações efetuadas</li>
+                                        <li><i class="icon style1 fa-calendar"></i> <strong> @opagendadas</strong> Operações agendadas</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="12u 12u$(medium)">
+                                <div style="display: flex; flex-direction:row; justify-content:center;">
+                                    <p>
+                                        <i class="icon style1 fa-wrench"></i> <strong> @diassman</strong> Dias sem manutenção |
+                                        <i class="icon style1 fa-list"></i> <strong> @opefetuadas</strong> Operações efetuadas |
+                                        <i class="icon style1 fa-calendar"></i> <strong> @opagendadas</strong> Operações agendadas
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    //TABELA
+                    <div class="row uniform">
+                        @if (Manutencoes != null && Manutencoes.Count() > 0)
+                        {
+                            <div>
+                                <SfGrid DataSource="@Manutencoes" AllowFiltering="true" AllowSorting="true" AllowGrouping="true" AllowSelection="false" EnableHover="false">
+                                    <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                                    <GridEvents QueryCellInfo="CustomizeCell" TValue="Schedule"></GridEvents>
+                                    <GridSortSettings>
+                                        <GridSortColumns>
+                                            <GridSortColumn Field="Inicio" Direction="SortDirection.Ascending"></GridSortColumn>
+                                            <GridSortColumn Field="DataRealizada" Direction="SortDirection.Ascending"></GridSortColumn>
+                                        </GridSortColumns>
+                                    </GridSortSettings>
+                                    <GridTemplates>
+                                        <DetailTemplate>
+                                            @{
+                                                var whois = (context as Schedule);
+                                                <p>@((MarkupString)whois.Notas.Replace("\n", "<br />"))</p>
+                                            }
+                                        </DetailTemplate>
+                                    </GridTemplates>
+
+                                    <GridColumns>
+                                        <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="50">
+                                            <Template>
+                                                @{
+                                                    var whois = (context as Schedule);
+                                                    <div style="display: flex; justify-content: space-between;">
+                                                        @if (whois.DataRealizada == null)
+                                                        {
+                                                            <p @onclick="@(() => { edittask(whois.Id, whois.Inicio, whois.Fim); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer" title="Editar"><span class="label">Editar</span></p>
+                                                        }
+                                                        else
+                                                        {
+                                                            <p @onclick="@(() => { editmanutencao(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer" title="Editar"><span class="label">Editar</span></p>
+                                                        }
+                                                    </div>
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                        <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="50">
+                                            <Template>
+                                                @{
+                                                    var whois = (context as Schedule);
+                                                    <div style="display: flex; justify-content: space-between;">
+                                                        @if (whois.DataRealizada != null)
+                                                        {
+                                                            <p @onclick="@(() => { docs(whois.Id); })" class="icon style1 fa-archive" style="margin:0.3em;cursor:pointer" title="Documentos"><span class="label">Documentos</span></p>
+                                                        }
+                                                    </div>
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                        <GridColumn HeaderText="U" Width="6">
+                                            <Template>
+                                                @{
+                                                    var whois = (context as Schedule);
+                                                    <div style="display: flex; justify-content: space-between;">
+                                                        @if (whois.Inicio != null && whois.Inicio == whois.Fim.Value)
+                                                        {
+                                                            <p @onclick="@(() => { edittask(whois.Id, whois.Inicio, whois.Fim); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer" title="Editar"><span class="label">Editar</span></p>
+                                                        }
+                                                        else
+                                                        {
+                                                            <p @onclick="@(() => { editmanutencao(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer" title="Editar"><span class="label">Editar</span></p>
+                                                        }
+                                                    </div>
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                        <GridColumn Field="Equipamento" HeaderText="Equipamento"></GridColumn>
+                                        <GridColumn Field="Operation" HeaderText="Operação"></GridColumn>
+                                        <GridColumn Field="Tipo" HeaderText="Tipo" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                        <GridColumn Field="Inicio" HeaderText="Inicio" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                        <GridColumn Field="Fim" HeaderText="Fim" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                        <GridColumn Field="DataRealizada" HeaderText="Realizada em" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                        <GridColumn Field="OperadorRealizou" HeaderText="Realizada por" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                    </GridColumns>
+                                </SfGrid>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                                <div class="card text-dark bg-light">
+                                    <div class="card-body">
+                                        <p style="margin:0;">Sem operações de manutenção efetuadas/agendadas para o período selecionado.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    //DOCUMENTOS
+                    <div class="row uniform">
+                        <div class="6u 12u$(medium)" style="display: flex;justify-content:flex-start;">
+                            <button @onclick="@(() => { PopupNewDoc = true; PopupSave = true; })"><i class="icon style1 fa-plus"></i> Adicionar Documento</button>
+                        </div>
+                        <div class="6u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+                            <button @onclick="@(() => { PopupDocs = false; selmanutencao = new Manutencao() { }; })"><i class="icon style1 fa-times"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="row uniform">
+                        @if (Documentos != null && Documentos.Count() > 0)
+                        {
+                            <div>
+                                <SfGrid DataSource="@Documentos" AllowFiltering="true" AllowSorting="true" AllowGrouping="true" AllowSelection="false" EnableHover="false">
+                                    <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                                    <GridColumns>
+                                        <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="50">
+                                            <Template>
+                                                @{
+                                                    var whois = (context as Dcs);
+                                                    <div style="display: flex; justify-content: space-between;">
+                                                        <p @onclick="@(() => { deletedoc(whois.Id); })" class="icon style1 fa-times" style="margin:0.3em;cursor:pointer"><span class="label">Eliminar</span></p>
+                                                    </div>
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                        <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="50">
+                                            <Template>
+                                                @{
+                                                    var whois = (context as Dcs);
+                                                    <div style="display: flex; justify-content: space-between;">
+                                                        <p @onclick="@(() => { downloaddoc(whois.Id); })" class="icon style1 fa-download" style="margin:0.3em;cursor:pointer"><span class="label">Descarregar</span></p>
+                                                    </div>
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                        <GridColumn Field="Nome" HeaderText="Nome"></GridColumn>
+                                        <GridColumn Field="Descricao" HeaderText="Descricao" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                    </GridColumns>
+                                </SfGrid>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                                <div class="card text-dark bg-light">
+                                    <div class="card-body">
+                                        <p style="margin:0;">Sem documentos registados na operação selecionada.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+
+
+                @*ADICIONAR MANUTENÇÃO*@
+                <SfDialog Target="#target" Width="500px" Height=auto ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupManutencao">
+                    <DialogTemplates>
+                        <Header>Registar Manutenção</Header>
+                        <Content>
+                            <div style="margin-top:1em;margin-bottom:1em;overflow:auto">
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Equipamento</p>
+                                    <SfDropDownList Value="@selmanutencao.Equipamento" TValue="string" TItem="Recc" DataSource="@Equipamentos.AsEnumerable()" Width="100%" Style="height:100%;margin-bottom: 10px">
+                                        <DropDownListEvents OnValueSelect="@SelEquipamento_SelectionChanged" TValue="string" TItem="Recc"></DropDownListEvents>
+                                        <DropDownListFieldSettings Value="Id" Text="Rec"></DropDownListFieldSettings>
+                                    </SfDropDownList>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Operação</p>
+                                    <SfTextBox Multiline="false" @bind-Value="@selmanutencao.Operation" style="margin-left:10px;padding:0"></SfTextBox>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Tipo</p>
+                                    <SfDropDownList Value="@selmanutencao.Tipo" TValue="string" TItem="Recc" DataSource="@Tipos.AsEnumerable()" Width="100%" Style="height:100%;margin-bottom: 10px">
+                                        <DropDownListEvents OnValueSelect="@SelTipo_SelectionChanged" TValue="string" TItem="Recc"></DropDownListEvents>
+                                        <DropDownListFieldSettings Value="Rec" Text="Rec"></DropDownListFieldSettings>
+                                    </SfDropDownList>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Notas</p>
+                                    <SfTextBox Multiline="true" @bind-Value="@selmanutencao.Notas" style="margin-left:10px;padding:0;height:80px"></SfTextBox>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Data</p>
+                                    <SfDateTimePicker @bind-Value="@selmanutencao.Inicio" style="margin-left:10px;padding:0"></SfDateTimePicker>
+                                </div>
+                                <div style="display: flex; justify-content: center; margin:0.5em">
+                                    <p style="margin-top:10px;color:red">@Erromsg</p>
+                                </div>
+                            </div>
+                              @if (selmanutencao.Id != 0)
+                              {
+                                <button class="button special pull-left" @onclick="@(() => { PopupDelManutencao = true; })" style="margin:10px">Eliminar</button>
+                              }
+                                <button class="button special pull-right" @onclick="@(() => { Add_Manutencao(selmanutencao.Id); })" style="margin:10px">Guardar</button>
+                                <button class="button pull-right" @onclick="@(() => { PopupManutencao = false; selmanutencao = new Manutencao() { }; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ELIMINAR MANUTENCAO*@
+                <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelManutencao">
+                    <DialogTemplates>
+                        <Header>Eliminar Manutenção</Header>
+                        <Content>
+                            <p>
+                                A eliminação da operação de manutenção é permanente.<br />
+                                Pretende realmente eliminar a operação de manutenção?
+                            </p>
+                            <button class="button special pull-right" @onclick="@(() => { Del_Manutencao(selmanutencao.Id); })" style="margin:10px">Sim</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupDelManutencao = false; })" style="margin:10px">Não</button>
+                        </Content>
+                    </DialogTemplates>    
+                </SfDialog>
+
+                @*ADICIONAR TASK*@
+                <SfDialog Target="#target" Width="500px" Height=auto ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupTask">
+                    <DialogTemplates>
+                        <Header>Agendar Manutenção</Header>
+                        <Content>
+                            <div style="margin-top:1em;margin-bottom:1em;overflow:auto">
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Equipamento</p>
+                                    <SfDropDownList Value="@seltask.Equipamento" TValue="string" TItem="Recc" DataSource="@Equipamentos.AsEnumerable()" Width="100%" Style="height:100%;margin-bottom: 10px">
+                                        <DropDownListEvents OnValueSelect="@SelEquipamento_SelectionChanged" TValue="string" TItem="Recc"></DropDownListEvents>
+                                        <DropDownListFieldSettings Value="Id" Text="Rec"></DropDownListFieldSettings>
+                                    </SfDropDownList>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Operação</p>
+                                    <SfTextBox Multiline="false" @bind-Value="@seltask.Operation" style="margin-left:10px;padding:0"></SfTextBox>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Tipo</p>
+                                    <SfDropDownList Value="@seltask.Tipo" TValue="string" TItem="Recc" DataSource="@Tipos.AsEnumerable()" Width="100%" Style="height:100%;margin-bottom: 10px">
+                                        <DropDownListEvents OnValueSelect="@SelTipo_SelectionChanged" TValue="string" TItem="Recc"></DropDownListEvents>
+                                        <DropDownListFieldSettings Value="Rec" Text="Rec"></DropDownListFieldSettings>
+                                    </SfDropDownList>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Notas</p>
+                                    <SfTextBox Multiline="true" @bind-Value="@seltask.Notas" style="margin-left:10px;padding:0;height:80px"></SfTextBox>
+                                </div>
+
+                                @*<div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Data</p>
+                                    <SfDatePicker TValue="DateTime?" Placeholder='Data' @bind-Value="@selmanutencao.Inicio" style="margin-left:10px;padding:0"></SfDatePicker>
+                                </div>*@
+
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:6.5em;margin:0;margin-top:10px;color:red">Urgente</p>
+                                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                                        <SfCheckBox @bind-Checked="@Urgente" @onchange="@(() => { StateHasChanged(); })"></SfCheckBox>
+                                    </div>
+                                </div>
+                                @if (Urgente == false)
+                                {
+                                    <div style="display: flex; justify-content: left; margin:0.5em">
+                                        <p style="width:8em;margin:0;margin-top:10px;">Inicio</p>
+                                        <SfDateTimePicker @bind-Value="@seltask.Inicio" style="margin-left:10px;padding:0"></SfDateTimePicker>
+                                    </div>
+                                    <div style="display: flex; justify-content: left; margin:0.5em">
+                                        <p style="width:8em;margin:0;margin-top:10px;">Fim</p>
+                                        <SfDateTimePicker @bind-Value="@seltask.Fim" style="margin-left:10px;padding:0"></SfDateTimePicker>
+                                    </div>
+                                }
+
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:6.5em;margin:0;margin-top:10px;">Recorrente</p>
+                                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                                        <SfCheckBox @bind-Checked="@seltask.Recorrente" @onchange="@(() => { StateHasChanged(); })"></SfCheckBox>
+                                    </div>
+                                </div>
+                                @if (seltask.Recorrente == true)
+                                {
+                                    <div style="display: flex; justify-content: left; margin:0.5em">
+                                        <p style="width:8em;margin:0;margin-top:10px;">Recorrência</p>
+                                        <SfDropDownList Value="@seltask.Recorrencia" TValue="string" TItem="Recc" DataSource="@Recs.AsEnumerable()" Width="100%" Style="height:100%;margin-bottom: 10px">
+                                            <DropDownListEvents OnValueSelect="@SelRecorrence_SelectionChanged" TValue="string" TItem="Recc"></DropDownListEvents>
+                                            <DropDownListFieldSettings Value="Id" Text="Rec"></DropDownListFieldSettings>
+                                        </SfDropDownList>
+                                    </div>
+                                    <div style="display: flex; justify-content: left; margin:0.5em">
+                                        <p style="width:6.5em;margin:0;margin-top:10px;">Sem fim</p>
+                                        <div style="margin-left:10px;margin-top:10px;padding:0">
+                                            <SfCheckBox @bind-Checked="@Eternal" @onchange="@(() => { StateHasChanged(); })"></SfCheckBox>
+                                        </div>
+                                    </div>
+                                    if (Eternal == false)
+                                    {
+                                        <div style="display: flex; justify-content: left; margin:0.5em">
+                                            <p style="width:8em;margin:0;margin-top:10px;">Até</p>
+                                            <SfDatePicker @bind-Value="@seltask.RecorrenciaEnd" style="margin-left:10px;padding:0"></SfDatePicker>
+                                        </div>
+                                    }
+                                }
+
+                                <div style="display: flex; justify-content: center; margin:0.5em">
+                                    <p style="margin-top:10px;color:red">@Erromsg</p>
+                                </div>
+                            </div>
+                            @if (seltask.Id != 0)
+                            {
+                                if (seltask.Recorrente == true)
+                                {
+                                    <button class="button special pull-left" @onclick="@(() => { PopupDelTask_rec = true; })" style="margin:10px">Eliminar</button>
+                                }
+                                else
+                                {
+                                    <button class="button special pull-left" @onclick="@(() => { PopupDelTask_norec = true; })" style="margin:10px">Eliminar</button>
+                                }
+                            }
+                        <button class="button special pull-right" @onclick="@(() => { Add_Task(seltask.Id); })" style="margin:10px">Guardar</button>
+                        <button class="button pull-right" @onclick="@(() => { PopupTask = false; seltask = new ManutencaoMarcar() { }; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ELIMINAR TASK*@
+                <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelTask_rec">
+                    <DialogTemplates>
+                        <Header>Eliminar Manutenção</Header>
+                        <Content>
+                            <p>
+                                O presente agendamento de manutenção é uma operação recorrente.<br />
+                                Pretende eliminar apenas o agendamento atual ou toda a recorrência?
+                            </p>
+                            <button class="button special pull-right" @onclick="@(() => { Del_all = false; Del_Task(seltask.Id); })" style="margin:10px">Agendamento Atual</button>
+                            <button class="button special pull-right" @onclick="@(() => { Del_all = true; Del_Task(seltask.Id); })" style="margin:10px">Toda a Recorrência</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupDelTask_rec = false; Del_all = false; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ELIMINAR MANUTENCAO*@
+                <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelTask_norec">
+                    <DialogTemplates>
+                        <Header>Eliminar Manutenção</Header>
+                        <Content>
+                            <p>
+                                A eliminação do agendamento da manutenção é permanente.<br />
+                                Pretende realmente eliminar o agendamento da manutenção?
+                            </p>
+                            <button class="button special pull-right" @onclick="@(() => { Del_Task(seltask.Id); })" style="margin:10px">Sim</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupDelTask_norec = false; })" style="margin:10px">Não</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*DOCUMENTOS*@
+                <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupNewDoc">
+                    <DialogTemplates>
+                        <Header>Gerir Documento</Header>
+                        <Content>
+                            <SfUploader @ref="upiroca" Multiple="false">
+                                <UploaderEvents ValueChange="OnChange" OnRemove="onRemove"></UploaderEvents>
+                            </SfUploader>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6em;margin:0">Nome</p>
+                                <p style="margin:0">@seldoc.Nome</p>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6.5em;margin:0">Descrição</p>
+                                <SfTextBox Multiline="true" @bind-Value="@seldoc.Descricao" style="height:100px;margin-left:10px;padding:0"></SfTextBox>
+                            </div>
+                            <button class="button special pull-right" @onclick="@(() => { Add_Doc(); })" style="margin:10px" disabled="@PopupSave">Guardar</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupNewDoc = false; indoc = new byte[1]; seldoc = new Dcs() { }; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ELIMINAR DOCUMENTO*@
+                <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelDoc">
+                    <DialogTemplates>
+                        <Header>Eliminar Documento</Header>
+                        <Content>
+                            <p>
+                                A eliminação do documento associado à operação de manutenção é permanente.<br />
+                                Pretende realmente eliminar o documento?
+                            </p>
+                                <button class="button special pull-right" @onclick="@(() => { Del_Doc(seldoc.Id); })" style="margin:10px">Sim</button>
+                                <button class="button pull-right" @onclick="@(() => { PopupDelDoc = false; })" style="margin:10px">Não</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+@code {
+    SfSpinner SpinnerObj = new SfSpinner();
+    SfUploader upiroca = new SfUploader();
+    f10.pulsar.mes.data.User who = new f10.pulsar.mes.data.User();
+
+    bool dbchecked = false, dbcheckedoff = false;
+    public DateTime? dti { get; set; } = DateTime.Today;
+    public DateTime? dtf { get; set; } = DateTime.Today;
+    public string Erromsg = "";
+    public List<Schedule> Manutencoes = new List<Schedule>() { };
+    public List<AreaChartData> ChartData = new List<AreaChartData> { };
+    public List<AreaChartData> RoundChartData = new List<AreaChartData> { };
+    private string diassman = "";
+    private string opefetuadas = "";
+    private string opagendadas = "";
+    public string[] chartpalettes = new string[] { "#FF6037", "#00CC99", "#50BFE6" };
+
+    protected override void OnInitialized()
+    {
+        who = (f10.pulsar.mes.data.User)utils.f10session["user"];
+        base.OnInitialized();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            LoadEquips();
+            LoadTipos();
+            SearchData();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+
+    List<Recc> Equipamentos = new List<Recc> { };
+    List<Recc> Tipos = new List<Recc> { };
+    private async void LoadEquips()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var pequips = from rt in dl.db.Equipamentos select rt;
+        var dados = await pequips.ToListAsync();
+
+        foreach (var item in dados)
+        {
+            Equipamentos.Add(new Recc { Id = item.Nome, Rec = item.Nome + " - " + item.Designacao });
+        }
+
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+        dl.Dispose();
+    }
+
+    private async void LoadTipos()
+    {
+        await SpinnerObj.ShowAsync();
+
+        Tipos.Add(new Recc { Id = "Manutenção Programada", Rec = "Manutenção Programada" });
+        Tipos.Add(new Recc { Id = "Manutenção Preventiva", Rec = "Manutenção Preventiva" });
+        Tipos.Add(new Recc { Id = "Manutenção Reativa", Rec = "Manutenção Reativa" });
+
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+    }
+
+    private async void SearchData()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        //TABELA
+        var pagenda = from rt in dl.db.ManutencaoMarcar where (rt.Inicio >= dti && rt.Inicio <= dtf.Value.AddDays(1)) || (rt.Inicio <= dtf.Value.AddDays(1) && rt.Recorrente == true) select rt;
+        var agenda = await pagenda.ToListAsync();
+        var pmanutencao = from rt in dl.db.Manutencao where rt.Inicio >= dti && rt.Inicio <= dtf.Value.AddDays(1) select rt;
+        var manutencao = await pmanutencao.ToListAsync();
+
+        List<Schedule> buffer = new List<Schedule>() { };
+        foreach (ManutencaoMarcar item in agenda)
+        {
+            if (item.Recorrente == false)
+            {
+                buffer.Add(new Schedule { Id = item.Id, Operation = item.Operation, Tipo = item.Tipo, Equipamento = item.Equipamento, Exceptions = item.Exceptions, Inicio = item.Inicio, Fim = item.Fim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, DataRealizada = null, OperadorRealizou = null });
+            }
+            else
+            {
+                switch (item.Recorrencia)
+                {
+                    case "Diário":
+                        for (int i = 0; i < (dtf - dti).Value.Days; i++)
+                        {
+                            bool write = true;
+
+                            //veririca onde começa
+                            if (dti.Value.Date.AddDays(i) < item.Inicio.Value.Date)
+                            {
+                                write = false;
+                            }
+
+                            //verifica dim de recorrência
+                            if (item.RecorrenciaEnd != null)
+                            {
+                                if (dti.Value.AddDays(i) >= item.RecorrenciaEnd)
+                                {
+                                    write = false;
+                                }
+                            }
+
+                            DateTime dataini = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Inicio.Value.ToShortTimeString());
+                            DateTime datafim = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Fim.Value.ToShortTimeString());
+
+                            //verifica exceções
+                            if (write == true)
+                            {
+                                if (item.Exceptions != "")
+                                {
+                                    bool towrite = true;
+                                    foreach (string exs in item.Exceptions.Split(";"))
+                                    {
+                                        DateTime a;
+                                        if (DateTime.TryParse(exs, out a) == true)
+                                        {
+                                            if (a.ToShortDateString() == dti.Value.AddDays(i).ToShortDateString())
+                                            {
+                                                towrite = false;
+                                            }
+                                        }
+                                    }
+                                    if (towrite == true)
+                                    {
+                                        buffer.Add(new Schedule { Id = item.Id, Equipamento = item.Equipamento, Operation = item.Operation, Tipo = item.Tipo, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, DataRealizada = null, OperadorRealizou = null });
+                                    }
+                                }
+                                else
+                                {
+                                    buffer.Add(new Schedule { Id = item.Id, Equipamento = item.Equipamento, Operation = item.Operation, Tipo = item.Tipo, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, DataRealizada = null, OperadorRealizou = null });
+                                }
+                            }
+                        }
+                        break;
+                    case "Semanal":
+                        for (int i = 0; i < (dtf - dti).Value.Days; i++)
+                        {
+                            bool write = true;
+
+                            //verifica onde começa
+                            if (dti.Value.Date.AddDays(i) < item.Inicio.Value.Date)
+                            {
+                                write = false;
+                            }
+
+                            //verifica o dia da semana
+                            if (dti.Value.AddDays(i).DayOfWeek != item.Inicio.Value.DayOfWeek)
+                            {
+                                write = false;
+                            }
+
+                            //verifica dim de recorrência
+                            if (item.RecorrenciaEnd != null)
+                            {
+                                if (dti.Value.AddDays(i) >= item.RecorrenciaEnd)
+                                {
+                                    write = false;
+                                }
+                            }
+
+                            DateTime dataini = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Inicio.Value.ToShortTimeString());
+                            DateTime datafim = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Fim.Value.ToShortTimeString());
+
+                            //verifica exceções
+                            if (write == true)
+                            {
+                                if (item.Exceptions != "")
+                                {
+                                    bool towrite = true;
+                                    foreach (string exs in item.Exceptions.Split(";"))
+                                    {
+                                        DateTime a;
+                                        if (DateTime.TryParse(exs, out a) == true)
+                                        {
+                                            if (a.ToShortDateString() == dti.Value.AddDays(i).ToShortDateString())
+                                            {
+                                                towrite = false;
+                                            }
+                                        }
+                                    }
+                                    if (towrite == true)
+                                    {
+                                        buffer.Add(new Schedule { Id = item.Id, Equipamento = item.Equipamento, Operation = item.Operation, Tipo = item.Tipo, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, DataRealizada = null, OperadorRealizou = null });
+                                    }
+                                }
+                                else
+                                {
+                                    buffer.Add(new Schedule { Id = item.Id, Equipamento = item.Equipamento, Operation = item.Operation, Tipo = item.Tipo, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, DataRealizada = null, OperadorRealizou = null });
+                                }
+                            }
+                        }
+                        break;
+                    case "Quinzenal":
+                        for (int i = 0; i < (dtf - dti).Value.Days; i++)
+                        {
+                            bool write = true;
+
+                            //verifica onde começa
+                            if (dti.Value.Date.AddDays(i) < item.Inicio.Value.Date)
+                            {
+                                write = false;
+                            }
+
+                            //verifica o dia da semana
+                            if (dti.Value.AddDays(i).DayOfWeek != item.Inicio.Value.DayOfWeek)
+                            {
+                                write = false;
+                            }
+                            else
+                            {
+                                //verifica a semana par ou impar
+                                int weeknumini = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(item.Inicio.Value, CalendarWeekRule.FirstDay, DayOfWeek.Monday);
+                                int weeknumtod = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(dti.Value.AddDays(i), CalendarWeekRule.FirstDay, DayOfWeek.Monday);
+
+                                if (weeknumini % 2 != weeknumtod % 2)
+                                {
+                                    write = false;
+                                }
+                            }
+
+                            //verifica dim de recorrência
+                            if (item.RecorrenciaEnd != null)
+                            {
+                                if (dti.Value.AddDays(i) >= item.RecorrenciaEnd)
+                                {
+                                    write = false;
+                                }
+                            }
+
+                            DateTime dataini = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Inicio.Value.ToShortTimeString());
+                            DateTime datafim = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Fim.Value.ToShortTimeString());
+
+                            //verifica exceções
+                            if (write == true)
+                            {
+                                if (item.Exceptions != "")
+                                {
+                                    bool towrite = true;
+                                    foreach (string exs in item.Exceptions.Split(";"))
+                                    {
+                                        DateTime a;
+                                        if (DateTime.TryParse(exs, out a) == true)
+                                        {
+                                            if (a.ToShortDateString() == dti.Value.AddDays(i).ToShortDateString())
+                                            {
+                                                towrite = false;
+                                            }
+                                        }
+                                    }
+                                    if (towrite == true)
+                                    {
+                                        buffer.Add(new Schedule { Id = item.Id, Equipamento = item.Equipamento, Operation = item.Operation, Tipo = item.Tipo, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, DataRealizada = null, OperadorRealizou = null });
+                                    }
+                                }
+                                else
+                                {
+                                    buffer.Add(new Schedule { Id = item.Id, Equipamento = item.Equipamento, Operation = item.Operation, Tipo = item.Tipo, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, DataRealizada = null, OperadorRealizou = null });
+                                }
+                            }
+                        }
+                        break;
+                    case "Mensal":
+                        for (int i = 0; i < (dtf - dti).Value.Days; i++)
+                        {
+                            bool write = true;
+
+                            //verifica onde começa
+                            if (dti.Value.Date.AddDays(i) < item.Inicio.Value.Date)
+                            {
+                                write = false;
+                            }
+
+                            //verifica o dia do mês
+                            if (dti.Value.AddDays(i).Day != item.Inicio.Value.Day)
+                            {
+                                write = false;
+                            }
+
+                            //verifica dim de recorrência
+                            if (item.RecorrenciaEnd != null)
+                            {
+                                if (dti.Value.AddDays(i) >= item.RecorrenciaEnd)
+                                {
+                                    write = false;
+                                }
+                            }
+
+                            DateTime dataini = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Inicio.Value.ToShortTimeString());
+                            DateTime datafim = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Fim.Value.ToShortTimeString());
+
+                            //verifica exceções
+                            if (write == true)
+                            {
+                                if (item.Exceptions != "")
+                                {
+                                    bool towrite = true;
+                                    foreach (string exs in item.Exceptions.Split(";"))
+                                    {
+                                        DateTime a;
+                                        if (DateTime.TryParse(exs, out a) == true)
+                                        {
+                                            if (a.ToShortDateString() == dti.Value.AddDays(i).ToShortDateString())
+                                            {
+                                                towrite = false;
+                                            }
+                                        }
+                                    }
+                                    if (towrite == true)
+                                    {
+                                        buffer.Add(new Schedule { Id = item.Id, Equipamento = item.Equipamento, Operation = item.Operation, Tipo = item.Tipo, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, DataRealizada = null, OperadorRealizou = null });
+                                    }
+                                }
+                                else
+                                {
+                                    buffer.Add(new Schedule { Id = item.Id, Equipamento = item.Equipamento, Operation = item.Operation, Tipo = item.Tipo, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, DataRealizada = null, OperadorRealizou = null });
+                                }
+                            }
+                        }
+                        break;
+                    case "Anual":
+                        for (int i = 0; i < (dtf - dti).Value.Days; i++)
+                        {
+                            bool write = true;
+
+                            //verifica onde começa
+                            if (dti.Value.Date.AddDays(i) < item.Inicio.Value.Date)
+                            {
+                                write = false;
+                            }
+
+                            //verifica o dia do ano
+                            if (dti.Value.AddDays(i).DayOfYear != item.Inicio.Value.DayOfYear)
+                            {
+                                write = false;
+                            }
+
+                            //verifica dim de recorrência
+                            if (item.RecorrenciaEnd != null)
+                            {
+                                if (dti.Value.AddDays(i) >= item.RecorrenciaEnd)
+                                {
+                                    write = false;
+                                }
+                            }
+
+                            DateTime dataini = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Inicio.Value.ToShortTimeString());
+                            DateTime datafim = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Fim.Value.ToShortTimeString());
+
+                            //verifica exceções
+                            if (write == true)
+                            {
+                                if (item.Exceptions != "")
+                                {
+                                    bool towrite = true;
+                                    foreach (string exs in item.Exceptions.Split(";"))
+                                    {
+                                        DateTime a;
+                                        if (DateTime.TryParse(exs, out a) == true)
+                                        {
+                                            if (a.ToShortDateString() == dti.Value.AddDays(i).ToShortDateString())
+                                            {
+                                                towrite = false;
+                                            }
+                                        }
+                                    }
+                                    if (towrite == true)
+                                    {
+                                        buffer.Add(new Schedule { Id = item.Id, Equipamento = item.Equipamento, Operation = item.Operation, Tipo = item.Tipo, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, DataRealizada = null, OperadorRealizou = null });
+                                    }
+                                }
+                                else
+                                {
+                                    buffer.Add(new Schedule { Id = item.Id, Equipamento = item.Equipamento, Operation = item.Operation, Tipo = item.Tipo, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, DataRealizada = null, OperadorRealizou = null });
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        foreach (Manutencao item in manutencao)
+        {
+            if (item.Idmarcar == -1)
+            {
+                buffer.Add(new Schedule { Id = item.Id, Equipamento = item.Equipamento, Operation = item.Operation, Tipo = item.Tipo, Exceptions = "", Inicio = null, Fim = null, Notas = item.Notas, Operador = "", Recorrencia = "", RecorrenciaEnd = null, Recorrente = false, DataRealizada = item.Inicio, OperadorRealizou = item.Operador });
+            }
+            else
+            {
+                Schedule marcacao = buffer.FirstOrDefault(x => x.Id == item.Idmarcar);
+                if (marcacao != null)
+                {
+                    marcacao.Id = item.Id;
+                    marcacao.Notas = item.Notas;
+                    marcacao.DataRealizada = item.Inicio;
+                    marcacao.OperadorRealizou = item.Operador;
+                }
+            }
+        }
+        Manutencoes = buffer;
+
+        //gráfico tipo de operação
+        List<AreaChartData> finalist = new List<AreaChartData>();
+        List<string> cpallete = new List<string>();
+
+        var progs = buffer.Select(s => s.Tipo).Distinct();
+        foreach (var item in progs)
+        {
+            finalist.Add(new AreaChartData { Dia = item, Num = buffer.Where(w => w.Tipo == item).Count() });
+            switch (item)
+            {
+                case "Manutenção Reativa":
+                    cpallete.Add("#FF6037");
+                    break;
+                case "Manutenção Preventiva":
+                    cpallete.Add("#00CC99");
+                    break;
+                case "Manutenção Programada":
+                    cpallete.Add("#50BFE6");
+                    break;
+                default:
+                    break;
+            }
+        }
+        RoundChartData = finalist;
+        chartpalettes = cpallete.ToArray();
+
+        //gráfico top equipamentos
+        var topq = buffer.GroupBy(eq => eq.Equipamento).Select(q => new AreaChartData { Dia = q.Key, Num = q.Count() }).OrderByDescending(ord => ord.Num).Take(10);
+        List<AreaChartData> topequip = new List<AreaChartData>();
+        foreach (var item in topq.OrderBy(ord => ord.Num))
+        {
+            topequip.Add(new AreaChartData { Dia = item.Dia, Num = item.Num });
+        }
+        ChartData = topequip;
+
+        //dias sem manutenção, operações efetuadas, operações agendadas
+        var LasOp = await dl.db.Manutencao.OrderByDescending(ze => ze.Id).Take(1).ToListAsync();
+        if (LasOp.Count > 0)
+        {
+            diassman = DateTime.Today.Subtract(LasOp.First().Inicio).Days.ToString();
+        }
+        else
+        {
+            diassman = "--";
+        }
+        opefetuadas = (await dl.db.Manutencao.ToListAsync()).Count().ToString();
+        opagendadas = (await dl.db.ManutencaoMarcar.ToListAsync()).Count().ToString();
+
+
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+        dl.Dispose();
+    }
+
+    //MANUTENÇÃO
+    private bool PopupManutencao = false;
+    private bool PopupDelManutencao = false;
+    public Manutencao selmanutencao = new Manutencao() { };
+
+    private async void editmanutencao(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var doc = dl.db.Manutencao.First(x => x.Id == id);
+        selmanutencao = doc;
+
+        PopupManutencao = true;
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Add_Manutencao(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (id == 0)
+        {
+            if (selmanutencao.Equipamento != "" && selmanutencao.Operation != "" && selmanutencao.Tipo != "")
+            {
+                dl.db.Manutencao.Add(new pulsar.sv.data.Manutencao { Idmarcar = -1, Equipamento = selmanutencao.Equipamento, Operation = selmanutencao.Operation, Inicio = selmanutencao.Inicio, Notas = selmanutencao.Notas, Operador = who.name, Tipo = selmanutencao.Tipo });
+            }
+            else
+            {
+                Erromsg = "Deve preencher corretamente os campos!";
+            }
+
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Inseriu a operação de manutenção '{selmanutencao.Operation}', no equipamento '{selmanutencao.Equipamento}'", "DataLink_L1");
+        }
+        else
+        {
+            dl.db.Manutencao.First(x => x.Id == id).Equipamento = selmanutencao.Equipamento;
+            dl.db.Manutencao.First(x => x.Id == id).Operation = selmanutencao.Operation;
+            dl.db.Manutencao.First(x => x.Id == id).Tipo = selmanutencao.Tipo;
+            dl.db.Manutencao.First(x => x.Id == id).Notas = selmanutencao.Notas;
+            dl.db.Manutencao.First(x => x.Id == id).Inicio = selmanutencao.Inicio;
+            dl.db.Manutencao.First(x => x.Id == id).Operador = who.name;
+
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Alterou a operação de manutenção '{selmanutencao.Operation}', no equipamento '{selmanutencao.Equipamento}'", "DataLink_L1");
+        }
+
+        PopupManutencao = false;
+        selmanutencao = new Manutencao() { };
+
+        await SpinnerObj.HideAsync();
+        SearchData();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Del_Manutencao(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        dl.db.Manutencao.Remove(dl.db.Manutencao.First(x => x.Id == id));
+        await dl.db.SaveChangesAsync();
+        utils.UserLog($"Eliminou a operação de manutenção '{selmanutencao.Operation}', no equipamento '{selmanutencao.Equipamento}'", "DataLink_L1");
+
+        PopupManutencao = false;
+        PopupDelManutencao = false;
+        selmanutencao = new Manutencao() { };
+
+        await SpinnerObj.HideAsync();
+        SearchData();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    //TASK
+    List<Recc> Recs = new List<Recc> {
+               new Recc() { Id = "Diário", Rec = "Diário" },
+               new Recc() { Id = "Semanal", Rec = "Semanal" },
+               new Recc() { Id = "Quinzenal", Rec = "Quinzenal" },
+               new Recc() { Id = "Mensal", Rec = "Mensal" },
+               new Recc() { Id = "Anual", Rec = "Anual" },
+            };
+    private bool PopupTask = false;
+    private bool PopupDelTask_rec = false;
+    private bool PopupDelTask_norec = false;
+    private bool Del_all = false;
+    public bool Urgente = false;
+    public bool Eternal = true;
+    public ManutencaoMarcar seltask = new ManutencaoMarcar() { };
+
+    public void SelRecorrence_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<Recc> args)
+    {
+        seltask.Recorrencia = args.ItemData.Rec;
+    }
+
+    private async void edittask(int id, DateTime? inicio, DateTime? fim)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var doc = dl.db.ManutencaoMarcar.First(x => x.Id == id);
+        seltask = doc;
+        seltask.Inicio = inicio.Value;
+        seltask.Fim = fim.Value;
+
+        if (seltask.Fim == seltask.Inicio)
+        {
+            Urgente = true;
+        }
+        else
+        {
+            Urgente = false;
+        }
+
+        if (seltask.RecorrenciaEnd != null)
+        {
+            Eternal = false;
+        }
+        else
+        {
+            Eternal = true;
+        }
+
+        PopupTask = true;
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Add_Task(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (Urgente == true)
+        {
+            seltask.Inicio = DateTime.Now;
+            seltask.Fim = seltask.Inicio;
+        }
+        else
+        {
+            if (seltask.Fim == seltask.Inicio)
+            {
+                seltask.Fim = seltask.Inicio.Value.AddMinutes(30);
+            }
+        }
+
+        if (Eternal == true)
+        {
+            seltask.RecorrenciaEnd = null;
+        }
+
+        if (id == 0)
+        {
+            if (seltask.Equipamento != "" && seltask.Operation != "" && seltask.Tipo != "")
+            {
+                dl.db.ManutencaoMarcar.Add(new ManutencaoMarcar { Equipamento = seltask.Equipamento, Operation = seltask.Operation, Tipo = seltask.Tipo, Notas = seltask.Notas, AllDay = seltask.AllDay, Inicio = seltask.Inicio, Fim = seltask.Fim, Recorrente = seltask.Recorrente, Recorrencia = seltask.Recorrencia, Exceptions = seltask.Exceptions, RecorrenciaEnd = seltask.RecorrenciaEnd, Operador = "Qualquer Utilizador", Criador = who.name });
+            }
+            else
+            {
+                Erromsg = "Deve preencher corretamente os campos!";
+            }
+
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Inseriu o agendamento de manutenção '{seltask.Operation}', no equipamento '{seltask.Equipamento}'", "DataLink_L1");
+        }
+        else
+        {
+            dl.db.ManutencaoMarcar.First(x => x.Id == id).Equipamento = seltask.Equipamento;
+            dl.db.ManutencaoMarcar.First(x => x.Id == id).Operation = seltask.Operation;
+            dl.db.ManutencaoMarcar.First(x => x.Id == id).Tipo = seltask.Tipo;
+            dl.db.ManutencaoMarcar.First(x => x.Id == id).Notas = seltask.Notas;
+            dl.db.ManutencaoMarcar.First(x => x.Id == id).AllDay = seltask.AllDay;
+            dl.db.ManutencaoMarcar.First(x => x.Id == id).Inicio = seltask.Inicio;
+            dl.db.ManutencaoMarcar.First(x => x.Id == id).Fim = seltask.Fim;
+            dl.db.ManutencaoMarcar.First(x => x.Id == id).Recorrente = seltask.Recorrente;
+            dl.db.ManutencaoMarcar.First(x => x.Id == id).Recorrencia = seltask.Recorrencia;
+            dl.db.ManutencaoMarcar.First(x => x.Id == id).Exceptions = seltask.Exceptions;
+            dl.db.ManutencaoMarcar.First(x => x.Id == id).RecorrenciaEnd = seltask.RecorrenciaEnd;
+            dl.db.ManutencaoMarcar.First(x => x.Id == id).Criador = who.name;
+
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Alterou o agendamento de manutenção '{seltask.Operation}', no equipamento '{seltask.Equipamento}'", "DataLink_L1");
+        }
+
+        PopupTask = false;
+        seltask = new ManutencaoMarcar() { };
+        Urgente = false;
+        Eternal = true;
+
+        await SpinnerObj.HideAsync();
+        SearchData();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Del_Task(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (seltask.Recorrente == true)
+        {
+            if (Del_all == true)
+            {
+                dl.db.ManutencaoMarcar.Remove(dl.db.ManutencaoMarcar.First(x => x.Id == id));
+                await dl.db.Manutencao.Where(x => x.Idmarcar == id).ForEachAsync(x => x.Idmarcar = -1);
+            }
+            else
+            {
+                dl.db.ManutencaoMarcar.First(x => x.Id == id).Exceptions += seltask.Inicio + ";";
+            }
+        }
+        else
+        {
+            dl.db.ManutencaoMarcar.Remove(dl.db.ManutencaoMarcar.First(x => x.Id == id));
+            await dl.db.Manutencao.Where(x => x.Idmarcar == id).ForEachAsync(x => x.Idmarcar = -1);
+        }
+        await dl.db.SaveChangesAsync();
+        utils.UserLog($"Eliminou o agendamento de manutenção '{seltask.Operation}', no equipamento '{seltask.Equipamento}'", "DataLink_L1");
+
+        PopupTask = false;
+        PopupDelTask_rec = false;
+        PopupDelTask_norec = false;
+        seltask = new ManutencaoMarcar() { };
+        Urgente = false;
+        Eternal = true;
+        Del_all = false;
+
+        await SpinnerObj.HideAsync();
+        SearchData();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    public void SelEquipamento_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<Recc> args)
+    {
+        if (PopupTask == true)
+        {
+            seltask.Equipamento = args.ItemData.Id;
+        }
+        if (PopupManutencao == true)
+        {
+            selmanutencao.Equipamento = args.ItemData.Id;
+        }
+    }
+
+    public void SelTipo_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<Recc> args)
+    {
+        if (PopupTask == true)
+        {
+            seltask.Tipo = args.ItemData.Rec;
+        }
+        if (PopupManutencao == true)
+        {
+            selmanutencao.Tipo = args.ItemData.Rec;
+        }
+    }
+
+    //DOCUMENTOS
+    private bool PopupDocs = false;
+    private bool PopupDelDoc = false;
+    private bool PopupNewDoc = false;
+    private bool PopupEditDoc = false;
+    private bool PopupSave = true;
+    public Dcs seldoc = new Dcs() { };
+    public byte[] indoc = new byte[1];
+    public List<Dcs> Documentos = new List<Dcs>() { };
+
+    private async void docs(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var man = dl.db.Manutencao.First(x => x.Id == id);
+        selmanutencao = man;
+
+        //TABELA
+        var pdocs = from rt in dl.db.ManutencaoDocumentos
+                    where rt.Idmanutencao == id
+                    select new Dcs { Id = rt.Id, Nome = rt.Nome, Descricao = rt.Descricao };
+        var dados = await pdocs.ToListAsync();
+        Documentos = dados;
+
+        PopupDocs = true;
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+        dl.Dispose();
+    }
+
+    private void OnChange(UploadChangeEventArgs args)
+    {
+        indoc = args.Files[0].Stream.ToArray();
+        args.Files[0].Stream.Close();
+
+        seldoc.Nome = args.Files[0].FileInfo.Name;
+        PopupSave = false;
+    }
+
+    private void onRemove(RemovingEventArgs args)
+    {
+        indoc = new byte[1];
+        seldoc = new Dcs() { };
+        PopupSave = true;
+        PopupEditDoc = false;
+    }
+
+    private async void Add_Doc()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (indoc.Length > 1)
+        {
+            dl.db.ManutencaoDocumentos.Add(new sv.data.ManutencaoDocumento { Idmanutencao = selmanutencao.Id, Nome = seldoc.Nome, Descricao = seldoc.Descricao, Ficheiro = indoc });
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Inseriu o documento '{seldoc.Nome}' na operação de manutenção '{selmanutencao.Operation}' no equipamento '{selmanutencao.Equipamento}'", "DataLink_L1");
+        }
+        PopupNewDoc = false;
+        PopupEditDoc = false;
+        indoc = new byte[1];
+        seldoc = new Dcs() { };
+
+        await SpinnerObj.HideAsync();
+        docs(selmanutencao.Id);
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void deletedoc(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var doc = dl.db.ManutencaoDocumentos.First(x => x.Id == id);
+        Dcs n = new Dcs() { Descricao = doc.Descricao, Id = doc.Id, Nome = doc.Nome };
+        seldoc = n;
+
+        PopupDelDoc = true;
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Del_Doc(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        dl.db.ManutencaoDocumentos.Remove(dl.db.ManutencaoDocumentos.First(x => x.Id == id));
+        await dl.db.SaveChangesAsync();
+        utils.UserLog($"Eliminou o documento '{seldoc.Nome}' da operação de manutenção '{selmanutencao.Operation}', no equipamento '{selmanutencao.Equipamento}'", "DataLink_L1");
+
+        PopupDelDoc = false;
+        indoc = new byte[1];
+        seldoc = new Dcs() { };
+
+        await SpinnerObj.HideAsync();
+        docs(selmanutencao.Id);
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void downloaddoc(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        byte[] file = dl.db.ManutencaoDocumentos.Where(x => x.Id == id).First().Ficheiro;
+        MemoryStream ms = new MemoryStream(file);
+        JS.SaveAs(dl.db.ManutencaoDocumentos.Where(x => x.Id == id).First().Nome, ms.ToArray());
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    public void CustomizeCell(QueryCellInfoEventArgs<Schedule> args)
+    {
+        if (args.Column.HeaderText == "U")
+        {
+            switch (args.Data.Tipo)
+            {
+                case "Manutenção Reativa":
+                    args.Cell.AddClass(new string[] { "manutencao-reativa" });
+                    break;
+                case "Manutenção Preventiva":
+                    args.Cell.AddClass(new string[] { "manutencao-preventiva" });
+                    break;
+                case "Manutenção Programada":
+                    args.Cell.AddClass(new string[] { "manutencao-programada" });
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+    public class Recc
+    {
+        public string Id { get; set; }
+        public string Rec { get; set; }
+    }
+
+    public class Schedule
+    {
+        public int Id { get; set; }
+        public string Equipamento { get; set; }
+        public string Operation { get; set; }
+        public string Tipo { get; set; }
+        public string Notas { get; set; }
+        public DateTime? Inicio { get; set; }
+        public DateTime? Fim { get; set; }
+        public bool Recorrente { get; set; }
+        public string Recorrencia { get; set; }
+        public string Exceptions { get; set; }
+        public DateTime? RecorrenciaEnd { get; set; }
+        public string Operador { get; set; }
+
+        public DateTime? DataRealizada { get; set; }
+        public string? OperadorRealizou { get; set; }
+    }
+
+    public class Dcs
+    {
+        public int Id { get; set; }
+        public string Nome { get; set; }
+        public string Descricao { get; set; }
+    }
+
+    public class AreaChartData
+    {
+        public string Dia { get; set; }
+        public int Num { get; set; }
+    }
+}

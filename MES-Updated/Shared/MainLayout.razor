@@ -1,0 +1,763 @@
+﻿@using Syncfusion.Blazor.Popups
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject Utils utils
+@inject IJSRuntime JSRuntime
+@inject ThemeState _themeState
+
+<div id="wrapper" style="@btheme">
+
+    <!-- Header -->
+    <header id="header">
+        <div class="inner">
+            <div class="row">
+                <div class="8u 12u$(medium) ">
+                    <!-- LOGO -->
+                    <a href="/" class="logo">
+                        <span class="symbol"><img src="images/mesicon.jpg" alt="" /></span><span class="title">F10 - GESTÃO DA FÁBRICA</span>
+                    </a>
+                </div>
+                <div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;height:32px;margin-bottom:2em;">
+                    <!--USER -->
+                    @if (who != null)
+                    {
+                        <img src="@picture(who.pic)" style="width:32px;height:32px;object-fit:cover;border-radius: 50%;border: 1px solid white;background-color:white;" />
+                        <div style="display:flex;justify-content:center;flex-direction:column;margin-left:20px;margin-right:20px">
+                            <h5 style="margin:0;letter-spacing:0.2em">@who.name</h5>
+                        </div>
+                        <div style="display:flex;justify-content:center;flex-direction:column;width:30px">
+                            <i @onclick="@(()=> { NavigationManager.NavigateTo("settings"); })" class="icon style1 fa-cog smallbot"></i>
+                        </div>
+                        <div style="display:flex;justify-content:center;flex-direction:column;width:30px">
+                            <i @onclick="@(()=> { logout(); })" class="icon style1 fa-sign-out smallbot"></i>
+                        </div>
+                    }
+                </div>
+            </div>
+
+
+            <!-- Nav -->
+            <nav>
+                <ul>
+                    <li><a href="#menu">Menu</a></li>
+                </ul>
+            </nav>
+
+        </div>
+    </header>
+    <!-- Menu -->
+    <nav id="menu">
+        <h2>Menu</h2>
+        <ul>
+            <li><a href="/">HOME</a></li>
+            <li><a href="">GERAL</a></li>
+            <li><a href="linha4">LINHA 4</a></li>
+            <li><a href="equipamentos">EQUIPAMENTOS</a></li>
+            <li><a href="404">STOCKS</a></li>
+        </ul>
+    </nav>
+
+
+    @if (utils.f10session.ContainsKey("user") == true)
+    {
+        @Body
+    }
+
+    <!-- Footer -->
+    <footer id="footer" class="noprint" style="@ftheme">
+        <div class="inner">
+            <section>
+                <h2>Pedido de suporte</h2>
+                <form onsubmit="event.preventDefault(); validateMyForm();">
+                    <div class="field half first">
+                        <input type="text" name="name" id="name" placeholder="Nome" @bind-value="@nome" />
+                    </div>
+                    <div class="field half">
+                        <input type="email" name="email" id="email" placeholder="Email" @bind-value="@email" />
+                    </div>
+                    <div class="field">
+                        <textarea name="message" id="message" placeholder="Mensagem" @bind="@mensagem"></textarea>
+                    </div>
+                    <ul class="actions">
+                        <li><input type="submit" value="Enviar" class="special" @onclick="sendmail" /></li>
+                    </ul>
+                </form>
+            </section>
+            <section>
+                <h2>Atalhos</h2>
+                <ul class="icons">
+                    <li><a href="geral" class="button special"><span class="label">Geral</span></a></li>
+                    <li><a href="equipamentos" class="button special" style="cursor:pointer;"><span class="label">Equips</span></a></li>
+                    <li>
+                        <a href="linha4" class="button special" style="cursor:pointer;">
+                            @if (utils.L1ON == false)
+                            {
+                                <span style="color:red" class="label icon fa-warning"> L1</span>
+                            }
+                            else
+                            {
+                                <span class="label">L4</span>
+                            }
+                        </a>
+                    </li>
+                    <li><a href="utilizadores" class="button special" style="cursor:pointer;"><span class="label">Users</span></a></li>
+                </ul>
+
+            </section>
+            <ul class="copyright">
+                <li>Powered by <a href="http://www.fdecimal.com" target="_blank"> Formula Decimal</a></li>
+            </ul>
+        </div>
+    </footer>
+
+    @*POPUP*@
+    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupMailSend">
+        <DialogTemplates>
+            <Header>A enviar pedido...</Header>
+        </DialogTemplates>
+    </SfDialog>
+    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupMail">
+        <DialogTemplates>
+            <Header>Pedido de Suporte</Header>
+            <Content>
+                <div style="margin-top:1em;margin-bottom:1em;max-height:300px;overflow:auto">
+                    <div style="display: flex; justify-content: center; margin:0.5em">
+                        <p style="margin-top:10px;">@PopupMessage</p>
+                    </div>
+                </div>
+                <SfButton class="button pull-right" @onclick="@(()=> { PopupMail = false;})" style="margin:10px">OK</SfButton>
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
+
+    @*MENSAGEM DE ERRO*@
+    <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupError">
+        <DialogTemplates>
+            <Header>Erro de Ligação</Header>
+            <Content>
+                <p>
+                    @errormsg
+                </p>
+                <SfButton class="button special pull-right" @onclick="@(()=> { PopupError=false; })" style="margin:10px">Ok</SfButton>
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
+
+</div>
+
+@code {
+    User who = null;
+    string btheme = "";
+    string ftheme = "";
+    string nome = "";
+    string email = "";
+    string mensagem = "";
+    bool PopupMailSend = false;
+    bool PopupMail = false;
+    string PopupMessage = "";
+    bool PopupError = false;
+    string errormsg = "";
+
+    protected override void OnInitialized()
+    {
+        _themeState.OnThemeChanged += ApplyTheme;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (utils.f10session.ContainsKey("user") != true)
+        {
+            NavigationManager.NavigateTo("login");
+        }
+        else
+        {
+            if (firstRender == true)
+            {
+                who = (User)utils.f10session["user"];
+
+                ApplyTheme();
+            }
+
+        }
+        base.OnAfterRender(firstRender);
+    }
+
+
+    private void logout()
+    {
+        utils.UserLog($"LOGOUT", "DataLink_MES");
+        NavigationManager.NavigateTo("login");
+    }
+
+    private string picture(Byte[] pic)
+    {
+        if (pic != null)
+        {
+            return "data:image/png;base64," + Convert.ToBase64String(pic);
+        }
+        else
+        {
+            return "data:image/png;base64,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";
+        }
+    }
+
+    private async void sendmail()
+    {
+        PopupMailSend = true;
+        Dictionary<string, string> from = new Dictionary<string, string>();
+        from.Add("Pulsar MES", "pulsar@fdecimal.com");
+        Dictionary<string, string> parato = new Dictionary<string, string>();
+        parato.Add("Apoio F10", "apoio@fdecimal.com");
+
+        if (nome != "" && email != "" && mensagem != "")
+        {
+            parato.Add(nome, email);
+
+            #region EMAIL
+            string body = @"
+    <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+    <html xmlns='http://www.w3.org/1999/xhtml' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:o='urn:schemas-microsoft-com:office:office'>
+    <head>
+    <meta http-equiv='Content-Type' content='text/html; charset=UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Relatório de Tratamento</title>
+    <style type='text/css'>
+    /* ----- Custom Font Import ----- */
+    @import url(https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic&subset=latin,latin-ext);
+
+    /* ----- Text Styles ----- */
+    table{
+    font-family: 'Lato', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-smoothing: antialiased;
+    -moz-font-smoothing: antialiased;
+    }
+
+    @media only screen and (max-width: 700px){
+    /* ----- Base styles ----- */
+    .full-width-container{
+    padding: 0 !important;
+    }
+
+    .container{
+    width: 100% !important;
+    }
+
+    /* ----- Header ----- */
+    .header td{
+    padding: 30px 15px 30px 15px !important;
+    }
+
+    /* ----- Projects list ----- */
+    .projects-list{
+    display: block !important;
+    }
+
+    .projects-list tr{
+    display: block !important;
+    }
+
+    .projects-list td{
+    display: block !important;
+    }
+
+    .projects-list tbody{
+    display: block !important;
+    }
+
+    .projects-list img{
+    margin: 0 auto 25px auto;
+    }
+
+    /* ----- Half block ----- */
+    .half-block{
+    display: block !important;
+    }
+
+    .half-block tr{
+    display: block !important;
+    }
+
+    .half-block td{
+    display: block !important;
+    }
+
+    .half-block__image{
+    width: 100% !important;
+    background-size: cover;
+    }
+
+    .half-block__content{
+    width: 100% !important;
+    box-sizing: border-box;
+    padding: 25px 15px 25px 15px !important;
+    }
+
+    /* ----- Hero subheader ----- */
+    .hero-subheader__title{
+    padding: 80px 15px 15px 15px !important;
+    font-size: 35px !important;
+    }
+
+    .hero-subheader__content{
+    padding: 0 15px 90px 15px !important;
+    }
+
+    /* ----- Title block ----- */
+    .title-block{
+    padding: 0 15px 0 15px;
+    }
+
+    /* ----- Paragraph block ----- */
+    .paragraph-block__content{
+    padding: 25px 15px 18px 15px !important;
+    }
+
+    /* ----- Info bullets ----- */
+    .info-bullets{
+    display: block !important;
+    }
+
+    .info-bullets tr{
+    display: block !important;
+    }
+
+    .info-bullets td{
+    display: block !important;
+    }
+
+    .info-bullets tbody{
+    display: block;
+    }
+
+    .info-bullets__icon{
+    text-align: center;
+    padding: 0 0 15px 0 !important;
+    }
+
+    .info-bullets__content{
+    text-align: center;
+    }
+
+    .info-bullets__block{
+    padding: 25px !important;
+    }
+
+    /* ----- CTA block ----- */
+    .cta-block__title{
+    padding: 35px 15px 0 15px !important;
+    }
+
+    .cta-block__content{
+    padding: 20px 15px 27px 15px !important;
+    }
+
+    .cta-block__button{
+    padding: 0 15px 0 15px !important;
+    }
+    }
+    </style>
+
+    <!--[if gte mso 9]><xml>
+    <o:OfficeDocumentSettings>
+    <o:AllowPNG/>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings>
+    </xml><![endif]-->
+    </head>
+
+    <body style='padding: 0; margin: 0;' bgcolor='#eeeeee'>
+    <span style='color:transparent !important; overflow:hidden !important; display:none !important; line-height:0px !important; height:0 !important; opacity:0 !important; visibility:hidden !important; width:0 !important; mso-hide:all;'>Pulsar MES - Zincral - " + mensagem + @"
+
+    <!-- / Full width container -->
+    <table class='full-width-container' border='0' cellpadding='0' cellspacing='0' height='100%' width='100%' bgcolor='#eeeeee' style='width: 100%; height: 100%; padding: 30px 0 30px 0;'>
+    <tr>
+    <td align='center' valign='top'>
+    <!-- / 700px container -->
+    <table class='container' border='0' cellpadding='0' cellspacing='0' width='700' bgcolor='#ffffff' style='width: 700px;'>
+    <tr>
+    <td align='center' valign='top'>
+    <!-- / Header -->
+    <table class='container header' border='0' cellpadding='0' cellspacing='0' width='620' style='width: 620px;'>
+    <tr>
+    <td style='padding: 30px 0 30px 0; border-bottom: solid 1px #eeeeee;' align='left'>
+        <img src='https://cloud.fdecimal.com/template/img/pulsarblk.png'>
+    </td>
+    </tr>
+    </table>
+    <!-- /// Header -->
+    <!-- / Hero subheader -->
+    <table class='container hero-subheader' border='0' cellpadding='0' cellspacing='0' width='620' style='width: 620px;'>
+    <tr>
+    <td class='hero-subheader__title' style='font-size: 43px; font-weight: bold; padding: 80px 0 15px 0;' align='left'>MES - Zincral - Suporte</td>
+    </tr>
+
+    <tr>
+    <td class='hero-subheader__content' style='font-size: 16px; line-height: 27px; color: #969696; padding: 0 60px 90px 0;' align='left'>Nome: " + nome + @"<br />Email: " + email + @"<br /><br />Mensagem:<br />" + mensagem.Replace("\n", "<br/>") + @" <br /><br /></td>
+    </tr>
+    </table>
+    <!-- /// Hero subheader -->
+    <!-- / Footer -->
+    <table class='container' border='0' cellpadding='0' cellspacing='0' width='100%' align='center'>
+    <tr>
+    <td align='center'>
+        <table class='container' border='0' cellpadding='0' cellspacing='0' width='620' align='center' style='border-top: 1px solid #eeeeee; width: 620px;'>
+            <tr>
+                <td style='text-align: center; padding: 50px 0 10px 0;'>Enviado por " + who.name + @" em " + DateTime.Now.ToString() + @"</td>
+            </tr>
+
+            <tr>
+                <td style='color: #d5d5d5; text-align: center; font-size: 15px; padding: 10px 0 60px 0; line-height: 22px;'>Powered by <a href='http://www.fdecimal.com/' target='_blank' style='text-decoration: none; border-bottom: 1px solid #d5d5d5; color: #d5d5d5;'>Formula Decimal</a>.</td>
+            </tr>
+        </table>
+    </td>
+    </tr>
+    </table>
+    <!-- /// Footer -->
+    </td>
+    </tr>
+    </table>
+    </td>
+    </tr>
+    </table>
+    </body>
+    </html>
+    ";
+            #endregion
+
+            Dictionary<string, byte[]> anexos = new Dictionary<string, byte[]>();
+            await f10.core.api.Client.MailService.sendmail(from, parato, "MES - F10 - Suporte", body, null, null, anexos);
+
+            nome = "";
+            email = "";
+            mensagem = "";
+            PopupMailSend = false;
+            PopupMessage = "Pedido de suporte enviado com sucesso! Por favor aguarda uma resposta por parte da Equipa de Apoio da Formula Decimal";
+            PopupMail = true;
+            StateHasChanged();
+        }
+        else
+        {
+            PopupMailSend = false;
+            PopupMessage = "Erro ao enviar pedido de suporte! Deve preencher os campos Nome, Email e Mensagem.";
+            PopupMail = true;
+        }
+    }
+
+
+    private void ApplyTheme()
+    {
+        if (utils.DarkTheme == true)
+        {
+            btheme = "background-color: #1a1a1a; color: white;";
+            ftheme = "background-color: #272727; color: white;";
+            utils.ctheme = Theme.BootstrapDark;
+            utils.cthemetitle = "White";
+        }
+        else
+        {
+            btheme = "";
+            ftheme = "";
+            utils.ctheme = Theme.Material;
+            utils.cthemetitle = "Black";
+        }
+
+        StateHasChanged();
+
+    }
+
+    public void Dispose()
+    {
+        _themeState.OnThemeChanged -= ApplyTheme;
+    }
+}
+
+
+@*DARKTHEME*@
+@if (utils.DarkTheme == true)
+{
+    <style>
+        .e-grid {
+            background-color: #272727 !important;
+            color: #ffffff !important;
+        }
+
+            .e-grid .e-groupdroparea {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-gridheader {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-headercell {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-headercelldiv {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-gridcontent {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-columnheader {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-table {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-altrow {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-rowcell {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-groupcaption {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-selectionbackground {
+                background-color: #ffffff !important;
+                color: #272727 !important;
+            }
+
+            .e-grid .e-pager {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-pagercontainer {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-parentmsgbar {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-gridfooter {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-summaryrow {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-summarycell {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+            .e-grid .e-toolbar .e-toolbar-items .e-toolbar-item .e-tbar-btn-text,
+            change color color-profile icons input toolbar
+            e-grid .e-toolbar .e-toolbar-items .e-toolbar-item .e-icons {
+                background-color: #272727 !important;
+                color: white !important;
+            }
+
+            .e-grid .e-toolbar,
+            .e-grid .e-toolbar .e-toolbar-items,
+            .e-grid .e-toolbar .e-toolbar-items .e-toolbar-item,
+            .e-grid .e-toolbar .e-toolbar-items .e-toolbar-item button {
+                background-color: #272727 !important;
+                color: #ffffff !important;
+            }
+
+
+        .e-tab .e-content .e-item {
+            color: #ffffff !important;
+        }
+
+
+
+
+
+
+        /*DIALOG*/
+        .e-dialog .e-footer-content {
+            background-color: #272727 !important;
+            color: #ffffff !important;
+        }
+
+        .e-dialog.e-control.e-popup, .e-dialog.e-control.e-popup .e-dlg-header-content {
+            background-color: #272727 !important;
+            color: #ffffff !important;
+        }
+
+        .e-dialog .e-dlg-content {
+            background-color: #272727 !important;
+            color: #ffffff !important;
+        }
+
+        .e-dialog .e-dlg-content {
+            background-color: #272727 !important;
+            color: #ffffff !important;
+        }
+
+        .e-dialog .e-dlg-header {
+            background-color: #272727 !important;
+            color: #ffffff !important;
+        }
+
+        .e-input {
+            background-color: #272727 !important;
+            color: #ffffff !important;
+        }
+
+        .e-input-group, .e-input-group.e-control-wrapper, .e-float-input, .e-float-input.e-input-group, .e-float-input.e-control-wrapper, .e-float-input.e-input-group.e-control-wrapper {
+            background-color: #272727 !important;
+            color: #ffffff !important;
+        }
+
+
+        /*LISTBOX*/
+        .e-listbox-wrapper .e-list-header,
+        .e-listbox-container .e-list-header {
+            background-color: #272727 !important;
+            color: #ffffff !important;
+        }
+
+        .e-listbox-wrapper.e-list-template .e-list-wrapper.e-list-multi-line .e-list-item-header, .e-listbox-container.e-list-template .e-list-wrapper.e-list-multi-line .e-list-item-header {
+            color: #ffffff !important;
+        }
+
+        .e-listbox-wrapper .e-list-item,
+        .e-listbox-container .e-list-item {
+            background-color: #272727 !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.13) !important;
+            border-left: 0 solid rgba(0, 0, 0, 0.13);
+            border-right: 0 solid rgba(0, 0, 0, 0.13);
+            border-top: 0 solid transparent;
+            color: #ffffff !important;
+        }
+
+            .e-listbox-wrapper .e-list-item:hover:not(.e-selected):not(.e-disabled),
+            .e-listbox-wrapper .e-list-item:hover.e-selected.e-checklist:not(.e-disabled),
+            .e-listbox-container .e-list-item:hover:not(.e-selected):not(.e-disabled),
+            .e-listbox-container .e-list-item:hover.e-selected.e-checklist:not(.e-disabled) {
+                background-color: #1a1a1a !important;
+                border-color: transparent;
+                color: #ffffff !important;
+            }
+
+            .e-listbox-wrapper .e-list-item.e-selected,
+            .e-listbox-container .e-list-item.e-selected {
+                background-color: #007bff !important;
+                color: #ffffff !important;
+            }
+
+                .e-listbox-wrapper .e-list-item.e-selected.e-checklist,
+                .e-listbox-container .e-list-item.e-selected.e-checklist {
+                    background-color: #007bff !important;
+                    color: #ffffff !important;
+                }
+
+            .e-listbox-wrapper .e-list-item.e-focused,
+            .e-listbox-wrapper .e-list-item.e-focused.e-selected.e-checklist,
+            .e-listbox-container .e-list-item.e-focused,
+            .e-listbox-container .e-list-item.e-focused.e-selected.e-checklist {
+                background-color: #007bff !important;
+                color: #ffffff !important;
+            }
+
+                .e-listbox-wrapper .e-list-item.e-focused .e-checkbox-wrapper .e-frame.e-check,
+                .e-listbox-wrapper .e-list-item.e-focused .e-css.e-checkbox-wrapper .e-frame.e-check,
+                .e-listbox-container .e-list-item.e-focused .e-checkbox-wrapper .e-frame.e-check,
+                .e-listbox-container .e-list-item.e-focused .e-css.e-checkbox-wrapper .e-frame.e-check {
+                    background-color: #007bff !important;
+                    color: #ffffff !important;
+                }
+
+        .e-listbox-wrapper .e-list-group-item,
+        .e-listbox-container .e-list-group-item {
+            background-color: #007bff !important;
+            color: #ffffff !important;
+        }
+
+        .e-listbox-wrapper .e-selectall-parent,
+        .e-listbox-container .e-selectall-parent {
+            background-color: #007bff !important;
+            color: #ffffff !important;
+        }
+
+
+
+        /*TREEVIEW*/
+        .e-treeview .e-list-text {
+            color: #ffffff !important;
+        }
+
+
+
+
+        /*MENU*/
+        #header nav ul li a {
+            background-color: #1a1a1a !important;
+        }
+
+        /*KPI - quadrados das páginas gerais*/
+        .kpi {
+            background-color: #272727 !important;
+            color: #ffffff !important;
+        }
+
+        .kpi2 {
+            background-color: #272727 !important;
+            color: #ffffff !important;
+        }
+
+        .a {
+            color: #ffffff !important;
+        }
+
+        .label {
+            color: #ffffff !important;
+        }
+
+
+        input[type="submit"], input[type="reset"], input[type="button"], button, .button {
+            box-shadow: inset 0 0 0 2px #ffffff;
+            color: #ffffff !important;
+        }
+
+
+        .text-dark {
+            color: #ffffff !important;
+        }
+
+        .bg-light {
+            background-color: #272727 !important;
+        }
+
+
+
+        .bounceball::before {
+            background-color: #3297BD !important;
+        }
+
+        .bounceballtext {
+            color: #3297BD !important;
+        }
+
+    </style>
+}
+

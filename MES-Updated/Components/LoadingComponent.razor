@@ -1,0 +1,11 @@
+﻿@*LoadingComponent*@
+
+<div style="min-height:100%; min-width:100%">
+    <SfSpinner Type="SpinnerType.Material" Visible="true" Label="@Text" />
+</div>
+
+@code {
+
+    [Parameter]
+    public string Text { get; set; } = "A carregar…";
+}

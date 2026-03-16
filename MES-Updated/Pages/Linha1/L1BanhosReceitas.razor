@@ -1,0 +1,235 @@
+﻿@page "/linha1/banhosreceitas"
+@using MySqlConnector
+@using f10.pulsar.mes.Components
+@using f10.pulsar.mes.Enums
+@using f10.pulsar.sv.data
+
+@inject NavigationManager NavigationManager
+@inject Utils Utils
+@inject IBanhoReceitaRepository BanhoReceitasService
+
+<BasePage State="State" LoadingText="A carregar receitas dos banhos..." OnReload="LoadAsync">
+
+    <!-- HEADER -->
+    <div class="row">
+        <div class="8u">
+            <h1>Gestão das Receitas dos Banhos</h1>
+        </div>
+        <div class="4u" style="display:flex;justify-content:flex-end;">
+            <button @onclick="BackStreetButton" title="Voltar">
+                <i class="icon fa-arrow-left"></i>
+            </button>
+            <button onclick="window.print()" title="Imprimir">
+                <i class="icon fa-print"></i>
+            </button>
+            <button @onclick="NewReceita" title="Adicionar">
+                <i class="icon fa-plus"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <SfTab>
+        <TabEvents Selected="OnTabSelected" />
+        <TabItems>
+            <TabItem><TabHeader Text="Ativos" /></TabItem>
+            <TabItem><TabHeader Text="Inativos" /></TabItem>
+        </TabItems>
+    </SfTab>
+
+    <!-- GRID -->
+    <SfGrid DataSource="@ReceitasBanhosFiltrados"
+            AllowFiltering="true"
+            AllowSorting="true"
+            AllowPaging="true" >
+        <GridPageSettings PageSize="20" />
+
+        <GridColumns>
+            <GridColumn Width="10%">
+                <Template>
+                    @{
+                        var r = context as BanhoReceita;
+                        <button class="sf-btn-xs" style="margin-right:1px">
+                            <i class="icon fa-edit fa-2x"
+                               title="Editar"
+                               style="cursor:pointer"
+                               @onclick="() => EditReceita(r)" />
+                        </button>
+
+                        <button class="sf-btn-xs">
+                            <i class="icon fa-arrow-right fa-2x"
+                               title="Parâmetros"
+                               style="cursor:pointer"
+                               @onclick="() => OpenParametros(r.Id)" />
+                        </button>
+
+
+                    }
+                </Template>
+            </GridColumn>
+            <GridColumn Field="Name" HeaderText="Nome Receita" />
+            <GridColumn Field="DateCreated" HeaderText="Data Criação" />
+            <GridColumn Field="WhoCreated" HeaderText="Autor" />
+            <GridColumn Field="IsActive" DisplayAsCheckBox="true" HeaderText="Estado" Width="10%" Type="ColumnType.Boolean" />
+
+        </GridColumns>
+
+        <GridTemplates>
+            <EmptyRecordTemplate>
+                <p style="margin:1em">Sem receitas de banhos registados.</p>
+            </EmptyRecordTemplate>
+        </GridTemplates>
+
+    </SfGrid>
+
+    <!-- POPUP ADD / EDIT -->
+    <SfDialog Width="500px" IsModal="true" ShowCloseIcon="false" Visible="@PopupVisible">
+
+        <DialogTemplates>
+            <Header>@PopupTitle</Header>
+
+            <Content>
+                <SfTextBox @bind-Value="EditModel.Name" Placeholder="Nome Banho" FloatLabelType="FloatLabelType.Always" style="margin:0.5em" />
+
+                @if (IsEdit)
+                {
+                    <div class="row">
+                        <div style="display: flex; justify-content: left; margin:0.5em">
+                            <p style="width:6.5em;margin:0;margin-top:10px;">Ativo</p>
+                            <SfSwitch @bind-Checked="EditModel.IsActive" style="margin:1em"/>
+                        </div>
+                    </div>
+                }
+
+                <div style="margin-top:1em;text-align:right">
+                    <SfButton class="button special pull-right" style="margin:10px" @onclick="Save">Guardar</SfButton>
+                    <SfButton class="button pull-right" style="margin:10px" @onclick="ClosePopup">Cancelar</SfButton>
+                </div>
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
+
+</BasePage>
+
+@code {
+
+    // DATA
+    List<pulsar.sv.data.BanhoReceita> ReceitasBanhos = new();
+
+    bool ShowActive = true;
+
+    IEnumerable<pulsar.sv.data.BanhoReceita> ReceitasBanhosFiltrados =>
+        ReceitasBanhos.Where(b => b.IsActive == ShowActive);
+
+    // POPUP
+    enum EditMode { None, New, Edit }
+    EditMode Mode = EditMode.None;
+
+    bool PopupVisible => Mode != EditMode.None;
+    bool IsEdit => Mode == EditMode.Edit;
+
+    string PopupTitle =>
+        Mode == EditMode.New ? "Adicionar Receita" : "Editar Receita";
+
+    pulsar.sv.data.BanhoReceita EditModel = new();
+
+    // PAGE
+    PageState State = PageState.Loading;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Utils.CanAccess("B"))
+        {
+            State = PageState.NoAccess;
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    async Task LoadAsync()
+    {
+        try
+        {
+            State = PageState.Loading;
+            ReceitasBanhos = await BanhoReceitasService.GetAllAsync();
+            State = PageState.Ready;
+        }
+        catch (MySqlException)
+        {
+            State = PageState.NoDatabase;
+        }
+        catch
+        {
+            State = PageState.Error;
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    // TABS
+    void OnTabSelected(SelectEventArgs args)
+    {
+        ShowActive = args.SelectedIndex == 0;
+    }
+
+    // POPUP ACTIONS
+    void NewReceita()
+    {
+        var who = (mes.data.User)Utils.f10session["user"];
+        EditModel = new() { WhoCreated = (short)who.id, DateCreated = DateTime.Now, IsActive = true };
+        Mode = EditMode.New;
+    }
+
+    void EditReceita(pulsar.sv.data.BanhoReceita banho)
+    {
+        EditModel = new()
+        {
+            Id = banho.Id,
+            Name = banho.Name,
+            WhoCreated = banho.WhoCreated,
+            DateCreated = banho.DateCreated,
+            WhoUpdated = banho.WhoUpdated,
+            DateUpdated = banho.DateUpdated,
+            IsActive = banho.IsActive
+        };
+        Mode = EditMode.Edit;
+    }
+
+    async Task Save()
+    {
+        try
+        {
+            State = PageState.Loading;
+            if (!IsEdit)
+                await BanhoReceitasService.AddAsync(EditModel);
+            else
+                await BanhoReceitasService.UpdateAsync(EditModel);
+
+                Mode = EditMode.None;
+            await LoadAsync();
+        }
+        catch
+        {
+            State = PageState.Error;
+        }
+    }
+
+    void ClosePopup()
+    {
+        Mode = EditMode.None;
+        EditModel = new();
+    }
+
+    void OpenParametros(int receitaId)
+    {
+        NavigationManager.NavigateTo($"/linha1/banhosreceitas/{receitaId}");
+    }
+
+    void BackStreetButton() => NavigationManager.NavigateTo("/linha1/banhos");
+
+}

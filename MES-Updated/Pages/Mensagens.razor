@@ -1,0 +1,1016 @@
+﻿@page "/mensagens"
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Spinner
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Microsoft.EntityFrameworkCore
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject Utils utils
+<!-- Main -->
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <p style="margin:0;">Sem ligação à base de dados Geral.</p>
+                                <a href="/" class="special button" style="margin-top:1em">Voltar</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                <div class="8u 12u$(medium)">
+                    <h1>Mensagens</h1>
+                    @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                </div>
+                <div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+                    <button class="noprint" @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                    <button class="noprint" onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                    <button @onclick="@(()=> { novomessage(); })" title="Nova Mensagem"><i class="icon style1 fa-plus"></i></button>
+                </div>
+            </div>
+
+            <div class="row uniform">
+                <SfTab>
+                    <TabItems>
+                        <TabItem>
+                            <ChildContent>
+                                <TabHeader Text="RECEBIDAS"></TabHeader>
+                            </ChildContent>
+                            <ContentTemplate>
+                                @if (GMessages != null && GMessages.Count > 0)
+                                {
+                                    @*TABELA*@
+                                    <div>
+                                        <SfGrid @ref="@Grid" DataSource="@GMessages" AllowFiltering="true" AllowSorting="true" AllowGrouping="true">
+                                            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                                            <GridEvents OnRecordDoubleClick="RecordDoubleClickHandler" QueryCellInfo="CustomizeCell" TValue="msg"></GridEvents>
+                                            <GridColumns>
+                                                <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+                                                    <Template>
+                                                        @{
+                                                    var whois = (context as msg);
+                                                    <div style="display: flex; justify-content: space-between;">
+                                                        <p @onclick="@(()=> { readmessage(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label">Ler</span></p>
+                                                    </div>
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                        <GridColumn HeaderText="" TextAlign="TextAlign.Right" Width="50">
+                                            <Template>
+                                                @{
+                                                    var whois1 = (context as msg);
+                                                    <div>
+                                                        @if (whois1.pic != null)
+                                                        {
+                                                            <span><img src="@picture(whois1.pic)" style="width:32px;height:32px;object-fit:cover;border-radius: 50%;border: 1px solid black;" /></span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="e-avatar e-avatar-circle e-color-@(whois1.Avatar)" style="width:32px;height:32px;object-fit:cover;border-radius: 50%;">@(whois1.Avatar)</span>
+                                                        }
+                                                    </div>
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                        <GridColumn Field="From" HeaderText="Enviado por"></GridColumn>
+                                        <GridColumn Field="Date" HeaderText="Data de envio" Type="ColumnType.DateTime"></GridColumn>
+                                        <GridColumn Field="Lida" HeaderText="">
+                                            <Template>
+                                                @{
+                                                    var whois1 = (context as msg);
+                                                    <div>
+                                                        @if (whois1.Lida == "")
+                                                        {
+                                                            <span class="e-badge e-badge-info">não lida</span>
+                                                        }
+                                                    </div>
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                    </GridColumns>
+                                </SfGrid>
+                            </div>
+                                }
+                                else
+                                {
+                                    <div class="row uniform" style="margin-top:20px">
+                                        <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                                            <div class="card text-dark bg-light">
+                                                <div class="card-body">
+                                                    <p style="margin:0;">Sem mensagens recebidas.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </ContentTemplate>
+                        </TabItem>
+                        <TabItem>
+                            <ChildContent>
+                                <TabHeader Text="ENVIADAS"></TabHeader>
+                            </ChildContent>
+                            <ContentTemplate>
+                                @if (SMessages != null && SMessages.Count > 0)
+                                {
+                                    @*TABELA*@
+                                    <div>
+                                        <SfGrid @ref="@Grid2" DataSource="@SMessages" AllowFiltering="true" AllowSorting="true" AllowGrouping="true">
+                                            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                                            <GridEvents OnRecordDoubleClick="SendRecordDoubleClickHandler" QueryCellInfo="SendCustomizeCell" TValue="msg"></GridEvents>
+                                            <GridColumns>
+                                                <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+                                                    <Template>
+                                                        @{
+                                                    var whois = (context as msg);
+                                                    <div style="display: flex; justify-content: space-between;">
+                                                        <p @onclick="@(()=> { editmessage(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label">Editar</span></p>
+                                                    </div>
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                        <GridColumn Field="To" HeaderText="Enviada a">
+                                            <Template>
+                                                @{
+                                                    var whois1 = (context as msg);
+                                                    foreach (msgto item in whois1.ListaTo)
+                                                    {
+                                                        <div style="display: flex; justify-content: left;">
+                                                            @if (item.pic != null)
+                                                            {
+                                                                <span><img src="@picture(item.pic)" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 1px solid black; margin: 0.1em;" /></span>
+                                                            }
+                                                            else
+                                                            {
+                                                                if (item.user == "All")
+                                                                {
+                                                                    <span class="e-avatar e-avatar-circle" style="width:32px;height:32px;object-fit:cover;border-radius: 50%; margin:0.1em;">TD</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="e-avatar e-avatar-circle e-color-@(item.nome.Substring(0,1))" style="width:32px;height:32px;object-fit:cover;border-radius: 50%; margin:0.1em;">@(item.nome.Substring(0, 1))</span>
+                                                                }
+                                                            }
+                                                            <p style="margin:0; margin-left:0.2em; margin-top:0.5em">@item.nome</p>
+                                                        </div>
+                                                    }
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                        <GridColumn Field="Date" HeaderText="Data" Type="ColumnType.DateTime" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                        <GridColumn Field="Lida" HeaderText="">
+                                            <Template>
+                                                @{
+                                                    var whois1 = (context as msg);
+                                                    <div>
+                                                        @if (whois1.Lida == "")
+                                                        {
+                                                            <span class="e-badge e-badge-info">não lida</span>
+                                                        }
+                                                    </div>
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                    </GridColumns>
+                                </SfGrid>
+                            </div>
+                                }
+                                else
+                                {
+                                    <div class="row uniform" style="margin-top:20px">
+                                        <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                                            <div class="card text-dark bg-light">
+                                                <div class="card-body">
+                                                    <p style="margin:0;">Sem mensagens enviadas</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </ContentTemplate>
+                        </TabItem>
+                    </TabItems>
+                </SfTab>
+            </div>
+
+
+            @*ADICIONAR*@
+            <SfDialog Target="#target" Width="800px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupNewMessage">
+                <DialogTemplates>
+                    <Header>Nova Mensagem</Header>
+                    <Content>
+                        <div class="row" style="margin-top:1em;margin-bottom:1em;max-height:300px;overflow:auto">
+                            <div class="6u 12u$(medium)">
+                                <div style="justify-content: left; margin:0.5em">
+                                    <p style="margin:0;margin-top:10px;">Enviar (utilize o botão ctrl para selecionar vários)</p>
+                                    <SfListBox @ref="SfListBoxNew" DataSource="@ListContacts" TValue="string[]" TItem="DataModel" CssClass="e-list-template" Width="350" @bind-Value="@SelUsers">
+                                        <ListBoxFieldSettings Value="Utilizador" Text="Text"></ListBoxFieldSettings>
+                                        <ListBoxSelectionSettings Mode="Syncfusion.Blazor.DropDowns.SelectionMode.Multiple"></ListBoxSelectionSettings>
+                                        <ListBoxTemplates TItem="DataModel">
+                                            <ItemTemplate>
+                                                <div class="e-list-wrapper e-list-multi-line e-list-avatar">
+                                                    @if (((context as DataModel).Pic) == null)
+                                                    {
+                                                        if (((context as DataModel).Avatar) != "")
+                                                        {
+                                                            <span class="e-avatar e-avatar-circle e-color-@((context as DataModel).Avatar)">@((context as DataModel).Avatar)</span>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="e-avatar e-avatar-circle"><img src="@picture((context as DataModel).Pic)" /></span>
+                                                    }
+                                                    <span class="e-list-item-header">@((context as DataModel).Nome)</span>
+                                                </div>
+                                            </ItemTemplate>
+                                        </ListBoxTemplates>
+                                    </SfListBox>
+                                </div>
+                            </div>
+                            <div class="6u 12u$(medium)">
+                                <div style="justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Mensagem</p>
+                                    <SfTextBox Multiline="true" Placeholder="" @bind-Value="@selmessage.Mensagem" style="height:250px;margin-left:10px;margin-top:10px;padding:0"></SfTextBox>
+                                </div>
+                            </div>
+                        </div>
+                        <SfButton class="button special pull-right" @onclick="@(()=> { Add_Message(0); })" style="margin:10px">Guardar</SfButton>
+                        <SfButton class="button pull-right" @onclick="@(()=> { PopupNewMessage = false; idMessage = 0; selmessage = new msg() { }; })" style="margin:10px">Cancelar</SfButton>
+                    </Content>
+                </DialogTemplates>
+            </SfDialog>
+            @*EDITAR*@
+            <SfDialog Target="#target" Width="800px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupEditMessage">
+                <DialogTemplates>
+                    <Header>Editar Mensagem</Header>
+                    <Content>
+                        <div class="row" style="margin-top:1em;margin-bottom:1em;max-height:300px;overflow:auto">
+                            <div class="6u 12u$(medium)">
+                                <div style="justify-content: left; margin:0.5em">
+                                    <p style=";margin:0;margin-top:10px;">Enviada (utilize o botão ctrl para selecionar vários)</p>
+                                    <SfListBox @ref="SfListBoxEdit" DataSource="@ListContacts" TValue="string[]" TItem="DataModel" CssClass="e-list-template" Width="350" @bind-Value="@SelUsers">
+                                        <ListBoxFieldSettings Value="Utilizador" Text="Text"></ListBoxFieldSettings>
+                                        <ListBoxSelectionSettings Mode="Syncfusion.Blazor.DropDowns.SelectionMode.Multiple"></ListBoxSelectionSettings>
+                                        <ListBoxTemplates TItem="DataModel">
+                                            <ItemTemplate>
+                                                <div class="e-list-wrapper e-list-multi-line e-list-avatar">
+                                                    @if (((context as DataModel).Pic) == null)
+                                                    {
+                                                        if (((context as DataModel).Avatar) != "")
+                                                        {
+                                                            <span class="e-avatar e-avatar-circle e-color-@((context as DataModel).Avatar)">@((context as DataModel).Avatar)</span>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="e-avatar e-avatar-circle"><img src="@picture((context as DataModel).Pic)" /></span>
+                                                    }
+                                                    <span class="e-list-item-header">@((context as DataModel).Nome)</span>
+                                                </div>
+                                            </ItemTemplate>
+                                        </ListBoxTemplates>
+                                    </SfListBox>
+                                </div>
+                            </div>
+                            <div class="6u 12u$(medium)">
+                                <div style="justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Mensagem</p>
+                                    <SfTextBox Multiline="true" Placeholder="" @bind-Value="@selmessage.Mensagem" style="height:100px;margin-left:10px;margin-top:10px;padding:0"></SfTextBox>
+                                </div>
+                                <div style="justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Lida por</p>
+                                    @{
+                                        if (selmessage.Lida != null && selmessage.Lida != "")
+                                        {
+                                            foreach (msgto item in selmessage.LidaPor)
+                                            {
+                                                <div style="display: flex; justify-content: left;">
+                                                    @if (item.pic != null)
+                                                    {
+                                                        <span><img src="@picture(item.pic)" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 1px solid black; margin: 0.1em;" /></span>
+                                                    }
+                                                    else
+                                                    {
+                                                        if (item.user != "")
+                                                        {
+                                                            <span class="e-avatar e-avatar-circle e-color-@(item.nome.Substring(0,1))" style="width:32px;height:32px;object-fit:cover;border-radius: 50%; margin:0.1em;">@(item.nome.Substring(0, 1))</span>
+                                                        }
+                                                    }
+                                                    <p style="margin:0; margin-left:0.2em; margin-top:0.5em">@item.nome</p>
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <p style="margin:0;margin-top:10px;">Ainda nenhum utilizador leu esta mensagem!</p>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        @if (selmessage.Id != 0)
+                        {
+                            <SfButton class="button special pull-left" @onclick="@(()=> { PopupDelMessage=true; })" style="margin:10px">Eliminar</SfButton>
+                        }
+                        <SfButton class="button special pull-right" @onclick="@(()=> { Add_Message(idMessage); })" style="margin:10px">Guardar</SfButton>
+                        <SfButton class="button pull-right" @onclick="@(()=> { PopupEditMessage = false; idMessage = 0; selmessage = new msg() { }; })" style="margin:10px">Cancelar</SfButton>
+                    </Content>
+                </DialogTemplates>
+
+            </SfDialog>
+
+            <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelMessage">
+                <DialogTemplates>
+                    <Header>Eliminar Mensagem</Header>
+                    <Content>
+                        <p>
+                            A eliminação da mensagem é permanente.<br />
+                            Pretende realmente eliminar a mensagem?
+                        </p>
+                        <SfButton class="button special pull-right" @onclick="@(()=> { Del_Message(selmessage.Id); })" style="margin:10px">Sim</SfButton>
+                        <SfButton class="button pull-right" @onclick="@(()=> { PopupDelMessage=false; })" style="margin:10px">Não</SfButton>
+                    </Content>
+                </DialogTemplates>
+            </SfDialog>
+
+
+
+            @*LER*@
+            <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupReadMessage">
+                <DialogTemplates>
+                    <Header>Mensagem</Header>
+                    <Content>
+                        <div style="display: flex; justify-content: left; margin:0.5em">
+                            <p style="width:8em;margin:0;margin-top:10px;">Enviada por</p>
+                            @if (selmessage.pic != null)
+                            {
+                                <img src="@picture(selmessage.pic)" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 1px solid black; margin: 0; margin-left: 10px; margin-top: 5px; padding: 0" />
+                            }
+                            else
+                            {
+                                <span class="e-avatar e-avatar-circle e-color-@(selmessage.Avatar)" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; margin: 0; margin-left: 10px; margin-top: 5px; padding: 0">@(selmessage.Avatar)</span>
+                            }
+                            <p style="margin: 0; margin-left: 10px; margin-top: 10px; padding: 0">@selmessage.From</p>
+                        </div>
+                        <div style="display: flex; justify-content: left; margin:0.5em">
+                            <p style="width:8em;margin:0;margin-top:10px;">Data</p>
+                            <p style="margin: 0; margin-left: 10px; margin-top: 10px; padding: 0">@selmessage.Date</p>
+                        </div>
+                        <div style="display: flex; justify-content: left; margin:0.5em">
+                            <p style="width:8em;margin:0;margin-top:10px;">Mensagem</p>
+                            <p style="min-height: 100px; margin: 0; margin-left: 10px; margin-top: 10px; padding: 0 ">@selmessage.Mensagem</p>
+                        </div>
+                        <SfButton class="button special pull-right" @onclick="@(()=> { Mensagem_Lida(idMessage); })" style="margin:10px">Fechar</SfButton>
+                    </Content>
+                </DialogTemplates>
+            </SfDialog>
+
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+
+    </div>
+</div>
+
+
+@code {
+    SfGrid<msg> Grid;
+    SfGrid<msg> Grid2;
+    SfSpinner SpinnerObj = new SfSpinner();
+
+    bool dbchecked = false, dbcheckedoff = false;
+    SfListBox<string[], DataModel> SfListBoxNew;
+    SfListBox<string[], DataModel> SfListBoxEdit;
+    User who = new User();
+    public List<msg> GMessages = new List<msg>() { };
+    public List<msg> SMessages = new List<msg>() { };
+    public string[] SelUsers = new string[] { };
+
+    List<DataModel> ListContacts = new List<DataModel>();
+
+
+    protected override void OnInitialized()
+    {
+        who = (User)utils.f10session["user"];
+        base.OnInitialized();
+    }
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+    private async void GetDB()
+    {
+        DataLink_MES dlm = new DataLink_MES();
+
+        if (await dlm.db.Database.CanConnectAsync())
+        {
+            utils.MESON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            dlm.Dispose();
+            StateHasChanged();
+            SearchMessages();
+        }
+        else
+        {
+            utils.MESON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            dlm.Dispose();
+            StateHasChanged();
+        }
+    }
+    private async void SearchMessages()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_MES dl = new DataLink_MES();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        //lista de contactos
+        List<DataModel> NListContacts = new List<DataModel>();
+        NListContacts.Add(new DataModel
+            {
+                Nome = "Todos",
+                Utilizador = "All",
+                Id = -1,
+                Avatar = "TD",
+                Pic = null
+            });
+        foreach (var item in dl.db.Users)
+        {
+            NListContacts.Add(new DataModel
+                {
+                    Nome = item.name,
+                    Utilizador = item.username,
+                    Id = item.id,
+                    Avatar = item.name.Substring(0, 1),
+                    Pic = item.pic
+                });
+        }
+        ListContacts = NListContacts;
+
+
+        //recebidas
+        var pmessagesG = from rt in dl.db.Mensagens
+                         where rt.To == "All" || rt.To.Contains(who.username + ";")
+                         orderby rt.Date descending
+                         select new msg { Id = rt.Id, Mensagem = rt.Mensagem, Date = rt.Date, From = rt.From, To = rt.To, Lida = rt.Lida, ListaTo = new List<msgto>(), LidaPor = new List<msgto>() };
+        var dadosG = await pmessagesG.ToListAsync();
+        GMessages = dadosG.ToList();
+        foreach (var itemG in GMessages)
+        {
+            itemG.pic = dl.db.Users.FirstOrDefault(x => x.username == itemG.From) != null ? dl.db.Users.FirstOrDefault(x => x.username == itemG.From).pic : null;
+            itemG.From = dl.db.Users.FirstOrDefault(x => x.username == itemG.From) != null ? dl.db.Users.FirstOrDefault(x => x.username == itemG.From).name : itemG.From;
+            itemG.Avatar = itemG.From.Substring(0, 1);
+            if (itemG.Lida.Contains(who.username + ";"))
+            {
+                itemG.Lida = "Lida";
+            }
+            else
+            {
+                itemG.Lida = "";
+            }
+        }
+
+        //enviadas
+        var pmessagesS = from rt in dl.db.Mensagens
+                         where rt.From == who.username
+                         orderby rt.Date descending
+                         select new msg { Id = rt.Id, Mensagem = rt.Mensagem, Date = rt.Date, From = rt.From, To = rt.To, Lida = rt.Lida, ListaTo = new List<msgto>(), LidaPor = new List<msgto>() };
+        var dadosS = await pmessagesS.ToListAsync();
+        SMessages = dadosS.ToList();
+        foreach (var item in SMessages)
+        {
+            if (item.To == "All")
+            {
+                item.pic = null;
+                item.Avatar = "TD";
+                msgto nnms = new msgto();
+                nnms.nome = "Todos";
+                nnms.pic = null;
+                nnms.user = "All";
+
+                item.ListaTo.Add(nnms);
+            }
+            else
+            {
+                foreach (string itemus in item.To.Split(";"))
+                {
+                    if (itemus != null && itemus != "")
+                    {
+                        msgto nnms = new msgto();
+                        nnms.nome = dl.db.Users.FirstOrDefault(x => x.username == itemus) != null ? dl.db.Users.FirstOrDefault(x => x.username == itemus).name : itemus;
+                        nnms.pic = dl.db.Users.FirstOrDefault(x => x.username == itemus) != null ? dl.db.Users.FirstOrDefault(x => x.username == itemus).pic : null;
+                        nnms.user = itemus;
+                        item.ListaTo.Add(nnms);
+                    }
+                }
+            }
+
+
+            if (item.Lida != "")
+            {
+                item.Lida = "Lida";
+            }
+        }
+
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+        dl.Dispose();
+    }
+
+
+    //NEW + EDIT
+    private bool PopupNewMessage = false;
+    private bool PopupEditMessage = false;
+    private int idMessage = 0;
+    public msg selmessage = new msg() { };
+    private async void novomessage()
+    {
+        //await SfListBoxNew.SelectItems(SfListBoxNew.Value, false);
+        //await SfListBoxEdit.SelectItems(SfListBoxEdit.Value, false);
+        SelUsers = new string[] { };
+        PopupNewMessage = true;
+    }
+    private async void editmessage(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_MES dl = new DataLink_MES();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var doc = dl.db.Mensagens.First(x => x.Id == id);
+        msg n = new msg() { Date = doc.Date, From = doc.From, Lida = doc.Lida, Mensagem = doc.Mensagem, To = doc.To, Id = doc.Id, LidaPor = new List<msgto>() };
+
+        n.pic = dl.db.Users.FirstOrDefault(x => x.username == n.From) != null ? dl.db.Users.FirstOrDefault(x => x.username == n.From).pic : null;
+        n.From = dl.db.Users.FirstOrDefault(x => x.username == n.From) != null ? dl.db.Users.FirstOrDefault(x => x.username == n.From).name : n.From;
+        n.Avatar = n.From.Substring(0, 1);
+        //await SfListBoxEdit.SelectItems(SfListBoxEdit.Value, false);
+        //await SfListBoxNew.SelectItems(SfListBoxNew.Value, false);
+        SelUsers = n.To.Split(";");
+
+        if (n.Lida != "")
+        {
+            foreach (string itemus in n.Lida.Split(";"))
+            {
+                if (itemus != null && itemus != "")
+                {
+                    msgto nnms = new msgto();
+                    nnms.nome = dl.db.Users.FirstOrDefault(x => x.username == itemus) != null ? dl.db.Users.FirstOrDefault(x => x.username == itemus).name : itemus;
+                    nnms.pic = dl.db.Users.FirstOrDefault(x => x.username == itemus) != null ? dl.db.Users.FirstOrDefault(x => x.username == itemus).pic : null;
+                    nnms.user = itemus;
+                    n.LidaPor.Add(nnms);
+                }
+            }
+            n.Lida = "Lida";
+        }
+        else
+        {
+            n.Lida = "";
+            msgto nnms = new msgto();
+            nnms.nome = "";
+            nnms.pic = null;
+            nnms.user = "";
+            n.LidaPor.Add(nnms);
+        }
+
+        selmessage = n;
+        idMessage = selmessage.Id;
+
+        PopupEditMessage = true;
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+    private async void Add_Message(int id)
+    {
+        if (selmessage.Mensagem != null && selmessage.Mensagem != "")
+        {
+            await SpinnerObj.ShowAsync();
+            DataLink_MES dl = new DataLink_MES();
+
+            selmessage.To = "";
+            foreach (var item in SelUsers)
+            {
+                if (item != "All")
+                {
+                    if (item != "")
+                    {
+                        selmessage.To = selmessage.To + item + ";";
+                    }
+                }
+                else
+                {
+                    selmessage.To = item;
+                    break;
+                }
+            }
+
+            if (id == 0)
+            {
+                dl.db.Mensagens.Add(new f10.pulsar.mes.data.Mensagens { From = who.username, Mensagem = selmessage.Mensagem, Date = DateTime.Now, Lida = "", To = selmessage.To });
+                await dl.db.SaveChangesAsync();
+                utils.UserLog($"Enviou uma mensagem ao(s) utilizador(es) '{selmessage.To}'", "DataLink_MES");
+            }
+            else
+            {
+                dl.db.Mensagens.First(x => x.Id == id).To = selmessage.To;
+                if (dl.db.Mensagens.First(x => x.Id == id).Mensagem != selmessage.Mensagem)
+                {
+                    dl.db.Mensagens.First(x => x.Id == id).Mensagem = selmessage.Mensagem;
+                    dl.db.Mensagens.First(x => x.Id == id).Lida = "";
+                }
+                dl.db.Mensagens.First(x => x.Id == id).Date = DateTime.Now;
+
+                await dl.db.SaveChangesAsync();
+                utils.UserLog($"Alterou a mensagem com o id '{selmessage.Id}'", "DataLink_MES");
+            }
+
+            PopupNewMessage = false;
+            PopupEditMessage = false;
+            PopupReadMessage = false;
+            PopupDelMessage = false;
+            selmessage = new msg() { };
+            idMessage = 0;
+
+            SearchMessages();
+            await SpinnerObj.HideAsync();
+            StateHasChanged();
+            dl.Dispose();
+        }
+    }
+
+    //READ
+    private bool PopupReadMessage = false;
+    private async void readmessage(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_MES dl = new DataLink_MES();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var doc = dl.db.Mensagens.First(x => x.Id == id);
+        msg n = new msg() { Date = doc.Date, From = doc.From, Lida = doc.Lida, Mensagem = doc.Mensagem, To = doc.To, Id = doc.Id, LidaPor = new List<msgto>() };
+
+        n.pic = dl.db.Users.FirstOrDefault(x => x.username == n.From) != null ? dl.db.Users.FirstOrDefault(x => x.username == n.From).pic : null;
+        n.From = dl.db.Users.FirstOrDefault(x => x.username == n.From) != null ? dl.db.Users.FirstOrDefault(x => x.username == n.From).name : n.From;
+        n.Avatar = n.From.Substring(0, 1);
+        selmessage = n;
+        idMessage = selmessage.Id;
+
+        PopupReadMessage = true;
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+    private async void Mensagem_Lida(int id)
+    {
+        if (selmessage.Id != 0)
+        {
+            await SpinnerObj.ShowAsync();
+            DataLink_MES dl = new DataLink_MES();
+
+            if (selmessage.Lida.Contains(who.username) != true)
+            {
+                dl.db.Mensagens.First(x => x.Id == id).Lida = dl.db.Mensagens.First(x => x.Id == id).Lida + who.username + ";";
+
+                await dl.db.SaveChangesAsync();
+                utils.UserLog($"Leu a mensagem '{selmessage.Id}'", "DataLink_MES");
+                SearchMessages();
+            }
+            PopupNewMessage = false;
+            PopupEditMessage = false;
+            PopupReadMessage = false;
+            PopupDelMessage = false;
+            selmessage = new msg() { };
+            idMessage = 0;
+
+            await SpinnerObj.HideAsync();
+            StateHasChanged();
+            dl.Dispose();
+        }
+    }
+
+    //DELETE
+    private bool PopupDelMessage = false;
+    private async void Del_Message(int id)
+    {
+        if (id != null)
+        {
+            await SpinnerObj.ShowAsync();
+            DataLink_MES dl = new DataLink_MES();
+
+            dl.db.Mensagens.Remove(dl.db.Mensagens.First(x => x.Id == id));
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Eliminou a mensagem {selmessage.Id}", "DataLink_MES");
+
+            PopupDelMessage = false;
+            PopupEditMessage = false;
+            PopupNewMessage = false;
+            PopupReadMessage = false;
+            selmessage = new msg() { };
+            idMessage = 0;
+
+            await SpinnerObj.HideAsync();
+            SearchMessages();
+            StateHasChanged();
+            dl.Dispose();
+        }
+    }
+
+
+
+    public void RecordDoubleClickHandler(RecordDoubleClickEventArgs<msg> args)
+    {
+        readmessage(args.RowData.Id);
+    }
+    public void CustomizeCell(QueryCellInfoEventArgs<msg> args)
+    {
+        if (args.Data.Lida != "Lida")
+        {
+            args.Cell.AddStyle(new string[] { "font-weight: 700;" });
+        }
+    }
+    public void SendRecordDoubleClickHandler(RecordDoubleClickEventArgs<msg> args)
+    {
+        editmessage(args.RowData.Id);
+    }
+    public void SendCustomizeCell(QueryCellInfoEventArgs<msg> args)
+    {
+        if (args.Data.Lida != "Lida")
+        {
+            args.Cell.AddStyle(new string[] { "font-weight: 700;" });
+        }
+    }
+    private string picture(Byte[] pic)
+    {
+        if (pic != null)
+        {
+            return "data:image/png;base64," + Convert.ToBase64String(pic);
+        }
+        else
+        {
+            return "data:image/png;base64,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";
+        }
+    }
+
+
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+
+    public class msg
+    {
+        public int Id { get; set; }
+        public string? Mensagem { get; set; }
+        public string? To { get; set; }
+        public string? From { get; set; }
+        public Byte[]? pic { get; set; }
+        public string? Lida { get; set; }
+        public DateTime Date { get; set; }
+        public string? Avatar { get; set; }
+        public List<msgto> ListaTo { get; set; }
+        public List<msgto> LidaPor { get; set; }
+    }
+
+    public class msgto
+    {
+        public string? user { get; set; }
+        public string? nome { get; set; }
+        public Byte[]? pic { get; set; }
+    }
+
+    public class DataModel
+    {
+        public int Id { get; set; }
+        public string? Nome { get; set; }
+        public string? Utilizador { get; set; }
+        public string? Avatar { get; set; }
+        public Byte[]? Pic { get; set; }
+    }
+}
+
+<style>
+    .e-listview.e-control {
+        width: 350px;
+    }
+
+    .e-listview.e-list-template .e-list-wrapper.e-list-avatar:not(.e-list-badge) {
+        padding-left: 2.6428em;
+        padding-right: 1.0714em;
+    }
+
+    .e-listview.e-list-template .e-list-wrapper.e-list-avatar .e-avatar {
+        height: 2.0571em;
+        left: 0em;
+        position: absolute;
+        top: 0.7142em;
+        width: 2.0571em;
+    }
+
+    .e-listview.e-list-template .e-list-wrapper.e-list-multi-line.e-list-avatar .e-avatar {
+        top: 0.4em;
+    }
+
+    .e-listview.e-list-template .e-list-wrapper.e-list-multi-line .e-list-item-header {
+        color: #212529;
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        margin: 0;
+        overflow: hidden;
+        padding: 0.038em 0;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+
+    .e-listbox-wrapper.e-list-template .e-list-wrapper.e-list-avatar:not(.e-list-badge), .e-listbox-container.e-list-template .e-list-wrapper.e-list-avatar:not(.e-list-badge) {
+        padding-left: 2.6428em;
+        padding-right: 1.0714em;
+    }
+
+    .e-listbox-wrapper.e-list-template .e-list-wrapper.e-list-multi-line .e-list-item-header, .e-listbox-container.e-list-template .e-list-wrapper.e-list-multi-line .e-list-item-header {
+        color: #212529;
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        margin: 0;
+        overflow: hidden;
+        /* padding: 0.038em 0; */
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .e-listbox-wrapper.e-list-template .e-list-wrapper.e-list-multi-line.e-list-avatar .e-avatar, .e-listbox-container.e-list-template .e-list-wrapper.e-list-multi-line.e-list-avatar .e-avatar {
+        top: 0.5142em;
+    }
+
+    .e-listbox-wrapper.e-list-template .e-list-wrapper.e-list-avatar .e-avatar, .e-listbox-container.e-list-template .e-list-wrapper.e-list-avatar .e-avatar {
+        height: 1.8571em;
+        left: 0;
+        position: absolute;
+        /*top: 0;*/
+        width: 1.8571em;
+    }
+
+
+
+    .e-color-A {
+        background-color: #039be5;
+        color: white;
+    }
+
+    .e-color-B {
+        background-color: #e91e63;
+        color: white;
+    }
+
+    .e-color-C {
+        background-color: #009688;
+        color: white;
+    }
+
+    .e-color-D {
+        background-color: #5b9e37;
+        color: white;
+    }
+
+    .e-color-E {
+        background-color: #edb75a;
+        color: white;
+    }
+
+    .e-color-F {
+        background-color: #475fe8;
+        color: white;
+    }
+
+    .e-color-G {
+        background-color: #42293f;
+        color: white;
+    }
+
+    .e-color-H {
+        background-color: #a52e78;
+        color: white;
+    }
+
+    .e-color-I {
+        background-color: #4c2827;
+        color: white;
+    }
+
+    .e-color-J {
+        background-color: #39ccb5;
+        color: white;
+    }
+
+    .e-color-K {
+        background-color: #05040a;
+        color: white;
+    }
+
+    .e-color-L {
+        background-color: #2339fc;
+        color: white;
+    }
+
+    .e-color-M {
+        background-color: #a02d23;
+        color: white;
+    }
+
+    .e-color-N {
+        background-color: #305112;
+        color: white;
+    }
+
+    .e-color-O {
+        background-color: #8e0c24;
+        color: white;
+    }
+
+    .e-color-P {
+        background-color: #1a4905;
+        color: white;
+    }
+
+    .e-color-Q {
+        background-color: #1cef4a;
+        color: white;
+    }
+
+    .e-color-R {
+        background-color: #011414;
+        color: white;
+    }
+
+    .e-color-S {
+        background-color: #694c70;
+        color: white;
+    }
+
+    .e-color-T {
+        background-color: #778c1a;
+        color: white;
+    }
+
+    .e-color-U {
+        background-color: #3f423b;
+        color: white;
+    }
+
+    .e-color-V {
+        background-color: #ff7151;
+        color: white;
+    }
+
+    .e-color-W {
+        background-color: #493d19;
+        color: white;
+    }
+
+    .e-color-X {
+        background-color: #1e0310;
+        color: white;
+    }
+
+    .e-color-Y {
+        background-color: #4c140c;
+        color: white;
+    }
+
+    .e-color-Z {
+        background-color: #141411;
+        color: white;
+    }
+</style>

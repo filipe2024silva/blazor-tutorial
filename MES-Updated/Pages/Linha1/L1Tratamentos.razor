@@ -1,0 +1,1249 @@
+﻿@page "/linha1/tratamentos"
+@using Microsoft.Data.SqlClient
+@inject NavigationManager NavigationManager
+@inject Utils utils
+
+<div id="main">
+	<div class="inner">
+
+		@if (dbchecked == false)
+		{
+			<div class="row uniform" style="margin-top:20px">
+				<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+					<div class="card text-dark bg-light">
+						<div class="card-body">
+							@if (dbcheckedoff == false)
+							{
+								<div>
+									<div class="bounceball"></div>
+									<div class="bounceballtext">A verificar ligação à base de dados</div>
+								</div>
+							}
+							else
+							{
+								<h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+								<p style="margin:0;">Operações recomendadas:</p>
+								<ul>
+									<li>Verifique se a linha se encontra em funcionamento</li>
+									<li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+									<li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+								</ul>
+								<div class="row" style="margin-top:1em">
+									<div class="12u$" style="display: flex;justify-content:flex-start;">
+										<button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+										<a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+									</div>
+								</div>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+		}
+		else
+		{
+			@if (utils.CanAccess("TTL1") == true)
+			{
+				<div class="row">
+					<div class="8u 12u$(medium)">
+						<h1>LINHA 1 - Tratamentos</h1>
+					</div>
+					<div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+						<button class="noprint" @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+						<button class="noprint" onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+						<button @onclick="@(() =>{ SearchData(); })" title="Atualizar"><i class="icon style1 fa-refresh"></i></button>
+						<button @onclick="@(()=> { PopupNewTempo = true; LoadTinas(); })" title="Inserir Tratamentos"><i class="icon style1 fa-plus"></i></button>
+					</div>
+				</div>
+
+				<div class="row uniform">
+
+					@if (Tempos_Ativos != null && Tempos_Ativos.Count() > 0)
+					{
+						<div>
+							<SfGrid @ref="@Grid" DataSource="@Tempos_Ativos" AllowFiltering="false" AllowSorting="false" AllowGrouping="false">
+								<GridColumns>
+									<GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="20" MinWidth="20">
+										<Template>
+											@{
+												var whois = (context as pulsar.sv.data.Receita);
+												<div style="display: flex; justify-content: space-between;">
+													<p @onclick="@(()=> { Edit_Tempo(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label">Editar</span></p>
+													<p @onclick="@(()=> { makeCopy(whois.Id); })" class="icon style1 fa-copy" style="margin:0.3em;cursor:pointer"><span class="label">Copiar</span></p>
+												</div>
+											}
+										</Template>
+									</GridColumn>
+									<GridColumn Field="Id" HeaderText="ID " Width="110"> </GridColumn>
+									<GridColumn Field="Nome" HeaderText="Nome" Width="110"> </GridColumn>
+									<GridColumn Field="Dtcreated" HeaderText="Data Criação" Type="ColumnType.Date" Width="110"> </GridColumn>
+								</GridColumns>
+							</SfGrid>
+						</div>
+					}
+					else
+					{
+						<div class="row uniform" style="margin-top:20px">
+							<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+								<div class="card text-dark bg-light">
+									<div class="card-body">
+										<p style="margin:0;">Sem tratamentos registados.</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					}
+
+				</div>
+
+				@*Adicionar*@
+				<SfDialog Target="#target" Width="1275px" Height="auto" ShowCloseIcon="false" IsModal="true" CloseOnEscape="false" @bind-Visible="PopupNewTempo">
+					<DialogTemplates>
+						<Header>Adicionar Tratamento</Header>
+						<Content>
+
+							<SfTab @ref="newtab">
+								<TabItems>
+									<div class="table-wrapper" style="margin:1em;">
+										<table>
+											<tbody>
+												<tr style="border:0px;background-color:#fff">
+													<td>Nome</td>
+													<td><SfTextBox Multiline="false" @bind-Value="@seleTempos.Nome" Width="100%" Style="height:40px"></SfTextBox></td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+
+									<TabItem>
+										<ChildContent>
+											<TabHeader Text="TEMPOS"></TabHeader>
+										</ChildContent>
+										<ContentTemplate>
+
+											@foreach (ReceitaStepsDTO t in listaTempos.Where(o=> !TinasNotShowList.Contains(o.Num.Value)))
+											{
+												
+												<section style="margin:3em">
+													<div class="row uniform">
+
+														<div class="5u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: @t.CorBanho;" class="kpi2__icon fa text-light">@t.Num</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title">@t.Designacao</div>
+																		<div class="kpi2__subtitle">Designação</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+														<div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: white;" class="kpi2__icon fa text-light">TP</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfMaskedTextBox Mask='000:00' Placeholder="000:00" @bind-Value="@t.T1" Width="42%" style="Height: 30px;"></SfMaskedTextBox></div>
+																		<div class="kpi2__subtitle">Tempo Permanência</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+														<div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: white;" class="kpi2__icon fa text-light">TE</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfMaskedTextBox Mask='000:00' Placeholder="000:00" @bind-Value="@t.T2" Width="42%" style="Height: 30px;"></SfMaskedTextBox></div>
+																		<div class="kpi2__subtitle">Tempo Escorrimento</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+													</div>
+												</section>
+											}
+
+										</ContentTemplate>
+									</TabItem>
+
+									<TabItem>
+										<ChildContent>
+											<TabHeader Text="RETIFICADORES"></TabHeader>
+										</ChildContent>
+										<ContentTemplate>
+											@foreach (ReceitaStepsDTO t in listaTempos.Where(o => TinasRectificadorList.Contains(o.Num.Value)))
+											{
+
+												<section style="margin:3em">
+													<div class="row uniform">
+
+
+														<div class="5u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: @t.CorBanho;" class="kpi2__icon fa text-light">@t.Num</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title">@t.Designacao</div>
+																		<div class="kpi2__subtitle">Designação</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+														<div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: white;" class="kpi2__icon fa text-light">TA</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfMaskedTextBox Mask='000:00' Placeholder="000:00" @bind-Value="@t.T1min" Width="65%" style="Height: 30px;"></SfMaskedTextBox></div>
+																		<div class="kpi2__subtitle">Tempo Aceleração</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+														<div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: white;" class="kpi2__icon fa text-light">TD</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfMaskedTextBox Mask='000:00' @bind-Value="@t.T1max" Width="65%" style="Height: 30px;"></SfMaskedTextBox></div>
+																		<div class="kpi2__subtitle">Tempo Desaceleração</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+													</div>
+
+													<div class="row uniform">
+
+														<div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: @t.CorBanho;" class="kpi2__icon fa text-light">@t.Num</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfNumericTextBox @bind-Value="@t.Opcao5" Width="65%" Min="0" ShowSpinButton=false style="Height: 30px;"></SfNumericTextBox></div>
+																		<div class="kpi2__subtitle">Corrente (Amp/dm2)</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+
+														<div class="2u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: white;" class="kpi2__icon fa text-light">TD</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfNumericTextBox @bind-Value="@t.Opcao3" Width="65%" Min="0" Max="100" ShowSpinButton=false style="Height: 30px;"></SfNumericTextBox></div>
+																		<div class="kpi2__subtitle">% Final</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+
+														<div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: white;" class="kpi2__icon fa text-light">TD</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfMaskedTextBox Mask='000:00' @bind-Value="@t.T2min" Width="65%" style="Height: 30px;"></SfMaskedTextBox></div>
+																		<div class="kpi2__subtitle">Tempo Pausa</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+													</div>
+												</section>
+
+											}
+
+										</ContentTemplate>
+									</TabItem>
+								</TabItems>
+							</SfTab>
+							<SfButton class="button special pull-right" Disabled="@Disabled" @onclick="@(()=> { addTempo(0); })" style="margin:10px">Guardar</SfButton>
+							<SfButton class="button pull-right" Disabled="@Disabled" @onclick="@(()=> { PopupNewTempo = false; idTempo = 0; seleTempos = new pulsar.sv.data.Receita() { }; })" style="margin:10px">Cancelar</SfButton>
+						</Content>
+					</DialogTemplates>
+				</SfDialog>
+
+				@*Editar*@
+				<SfDialog Target="#target" Width="1275px" Height="auto" ShowCloseIcon="false" IsModal="true" CloseOnEscape="false" @bind-Visible="PopupEditTempo">
+					<DialogTemplates>
+						<Header>Gerir Tratamento</Header>
+						<Content>
+							<SfTab @ref="edittab">
+								<TabItems>
+
+									<div class="table-wrapper" style="margin:1em;">
+										<table>
+											<tbody>
+												<tr style="border:0px;background-color:#fff">
+													<td>Nome</td>
+													<td><SfTextBox Multiline="false" @bind-Value="@seleTempos.Nome" Width="100%" Style="height:40px"></SfTextBox></td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+
+									<TabItem>
+										<ChildContent>
+											<TabHeader Text="TEMPOS"></TabHeader>
+										</ChildContent>
+										<ContentTemplate>
+											@foreach (ReceitaStepsDTO t in listaTempos.Where(o => !TinasNotShowList.Contains(o.Num.Value)))
+											{
+
+												<section style="margin:2em">
+													<div class="row uniform">
+
+														<div class="5u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: @t.CorBanho;" class="kpi2__icon fa text-light">@t.Num</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title">@t.Designacao</div>
+																		<div class="kpi2__subtitle">Designação</div>
+																	</div>
+																</div>
+															</div>
+
+														</div>
+
+														<div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: white;" class="kpi2__icon fa text-light">TP</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfMaskedTextBox Mask='000:00' Placeholder="000:00" @bind-Value="@t.T1" Width="42%" style="Height: 30px;"></SfMaskedTextBox></div>
+																		<div class="kpi2__subtitle">Tempo Permanência</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+														<div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: white;" class="kpi2__icon fa text-light">TE</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfMaskedTextBox Mask='000:00' Placeholder="000:00" @bind-Value="@t.T2" Width="42%" style="Height: 30px;"></SfMaskedTextBox></div>
+																		<div class="kpi2__subtitle">Tempo Escorrimento</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+													</div>
+												</section>
+
+											}
+
+										</ContentTemplate>
+									</TabItem>
+
+									<TabItem>
+										<ChildContent>
+											<TabHeader Text="RETIFICADORES"></TabHeader>
+										</ChildContent>
+										<ContentTemplate>
+											@foreach (ReceitaStepsDTO t in listaTempos.Where(o => TinasRectificadorList.Contains(o.Num.Value)))
+											{
+
+												<section style="margin:3em">
+													<div class="row uniform">
+
+
+														<div class="5u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: @t.CorBanho;" class="kpi2__icon fa text-light">@t.Num</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title">@t.Designacao</div>
+																		<div class="kpi2__subtitle">Designação</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+														<div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: white;" class="kpi2__icon fa text-light">TA</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfMaskedTextBox Mask='000:00' Placeholder="000:00" @bind-Value="@t.T1min" Width="65%" style="Height: 30px;"></SfMaskedTextBox></div>
+																		<div class="kpi2__subtitle">Tempo Aceleração</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+														<div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: white;" class="kpi2__icon fa text-light">TD</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfMaskedTextBox Mask='000:00' @bind-Value="@t.T1max" Width="65%" style="Height: 30px;"></SfMaskedTextBox></div>
+																		<div class="kpi2__subtitle">Tempo Desaceleração</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+													</div>
+
+													<div class="row uniform">
+
+														<div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: @t.CorBanho;" class="kpi2__icon fa text-light">@t.Num</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfNumericTextBox @bind-Value="@t.Opcao5" Width="65%" Min="0" ShowSpinButton=false style="Height: 30px;"></SfNumericTextBox></div>
+																		<div class="kpi2__subtitle">Corrente Total (Amp)</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+														<div class="2u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: white;" class="kpi2__icon fa text-light">TD</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfNumericTextBox @bind-Value="@t.Opcao3" Width="65%" Min="0" Max="100" ShowSpinButton=false style="Height: 30px;"></SfNumericTextBox></div>
+																		<div class="kpi2__subtitle">% Final</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+														<div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+															<div class="kpi2">
+																<div class="kpi2__inside">
+																	<i style="background-color: white;" class="kpi2__icon fa text-light">TD</i>
+																	<div class="kpi2__text">
+																		<div class="kpi2__title"><SfMaskedTextBox Mask='000:00' @bind-Value="@t.T2min" Width="65%" style="Height: 30px;"></SfMaskedTextBox></div>
+																		<div class="kpi2__subtitle">Tempo Pausa</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+
+													</div>
+												</section>
+											}
+
+										</ContentTemplate>
+									</TabItem>
+								</TabItems>
+							</SfTab>
+							@if (activeCopy == false)
+							{
+								<SfButton class="button pull-left" @onclick="@(()=> { PopDelTempo = true; })" style="margin:10px">Eliminar</SfButton>
+								<SfButton class="button special pull-right" @onclick="@(()=> { editTempo(idTempo); })" style="margin:10px">Guardar</SfButton>
+								<SfButton class="button pull-right" @onclick="@(()=> { PopupEditTempo = false; idTempo = 0; seleTempos = new pulsar.sv.data.Receita() { }; listaTempos.Clear();  })" style="margin:10px">Cancelar</SfButton>
+							}
+							else
+							{
+								<SfButton class="button special pull-right" @onclick="@(()=> { addTempo(0); activeCopy = false; })" style="margin:10px">Copiar</SfButton>
+								<SfButton class="button pull-right" @onclick="@(()=> { PopupEditTempo = false; idTempo = 0; seleTempos = new pulsar.sv.data.Receita() { }; listaTempos.Clear(); activeCopy = false; })" style="margin:10px">Cancelar</SfButton>
+							}
+						</Content>
+					</DialogTemplates>
+				</SfDialog>
+
+				@*Eliminar*@
+				<SfDialog Width="400px" ShowCloseIcon="false" IsModal="true" CloseOnEscape="false" @bind-Visible="@PopDelTempo">
+					<DialogTemplates>
+						<Header>Eliminar Tempo</Header>
+						<Content>
+							<p>
+								A eliminação é permanente.<br />
+								Pretende realmente eliminar os tempos?
+							</p>
+							<SfButton class="button special pull-right" @onclick="@(() => { Remove_Tempo(idTempo); })" style="margin:10px">Sim</SfButton>
+							<SfButton class="button pull-right" @onclick="@(() => { PopDelTempo = false; })" style="margin:10px">Não</SfButton>
+						</Content>
+					</DialogTemplates>
+				</SfDialog>
+			}
+			else
+			{
+				<div class="row uniform" style="margin-top:20px">
+					<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+						<div class="card text-dark bg-light">
+							<div class="card-body">
+								<p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+								<a href="/">Voltar</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+
+			<div class="col-lg-12 control-section toast-default-section">
+				<SfToast ID="toast_default" @ref="ToastObj"></SfToast>
+			</div>
+		}
+		<SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+	</div>
+</div>
+
+<style>
+	#toast_default .e-meeting::before {
+	content: "\e705";
+	font-size: 17px;
+	}
+
+	.bootstrap4 #toast_default .e-meeting::before {
+	content: "\e763";
+	font-size: 20px;
+	}
+</style>
+
+@code {
+	SfToast ToastObj = new SfToast();
+	SfSpinner SpinnerObj = new SfSpinner();
+	SfGrid<pulsar.sv.data.Receita>? Grid;
+	SfTab newtab = new SfTab();
+	SfTab edittab = new SfTab();
+	User who = new User();
+
+	public static List<int> TinasNotShowList = new List<int> {1,2,3,4,21,35,37,38,39 };
+	public static List<int> TinasRectificadorList = new List<int>() { 22, 34, 37 }; //não repetir para o mesmo precesso(ex: tina 1 - Zinco e tina 2 - Zinco => fica apenas 1)
+
+	bool dbchecked = false, dbcheckedoff = false, Disabled = false, activeCopy = false;
+
+	public List<pulsar.sv.data.Receita> Tempos_Ativos = new List<pulsar.sv.data.Receita>() { };
+	public List<pulsar.sv.data.Tina> Ttinas = new List<pulsar.sv.data.Tina>();
+
+	protected override void OnInitialized()
+	{
+		who = (User)utils.f10session["user"];
+		base.OnInitialized();
+	}
+
+	protected override void OnAfterRender(bool firstRender)
+	{
+		if (firstRender == true)
+		{
+			GetDB();
+		}
+		base.OnAfterRender(firstRender);
+	}
+
+	private async void GetDB()
+	{
+		DataLink_L1 DL1 = new DataLink_L1();
+
+		if (await DL1.db.Database.CanConnectAsync())
+		{
+			utils.L1ON = true;
+			dbchecked = true;
+			dbcheckedoff = false;
+			DL1.Dispose();
+			StateHasChanged();
+			SearchData();
+
+		}
+		else
+		{
+			utils.L1ON = false;
+			dbchecked = false;
+			dbcheckedoff = true;
+			DL1.Dispose();
+			StateHasChanged();
+		}
+	}
+
+	private async void SearchData()
+	{
+		await SpinnerObj.ShowAsync();
+		DataLink_L1 dl = new DataLink_L1();
+		dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+		Tempos_Ativos = dl.db.Receitas.Where(x => x.IsActive == true && x.IsDeleted == false).ToList();
+
+		var tinasList = from dt in dl.db.Tinas
+						select new pulsar.sv.data.Tina { Id = dt.Id, Num = dt.Num, Designacao = dt.Designacao, Tina1 = dt.Tina1, CorBanho = dt.CorBanho };
+
+		Ttinas = tinasList.ToList();
+
+		StateHasChanged();
+		await SpinnerObj.HideAsync();
+		dl.Dispose();
+	}
+
+	private async void LoadTinas()
+	{
+		await SpinnerObj.ShowAsync();
+		listaTempos.Clear();
+
+		foreach (pulsar.sv.data.Tina t in Ttinas)
+		{
+			ReceitaStepsDTO s = new ReceitaStepsDTO()
+				{
+					Designacao = t.Designacao,
+					Num = t.Num.Value,
+					T1 = "000:00",
+					T2 = "000:00",
+					T1min = "000:00",
+					T1max = "000:00",
+					T2min = "000:00",
+				//Opcao2 = "0",
+					Opcao3 = 0,
+					D1 = 0,
+					CorBanho = t.CorBanho,
+					Opcao5 = 0,
+					LM = false,
+					SM = false
+				};
+			listaTempos.Add(s);
+		}
+
+		StateHasChanged();
+		await SpinnerObj.HideAsync();
+	}
+
+	private bool PopupNewTempo = false, PopupEditTempo = false, PopDelTempo = false;
+	private int idTempo = 0;
+	private byte lenght = 0;
+	private string ToastContent = "";
+	public pulsar.sv.data.Receita seleTempos = new pulsar.sv.data.Receita() { };
+	public List<ReceitaStepsDTO> listaTempos = new List<ReceitaStepsDTO>() { };
+
+	private async void Edit_Tempo(int id)
+	{
+		await SpinnerObj.ShowAsync();
+		listaTempos.Clear();
+
+		DataLink_L1 dl = new DataLink_L1();
+		dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+		var doc = dl.db.Receitas.First(x => x.Id == id);
+		seleTempos = doc;
+		idTempo = seleTempos.Id;
+
+		var rst = dl.db.ReceitasSteps.Where(x => x.Receitaid == id).OrderBy(x => x.Tina);
+		foreach (pulsar.sv.data.ReceitasStep rs in rst)
+		{
+			var T1_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T1.Value.TotalSeconds));
+			var T2_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T2.Value.TotalSeconds));
+			var T1min_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T1min.Value.TotalSeconds));
+			var T1max_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T1max.Value.TotalSeconds));
+			var T2min_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T2min.Value.TotalSeconds));
+
+			ReceitaStepsDTO s = new ReceitaStepsDTO()
+				{
+					Designacao = Ttinas.First(x => x.Num == rs.Tina).Designacao,
+					Num = Convert.ToInt32(rs.Tina),
+					T1 = string.Format("{0:D3}:{1:D2}", (int)T1_sec.TotalMinutes, T1_sec.Seconds),
+					T2 = string.Format("{0:D3}:{1:D2}", (int)T2_sec.TotalMinutes, T2_sec.Seconds),
+					T1min = string.Format("{0:D3}:{1:D2}", (int)T1min_sec.TotalMinutes, T1min_sec.Seconds),
+					T1max = string.Format("{0:D3}:{1:D2}", (int)T1max_sec.TotalMinutes, T1max_sec.Seconds),
+					T2min = string.Format("{0:D3}:{1:D2}", (int)T2min_sec.TotalMinutes, T2min_sec.Seconds),
+				//Opcao2 = rs.Opcao2,
+					Opcao3 = Int32.Parse(rs.Opcao3),
+					D1 = float.Parse(rs.Opcao4),
+					CorBanho = Ttinas.First(x => x.Num == rs.Tina).CorBanho,
+					Opcao5 = float.Parse(rs.Opcao5.Replace(".", ",")),
+					LM = rs.Lm,
+					SM = rs.Sm
+				};
+			listaTempos.Add(s);
+		}
+
+		PopupEditTempo = true;
+		await SpinnerObj.HideAsync();
+		StateHasChanged();
+		dl.Dispose();
+	}
+
+	private int t1, t2, t1min, t1max, t2min;
+
+	int tempo9Passivador = 0, tempo12Passivador = 0, tempo15Passivador = 0, tempo18Passivador = 0;
+	int numPassivadores = 0;
+	string corPassivador = "0";
+
+	private async void addTempo(int id)
+	{
+		await SpinnerObj.ShowAsync();
+		DataLink_L1 dl = new DataLink_L1();
+		StringBuilder b = new StringBuilder();
+
+		ToastContent = "";
+		Disabled = true;
+
+		bool repetidoOUnao = dl.db.Receitas.Any(x => x.Nome.ToLower() == seleTempos.Nome.ToLower());
+
+		if (repetidoOUnao)
+		{
+			Disabled = false;
+			await SpinnerObj.HideAsync();
+			await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = "Já existe um tratamento com este nome.", Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+			return;
+		}
+
+		if (ValidaTempos() == true)
+		{
+			lenght = 1;
+		}
+		else
+		{
+			lenght = 0;
+			b.Append("Campo inválido!");
+			ToastContent = ToastContent + b;
+			StateHasChanged();
+			await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+		}
+
+		if (CalculaTemposPassivadores() == true)
+		{
+			int p = RetornaNumeroPassivadores();
+
+			if (p != 0 && p != 1)
+			{
+				lenght = 0;
+				b.Append("O Tratamento só pode ter tempos num dos Passivadores!");
+				ToastContent = ToastContent + b;
+				StateHasChanged();
+				await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+			}
+		}
+
+		if (String.IsNullOrEmpty(seleTempos.Nome) == false && lenght == 1 && repetidoOUnao == false && id == 0)
+		{
+			if (AdicionaTempos() == true)
+			{
+				listaTempos.Clear();
+				PopupNewTempo = false;
+				PopupEditTempo = false;
+				activeCopy = false;
+				seleTempos = new pulsar.sv.data.Receita() { };
+				idTempo = 0;
+				ToastContent = "";
+			}
+			else
+			{
+				b.Append("Erro ao guardar Artigo!");
+				ToastContent = ToastContent + b;
+				StateHasChanged();
+				await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+			}
+		}
+
+
+		SearchData();
+		Disabled = false;
+		await SpinnerObj.HideAsync();
+		StateHasChanged();
+		dl.Dispose();
+	}
+
+	public bool AdicionaTempos()
+	{
+		DataLink_L1 dl = new DataLink_L1();
+		var toAdd = (new f10.pulsar.sv.data.Receita { Nome = seleTempos.Nome, Dtcreated = DateTime.Now, Whocreated = Convert.ToInt16(who.id), IsDeleted = false, IsActive = true });
+		dl.db.Receitas.Add(toAdd);
+		dl.db.SaveChanges();
+		utils.UserLog($"Adicionou a receita '{seleTempos.Nome}'", "DataLink_L1");
+
+		for (int i = 0; i < listaTempos.Count; i++)
+		{
+			if (listaTempos[i].Num != 21 && listaTempos[i].Num != 26 && listaTempos[i].Num != 27 && listaTempos[i].Num != 28 && listaTempos[i].Num != 35 && listaTempos[i].Num != 37 && listaTempos[i].Num != 38 && listaTempos[i].Num != 39)
+			{
+				t1 = Convert.ToInt16(listaTempos[i].T1.Substring(listaTempos[i].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T1.Substring(0, listaTempos[i].T1.Length - 2).Replace(":", "")) * 60;
+				t2 = Convert.ToInt16(listaTempos[i].T2.Substring(listaTempos[i].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T2.Substring(0, listaTempos[i].T2.Length - 2).Replace(":", "")) * 60;
+				t1min = Convert.ToInt16(listaTempos[i].T1min.Substring(listaTempos[i].T1min.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T1min.Substring(0, listaTempos[i].T1min.Length - 2).Replace(":", "")) * 60;
+				t1max = Convert.ToInt16(listaTempos[i].T1max.Substring(listaTempos[i].T1max.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T1max.Substring(0, listaTempos[i].T1max.Length - 2).Replace(":", "")) * 60;
+				t2min = Convert.ToInt16(listaTempos[i].T2min.Substring(listaTempos[i].T2min.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T2min.Substring(0, listaTempos[i].T2min.Length - 2).Replace(":", "")) * 60;
+			}
+
+			if (listaTempos[i].Num == 20 || listaTempos[i].Num == 21)
+			{
+				dl.db.ReceitasSteps.Add(new pulsar.sv.data.ReceitasStep { Receitaid = Convert.ToInt16(toAdd.Id), Tina = Convert.ToByte(listaTempos[i].Num), T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1)), T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2)), T1min = TimeSpan.FromSeconds(0), T1max = TimeSpan.FromSeconds(0), T2min = TimeSpan.FromSeconds(0), Opcao3 = "0", Opcao4 = "0", Opcao5 = "0", Lm = false, Sm = false });
+				dl.db.SaveChanges();
+			}
+			else if (listaTempos[i].Num == 22)
+			{
+				dl.db.ReceitasSteps.Add(new pulsar.sv.data.ReceitasStep { Receitaid = Convert.ToInt16(toAdd.Id), Tina = Convert.ToByte(listaTempos[i].Num), T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1)), T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2)), T1min = TimeSpan.FromSeconds(Convert.ToInt32(t1min)), T1max = TimeSpan.FromSeconds(Convert.ToInt32(t1max)), T2min = TimeSpan.FromSeconds(Convert.ToInt32(t2min)), Opcao3 = listaTempos[i].Opcao3.ToString(), Opcao4 = "0", Opcao5 = listaTempos[i].Opcao5.ToString(), Lm = false, Sm = false });
+				dl.db.SaveChanges();
+			}
+			else if (listaTempos[i].Num == 26 || listaTempos[i].Num == 27 || listaTempos[i].Num == 28)
+			{
+				dl.db.ReceitasSteps.Add(new pulsar.sv.data.ReceitasStep { Receitaid = Convert.ToInt16(toAdd.Id), Tina = Convert.ToByte(listaTempos[i].Num), T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1)), T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2)), T1min = TimeSpan.FromSeconds(0), T1max = TimeSpan.FromSeconds(0), T2min = TimeSpan.FromSeconds(0), Opcao3 = "0", Opcao4 = "0", Opcao5 = listaTempos[i].Opcao5.ToString(), Lm = false, Sm = false });
+				dl.db.SaveChanges();
+			}
+			else if (listaTempos[i].Num == 32)
+			{
+				dl.db.ReceitasSteps.Add(new pulsar.sv.data.ReceitasStep { Receitaid = Convert.ToInt16(toAdd.Id), Tina = Convert.ToByte(listaTempos[i].Num), T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1)), T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2)), T1min = TimeSpan.FromSeconds(Convert.ToInt32(t1min)), T1max = TimeSpan.FromSeconds(Convert.ToInt32(t1max)), T2min = TimeSpan.FromSeconds(Convert.ToInt32(t2min)), Opcao3 = listaTempos[i].Opcao3.ToString(), Opcao4 = "0", Opcao5 = listaTempos[i].Opcao5.ToString(), Lm = false, Sm = false });
+				dl.db.SaveChanges();
+			}
+			else if (listaTempos[i].Num >= 36 && listaTempos[i].Num <= 39)
+			{
+				dl.db.ReceitasSteps.Add(new pulsar.sv.data.ReceitasStep { Receitaid = Convert.ToInt16(toAdd.Id), Tina = Convert.ToByte(listaTempos[i].Num), T1 = TimeSpan.FromSeconds(0), T2 = TimeSpan.FromSeconds(0), T1min = TimeSpan.FromSeconds(0), T1max = TimeSpan.FromSeconds(0), T2min = TimeSpan.FromSeconds(0), Opcao3 = "0", Opcao4 = "0", Opcao5 = "0", Lm = false, Sm = false });
+				dl.db.SaveChanges();
+			}
+			else if (listaTempos[i].Num == 41 || listaTempos[i].Num == 42)
+			{
+				dl.db.ReceitasSteps.Add(new pulsar.sv.data.ReceitasStep { Receitaid = Convert.ToInt16(toAdd.Id), Tina = Convert.ToByte(listaTempos[i].Num), T1 = TimeSpan.FromSeconds(0), T2 = TimeSpan.FromSeconds(0), T1min = TimeSpan.FromSeconds(0), T1max = TimeSpan.FromSeconds(0), T2min = TimeSpan.FromSeconds(0), Opcao3 = "0", Opcao4 = "0", Opcao5 = "0", Lm = false, Sm = false });
+				dl.db.SaveChanges();
+			}
+			else
+			{
+				dl.db.ReceitasSteps.Add(new pulsar.sv.data.ReceitasStep { Receitaid = Convert.ToInt16(toAdd.Id), Tina = Convert.ToByte(listaTempos[i].Num), T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1)), T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2)), T1min = TimeSpan.FromSeconds(0), T1max = TimeSpan.FromSeconds(0), T2min = TimeSpan.FromSeconds(0), Opcao3 = "0", Opcao4 = "0", Opcao5 = "0", Lm = false, Sm = false });
+				dl.db.SaveChanges();
+			}
+		}
+
+		return true;
+	}
+
+	private List<pulsar.sv.data.Receita>
+	mudarTempos = new List<pulsar.sv.data.Receita>();
+	public pulsar.sv.data.Material obterCadaUmDeles_Tempos = new pulsar.sv.data.Material() { };
+
+	private async void editTempo(int id)
+	{
+		await SpinnerObj.ShowAsync();
+		DataLink_L1 dl = new DataLink_L1();
+		StringBuilder b = new StringBuilder();
+
+		Disabled = true;
+		ToastContent = "";
+
+		if (ValidaTempos() == true)
+		{
+			lenght = 1;
+		}
+		else
+		{
+			lenght = 0;
+			b.Append("Campo inválido!");
+			ToastContent = ToastContent + b;
+			StateHasChanged();
+			await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+		}
+
+		if (CalculaTemposPassivadores() == true)
+		{
+			int np = RetornaNumeroPassivadores();
+			string op = RetornaOpcaoPassivador();
+
+			if (np > 1)
+			{
+				lenght = 0;
+				b.Append("O Tratamento só pode ter tempos num dos Passivadores!");
+				ToastContent = ToastContent + b;
+				StateHasChanged();
+				await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+			}
+		}
+
+		var repetidoOUnao = dl.db.Receitas.Where(x => x.Nome == seleTempos.Nome && x.Id != id);
+
+		if (repetidoOUnao.Count() == 0 && lenght == 1)
+		{
+			var dbR = dl.db.Receitas.First(x => x.Id == id);
+			dbR.Nome = seleTempos.Nome;
+			await dl.db.SaveChangesAsync();
+
+			mudarTempos = await dl.db.Receitas.Where(x => x.Nome.Contains("*_" + id + "_*") || x.Id == id).ToListAsync();
+
+			string sb_tempos = id.ToString() + ";";
+			foreach (var t in mudarTempos)
+			{
+				obterCadaUmDeles_Tempos = dl.db.Materiais.FirstOrDefault(x => x.IdTratamento == t.Id && x.Opcao8 == false);
+				if (obterCadaUmDeles_Tempos != null)
+				{
+					sb_tempos = sb_tempos + obterCadaUmDeles_Tempos.IdTratamento.ToString() + ";";
+				}
+			}
+
+#if DEBUG
+    string connectionstring = DataLink_L1.connStRL1;
+#else
+			string connectionstring = DataLink_L1.connStRL1;
+#endif
+
+			using (SqlConnection connection = new SqlConnection(connectionstring))
+			{
+				connection.Open();
+
+				SqlCommand command = connection.CreateCommand();
+				SqlTransaction transaction;
+
+				transaction = connection.BeginTransaction();
+
+				command.Connection = connection;
+				command.Transaction = transaction;
+
+				#region Tempos
+
+				try
+				{
+					foreach (var x in sb_tempos.Split(";"))
+					{
+						if (x != "" && x != null)
+						{
+
+							for (int i = 0; i < listaTempos.Count; i++)
+							{
+								if (listaTempos[i].Num >= 20 && listaTempos[i].Num <= 21)
+								{
+									var data = listaTempos[19];
+									t1 = Convert.ToInt16(data.T1.Substring(data.T1.Length - 2, 2)) + Convert.ToInt16(data.T1.Substring(0, data.T1.Length - 2).Replace(":", "")) * 60;
+									t2 = Convert.ToInt16(data.T2.Substring(data.T2.Length - 2, 2)) + Convert.ToInt16(data.T2.Substring(0, data.T2.Length - 2).Replace(":", "")) * 60;
+									var TINA = listaTempos[i].Num;
+									var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+									var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+									command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "' , T2 = '" + T2 + "' WHERE receitaid = " + x + " AND tina = " + TINA + "";
+									command.ExecuteNonQuery();
+								}
+								else if (listaTempos[i].Num == 22)
+								{
+									t1 = Convert.ToInt16(listaTempos[i].T1.Substring(listaTempos[i].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T1.Substring(0, listaTempos[i].T1.Length - 2).Replace(":", "")) * 60;
+									t2 = Convert.ToInt16(listaTempos[i].T2.Substring(listaTempos[i].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T2.Substring(0, listaTempos[i].T2.Length - 2).Replace(":", "")) * 60;
+									t1min = Convert.ToInt16(listaTempos[i].T1min.Substring(listaTempos[i].T1min.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T1min.Substring(0, listaTempos[i].T1min.Length - 2).Replace(":", "")) * 60;
+									t1max = Convert.ToInt16(listaTempos[i].T1max.Substring(listaTempos[i].T1max.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T1max.Substring(0, listaTempos[i].T1max.Length - 2).Replace(":", "")) * 60;
+									t2min = Convert.ToInt16(listaTempos[i].T2min.Substring(listaTempos[i].T2min.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T2min.Substring(0, listaTempos[i].T2min.Length - 2).Replace(":", "")) * 60;
+
+									var TINA = listaTempos[i].Num;
+									var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+									var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+									var T1MIN = TimeSpan.FromSeconds(Convert.ToInt32(t1min));
+									var T1MAX = TimeSpan.FromSeconds(Convert.ToInt32(t1max));
+									var T2MIN = TimeSpan.FromSeconds(Convert.ToInt32(t2min));
+									var OP5 = listaTempos[i].Opcao5.ToString().Replace(",", ".");
+									var OP3 = listaTempos[i].Opcao3.ToString();
+
+									command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "', T2 = '" + T2 + "', T1min = '" + T1MIN + "', T1max = '" + T1MAX + "', T2min = '" + T2MIN + "', Opcao5 = " + OP5 + ", Opcao3 =" + OP3 + " WHERE receitaid = " + x + " AND tina =" + TINA + "";
+									command.ExecuteNonQuery();
+								}
+								else if (listaTempos[i].Num >= 25 && listaTempos[i].Num <= 28)
+								{
+									var data = listaTempos[24];
+									t1 = Convert.ToInt16(data.T1.Substring(data.T1.Length - 2, 2)) + Convert.ToInt16(data.T1.Substring(0, data.T1.Length - 2).Replace(":", "")) * 60;
+									t2 = Convert.ToInt16(data.T2.Substring(data.T2.Length - 2, 2)) + Convert.ToInt16(data.T2.Substring(0, data.T2.Length - 2).Replace(":", "")) * 60;
+									var TINA = listaTempos[i].Num;
+									var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+									var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+									command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "' , T2 = '" + T2 + "' WHERE receitaid = " + x + " AND tina = " + TINA + "";
+									command.ExecuteNonQuery();
+								}
+								else if (listaTempos[i].Num >= 34 && listaTempos[i].Num <= 35)
+								{
+									var data = listaTempos[33];
+									t1 = Convert.ToInt16(data.T1.Substring(data.T1.Length - 2, 2)) + Convert.ToInt16(data.T1.Substring(0, data.T1.Length - 2).Replace(":", "")) * 60;
+									t2 = Convert.ToInt16(data.T2.Substring(data.T2.Length - 2, 2)) + Convert.ToInt16(data.T2.Substring(0, data.T2.Length - 2).Replace(":", "")) * 60;
+									t1min = Convert.ToInt16(data.T1min.Substring(data.T1min.Length - 2, 2)) + Convert.ToInt16(data.T1min.Substring(0, data.T1min.Length - 2).Replace(":", "")) * 60;
+									t1max = Convert.ToInt16(data.T1max.Substring(data.T1max.Length - 2, 2)) + Convert.ToInt16(data.T1max.Substring(0, data.T1max.Length - 2).Replace(":", "")) * 60;
+									t2min = Convert.ToInt16(data.T2min.Substring(data.T2min.Length - 2, 2)) + Convert.ToInt16(data.T2min.Substring(0, data.T2min.Length - 2).Replace(":", "")) * 60;
+
+									var t1_ = 0;
+									var t2_ = 0;
+									if ((t1 + t2 + t1min + t1max + t2min) > 0)
+									{
+										t1_ = 1;
+										t2_ = 0;
+									}
+									else
+									{
+										t1_ = 0;
+										t2_ = 0;
+									}
+
+									var TINA = listaTempos[i].Num;
+									var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+									var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+									var T1MIN = TimeSpan.FromSeconds(Convert.ToInt32(t1min));
+									var T1MAX = TimeSpan.FromSeconds(Convert.ToInt32(t1max));
+									var T2MIN = TimeSpan.FromSeconds(Convert.ToInt32(t2min));
+									var OP5 = data.Opcao5.ToString().Replace(",", ".");
+									var OP3 = data.Opcao3.ToString();
+									var TENSAO = data.D1.ToString();
+
+									command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "', T2 = '" + T2 + "', T1min = '" + T1MIN + "', T1max = '" + T1MAX + "', T2min = '" + T2MIN + "', Opcao5 = " + OP5 + ", Opcao3 =" + OP3 + " , Opcao4 =" + TENSAO + ", LM =" + t1_ + ", SM =" + t2_ + "  WHERE receitaid = " + id + " AND tina =" + TINA + "";
+									command.ExecuteNonQuery();
+
+								}
+								else if (listaTempos[i].Num >= 36 && listaTempos[i].Num <= 39)
+								{
+									var data = listaTempos[35];
+									t1 = Convert.ToInt16(data.T1.Substring(data.T1.Length - 2, 2)) + Convert.ToInt16(data.T1.Substring(0, data.T1.Length - 2).Replace(":", "")) * 60;
+									t2 = Convert.ToInt16(data.T2.Substring(data.T2.Length - 2, 2)) + Convert.ToInt16(data.T2.Substring(0, data.T2.Length - 2).Replace(":", "")) * 60;
+									t1min = Convert.ToInt16(data.T1min.Substring(data.T1min.Length - 2, 2)) + Convert.ToInt16(data.T1min.Substring(0, data.T1min.Length - 2).Replace(":", "")) * 60;
+									t1max = Convert.ToInt16(data.T1max.Substring(data.T1max.Length - 2, 2)) + Convert.ToInt16(data.T1max.Substring(0, data.T1max.Length - 2).Replace(":", "")) * 60;
+									t2min = Convert.ToInt16(data.T2min.Substring(data.T2min.Length - 2, 2)) + Convert.ToInt16(data.T2min.Substring(0, data.T2min.Length - 2).Replace(":", "")) * 60;
+
+									var t1_ = 0;
+									var t2_ = 0;
+
+									if ((t1 + t2 + t1min + t1max + t2min) > 0)
+									{
+										t1_ = 0;
+										t2_ = 1;
+									}
+									else
+									{
+										t1_ = 0;
+										t2_ = 0;
+									}
+
+									var TINA = listaTempos[i].Num;
+									var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+									var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+									var T1MIN = TimeSpan.FromSeconds(Convert.ToInt32(t1min));
+									var T1MAX = TimeSpan.FromSeconds(Convert.ToInt32(t1max));
+									var T2MIN = TimeSpan.FromSeconds(Convert.ToInt32(t2min));
+									var OP5 = data.Opcao5.ToString().Replace(",", ".");
+									var OP3 = data.Opcao3.ToString();
+									var TENSAO = data.D1.ToString();
+
+									command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "', T2 = '" + T2 + "', T1min = '" + T1MIN + "', T1max = '" + T1MAX + "', T2min = '" + T2MIN + "', Opcao5 = " + OP5 + ", Opcao3 =" + OP3 + " , Opcao4 =" + TENSAO + ", LM =" + t1_ + ", SM =" + t2_ + " WHERE receitaid = " + id + " AND tina =" + TINA + "";
+									command.ExecuteNonQuery();
+
+								}
+								else
+								{
+									t1 = Convert.ToInt16(listaTempos[i].T1.Substring(listaTempos[i].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T1.Substring(0, listaTempos[i].T1.Length - 2).Replace(":", "")) * 60;
+									t2 = Convert.ToInt16(listaTempos[i].T2.Substring(listaTempos[i].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T2.Substring(0, listaTempos[i].T2.Length - 2).Replace(":", "")) * 60;
+									var TINA = listaTempos[i].Num;
+									var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+									var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+									command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "' , T2 = '" + T2 + "' WHERE receitaid = " + x + " AND tina = " + TINA + "";
+									command.ExecuteNonQuery();
+								}
+							}
+
+							command.CommandText = "update Materiais SET Opcao4 = '" + corPassivador + "' WHERE IdTratamento = " + x + "";
+							command.ExecuteNonQuery();
+
+						}
+					}
+					transaction.Commit();
+					utils.UserLog($"Alterou a receita '{seleTempos.Nome}'", "DataLink_L1");
+				}
+				catch (Exception)
+				{
+					try
+					{
+						transaction.RollbackAsync();
+						ToastContent = "Erro ao guardar artigo!";
+						StateHasChanged();
+						await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+					}
+					catch (Exception)
+					{
+					}
+				}
+
+				#endregion
+
+				connection.Close();
+			}
+
+			listaTempos.Clear();
+			PopupEditTempo = false;
+			seleTempos = new pulsar.sv.data.Receita() { };
+			idTempo = 0;
+			ToastContent = "";
+			activeCopy = false;
+		}
+
+		SearchData();
+		Disabled = false;
+		await SpinnerObj.HideAsync();
+		StateHasChanged();
+		dl.Dispose();
+	}
+
+	private async void makeCopy(int id)
+	{
+		await SpinnerObj.ShowAsync();
+		DataLink_L1 dl = new DataLink_L1();
+		dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+		//DÁ-NOS A INFORMAÇÃO QUE ESTAMOS A COPIAR E NÃO A EDITAR
+		activeCopy = true;
+		var doc = dl.db.Receitas.First(x => x.Id == id);
+
+		var rst = dl.db.ReceitasSteps.Where(x => x.Receitaid == id);
+		foreach (pulsar.sv.data.ReceitasStep rs in rst)
+		{
+			var T1_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T1.Value.TotalSeconds));
+			var T2_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T2.Value.TotalSeconds));
+			var T1min_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T1min.Value.TotalSeconds));
+			var T1max_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T1max.Value.TotalSeconds));
+			var T2min_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T2min.Value.TotalSeconds));
+
+			ReceitaStepsDTO s = new ReceitaStepsDTO()
+				{
+					Designacao = Ttinas.First(x => x.Num == rs.Tina).Designacao,
+					Num = Convert.ToInt32(rs.Tina),
+					T1 = string.Format("{0:D3}:{1:D2}", (int)T1_sec.TotalMinutes, T1_sec.Seconds),
+					T2 = string.Format("{0:D3}:{1:D2}", (int)T2_sec.TotalMinutes, T2_sec.Seconds),
+					T1min = string.Format("{0:D3}:{1:D2}", (int)T1min_sec.TotalMinutes, T1min_sec.Seconds),
+					T1max = string.Format("{0:D3}:{1:D2}", (int)T1max_sec.TotalMinutes, T1max_sec.Seconds),
+					T2min = string.Format("{0:D3}:{1:D2}", (int)T2min_sec.TotalMinutes, T2min_sec.Seconds),
+				//Opcao2 = rs.Opcao2,
+					Opcao3 = Int16.Parse(rs.Opcao3),
+					CorBanho = Ttinas.First(x => x.Num == rs.Tina).CorBanho,
+					Opcao5 = float.Parse(rs.Opcao5.Replace(".", ",")),
+					LM = rs.Lm,
+					SM = rs.Sm
+				};
+			listaTempos.Add(s);
+		}
+
+		PopupEditTempo = true;
+		await SpinnerObj.HideAsync();
+		StateHasChanged();
+		dl.Dispose();
+	}
+
+	private async void Remove_Tempo(int id)
+	{
+		await SpinnerObj.ShowAsync();
+		DataLink_L1 dl = new DataLink_L1();
+
+		sv.data.Receita obj = dl.db.Receitas.First(x => x.Id == id);
+
+		if (obj.IsActive == false)
+		{
+			dl.db.Receitas.Remove(obj);
+		}
+		else
+		{
+			obj.IsActive = false;
+		}
+
+		await dl.db.SaveChangesAsync();
+		utils.UserLog($"Eliminou a receita '{seleTempos.Nome}'", "DataLink_L1");
+
+		PopupNewTempo = false;
+		PopupEditTempo = false;
+		PopDelTempo = false;
+		listaTempos.Clear();
+
+		SearchData();
+		await SpinnerObj.HideAsync();
+		StateHasChanged();
+		dl.Dispose();
+	}
+
+	#region FUNÇÕES DE SUPORTE
+
+	public bool CalculaTemposPassivadores()
+	{
+		try
+		{
+			var tP9 = Convert.ToInt16(listaTempos[8].T1.Substring(listaTempos[8].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[8].T1.Substring(0, listaTempos[8].T1.Length - 2).Replace(":", "")) * 60;
+			var tE9 = Convert.ToInt16(listaTempos[8].T2.Substring(listaTempos[8].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[8].T2.Substring(0, listaTempos[8].T2.Length - 2).Replace(":", "")) * 60;
+			tempo9Passivador = tP9 + tE9;
+
+			var tP12 = Convert.ToInt16(listaTempos[11].T1.Substring(listaTempos[11].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[11].T1.Substring(0, listaTempos[11].T1.Length - 2).Replace(":", "")) * 60;
+			var tE12 = Convert.ToInt16(listaTempos[11].T2.Substring(listaTempos[11].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[11].T2.Substring(0, listaTempos[11].T2.Length - 2).Replace(":", "")) * 60;
+			tempo12Passivador = tP12 + tE12;
+
+			var tP15 = Convert.ToInt16(listaTempos[14].T1.Substring(listaTempos[14].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[14].T1.Substring(0, listaTempos[14].T1.Length - 2).Replace(":", "")) * 60;
+			var tE15 = Convert.ToInt16(listaTempos[14].T2.Substring(listaTempos[14].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[14].T2.Substring(0, listaTempos[14].T2.Length - 2).Replace(":", "")) * 60;
+			tempo15Passivador = tP15 + tE15;
+
+			var tP18 = Convert.ToInt16(listaTempos[17].T1.Substring(listaTempos[17].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[17].T1.Substring(0, listaTempos[17].T1.Length - 2).Replace(":", "")) * 60;
+			var tE18 = Convert.ToInt16(listaTempos[17].T2.Substring(listaTempos[17].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[17].T2.Substring(0, listaTempos[17].T2.Length - 2).Replace(":", "")) * 60;
+			tempo18Passivador = tP18 + tE18;
+
+		}
+		catch (Exception)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	public bool ValidaTempos()
+	{
+		bool condicao = true;
+
+		foreach (var tempo in listaTempos)
+		{
+			if (!(tempo.T1.Length >= 5 && tempo.T2.Length >= 5 && tempo.T1min.Length >= 5 && tempo.T1max.Length >= 5 && tempo.T2min.Length >= 5))
+			{
+				condicao = false;
+				break;
+			}
+		}
+		return condicao;
+	}
+
+	public int RetornaNumeroPassivadores()
+	{
+		numPassivadores = 0;
+		if (tempo9Passivador > 0)
+		{
+			numPassivadores = numPassivadores + 1;
+		}
+		if (tempo12Passivador > 0)
+		{
+			numPassivadores = numPassivadores + 1;
+		}
+		if (tempo15Passivador > 0)
+		{
+			numPassivadores = numPassivadores + 1;
+		}
+		if (tempo18Passivador > 0)
+		{
+			numPassivadores = numPassivadores + 1;
+		}
+		return numPassivadores;
+	}
+
+	public string RetornaOpcaoPassivador()
+	{
+		corPassivador = "0";
+		if (tempo9Passivador > 0)
+		{
+			//Passivador Preto
+			corPassivador = "3";
+		}
+		if (tempo12Passivador > 0)
+		{
+			//Passivador Transparente
+			corPassivador = "2";
+		}
+		if (tempo15Passivador > 0)
+		{
+			//Passivador Irisado
+			corPassivador = "1";
+		}
+		if (tempo18Passivador > 0)
+		{
+			//Passivador Azul
+			corPassivador = "4";
+		}
+		if (tempo9Passivador == 0 && tempo12Passivador == 0 && tempo15Passivador == 0 && tempo18Passivador == 0)
+		{
+			//Sem Passivador
+			corPassivador = "0";
+		}
+		return corPassivador;
+	}
+
+	#endregion
+
+	private void BackStreetButton()
+	{
+		NavigationManager.NavigateTo("/linha1/");
+	}
+
+
+}

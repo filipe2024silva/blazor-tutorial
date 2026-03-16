@@ -1,0 +1,335 @@
+﻿@page "/linha1/basedados"
+
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject Utils utils
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("BDL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - Gestão da Base de Dados</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+                        <button class="noprint" @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button class="noprint" onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top:40px">
+                    <div class="6u 12u$(medium) align-self-end">
+                        <div style="display: flex; justify-content: left; margin:0.5em">
+                            <p style="width:50%;margin:0;margin-top:10px;">Dias de Backup Automático</p>
+                            <div class="row" style="width:50%">
+                                <div class="3u 6u(small)">
+                                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                                        <div style="text-align:center">
+                                            <p style="margin:0">Segunda</p>
+                                            <SfSwitch @bind-Checked="@segunda"></SfSwitch>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="3u 6u(small)">
+                                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                                        <div style="text-align:center">
+                                            <p style="margin:0">Terça</p>
+                                            <SfSwitch @bind-Checked="@terca"></SfSwitch>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="3u 6u(small)">
+                                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                                        <div style="text-align:center">
+                                            <p style="margin:0">Quarta</p>
+                                            <SfSwitch @bind-Checked="@quarta"></SfSwitch>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="3u 6u(small)">
+                                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                                        <div style="text-align:center">
+                                            <p style="margin:0">Quinta</p>
+                                            <SfSwitch @bind-Checked="@quinta"></SfSwitch>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="3u 6u(small)">
+                                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                                        <div style="text-align:center">
+                                            <p style="margin:0">Sexta</p>
+                                            <SfSwitch @bind-Checked="@sexta"></SfSwitch>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="3u 6u(small)">
+                                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                                        <div style="text-align:center">
+                                            <p style="margin:0">Sábado</p>
+                                            <SfSwitch @bind-Checked="@sabado"></SfSwitch>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="3u 6u(small)">
+                                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                                        <div style="text-align:center">
+                                            <p style="margin:0">Domingo</p>
+                                            <SfSwitch @bind-Checked="@domingo"></SfSwitch>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: left; margin:0.5em">
+                            <p style="width:50%;margin:0;margin-top:10px;">Hora do Backup Automático</p>
+                            <div class="row" style="width:50%">
+                                <div class="12u$">
+                                    <SfNumericTextBox Placeholder="" @bind-Value="@horabackup" Max="23" Min="0" style="margin-left:10px;padding:0"></SfNumericTextBox>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="button special" @onclick="@(()=> { SaveBD(); })" style="margin:10px; margin-top:40px;">Guardar</button>
+                    </div>
+                    <div class="6u 12u$(medium) align-self-end">
+                        <div style="margin:0.5em">
+                            <p>@databackup</p>
+                        </div>
+
+                        <div>
+                            <SfAccumulationChart @ref="@ChartObj" Title="" Width="100%" Height="300" Theme="@utils.ctheme">
+                                <AccumulationChartLegendSettings Visible="true" Position="Syncfusion.Blazor.Charts.LegendPosition.Bottom">
+                                </AccumulationChartLegendSettings>
+                                <AccumulationChartTooltipSettings Enable="false"></AccumulationChartTooltipSettings>
+                                <AccumulationChartSeriesCollection>
+                                    <AccumulationChartSeries DataSource="@RoundChartData" XName="Hora" YName="Num" Radius="70%" InnerRadius="40%" Explode="true" ExplodeOffset="10%" ExplodeIndex="3">
+                                        <AccumulationDataLabelSettings Visible="true" Name="text">
+                                            <AccumulationChartDataLabelFont FontWeight="600" Color="white"></AccumulationChartDataLabelFont>
+                                        </AccumulationDataLabelSettings>
+                                    </AccumulationChartSeries>
+                                </AccumulationChartSeriesCollection>
+                            </SfAccumulationChart>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*MENSAGEM*@
+        <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupMessage">
+            <DialogTemplates>
+                <Header>Gestão da Base de Dados</Header>
+                <Content>
+                    <p>
+                        @popupText
+                    </p>
+                     <button class="button special pull-right" @onclick="@(()=> { PopupMessage=false; })" style="margin:10px">OK</button>
+                </Content>
+            </DialogTemplates>
+        </SfDialog>
+
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+
+@code {
+    SfSpinner SpinnerObj = new SfSpinner();
+    SfAccumulationChart ChartObj;
+    public List<AreaChartData> RoundChartData = new List<AreaChartData> { };
+
+    bool dbchecked = false, dbcheckedoff = false;
+    bool PopupMessage = false;
+    string popupText = "";
+    int horabackup = 0;
+    bool segunda, terca, quarta, quinta, sexta, sabado, domingo = false;
+    string databackup = "";
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            SearchBD();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+    private async void SearchBD()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            var pConfig = dl.db.Configs;
+            var dados = await pConfig.ToListAsync();
+
+            var pBackup = dl.db.Users.OrderByDescending((x) => x.Comportamento.ToUpper() == "BACKUP" || x.Comportamento.ToUpper() == "BACKUP-AUTO").Take(1);
+            var dbackup = await pBackup.ToListAsync();
+
+            if (dados.Count > 0)
+            {
+                // horabackup = Convert.ToInt16(dados[0].Horabackup);
+                // segunda = (bool)dados[0].Segunda;
+                // terca = (bool)dados[0].Terca;
+                // quarta = (bool)dados[0].Quarta;
+                // quinta = (bool)dados[0].Quinta;
+                // sexta = (bool)dados[0].Sexta;
+                // sabado = (bool)dados[0].Sabado;
+                // domingo = (bool)dados[0].Domingo;
+            }
+            if (dbackup.Count > 0)
+            {
+                databackup = dbackup[0].Tempo.ToString();
+                if (dbackup[0].Comportamento.ToUpper() == "BACKUP")
+                {
+                    databackup = "Último Backup: " + dbackup[0].Tempo.ToString() + " por " + dbackup[0].Username;
+                }
+                else
+                {
+                    databackup = "Último Backup: " + dbackup[0].Tempo.ToString() + " de forma automática";
+                }
+            }
+
+            Microsoft.Data.SqlClient.SqlConnection cn = new Microsoft.Data.SqlClient.SqlConnection("Server = tcp:cabq88orcf.database.windows.net, 1433; Initial Catalog = DBP_PULSAR_SRAM;Persist Security Info = False; User ID = causer; Password =fDecimal2015#; MultipleActiveResultSets = False; Encrypt = True; TrustServerCertificate = False; Connection Timeout = 30;");
+            Microsoft.Data.SqlClient.SqlDataAdapter da = new Microsoft.Data.SqlClient.SqlDataAdapter("exec sp_spaceused;", cn);
+            System.Data.DataTable res = new System.Data.DataTable();
+            da.Fill(res);
+
+            if (res.Rows.Count > 0)
+            {
+                decimal sizeo = Convert.ToDecimal(res.Rows[0][1].ToString().Replace(" MB", "").Replace(".", ","));
+                List<AreaChartData> finalist = new List<AreaChartData>();
+                finalist.Add(new AreaChartData { Ordem = 1, Hora = "Ocupado", Num = sizeo });
+                finalist.Add(new AreaChartData { Ordem = 1, Hora = "Disponivel", Num = 10000 - sizeo });
+                RoundChartData = finalist;
+            }
+        }
+        finally
+        {
+            await SpinnerObj.HideAsync();
+            dl.Dispose();
+            StateHasChanged();
+        }
+    }
+    private async void SaveBD()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        // dl.db.Configs.First().Horabackup = horabackup.ToString();
+        // dl.db.Configs.First().Segunda = segunda;
+        // dl.db.Configs.First().Terca = terca;
+        // dl.db.Configs.First().Quarta = quarta;
+        // dl.db.Configs.First().Quinta = quinta;
+        // dl.db.Configs.First().Sexta = sexta;
+        // dl.db.Configs.First().Sabado = sabado;
+        // dl.db.Configs.First().Domingo = domingo;
+
+        await dl.db.SaveChangesAsync();
+        utils.UserLog($"Alterou as configurações de Base de dados.", "DataLink_L1");
+        SearchBD();
+
+        popupText = "Alteraçãos guardadas com sucesso!";
+        PopupMessage = true;
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+
+    public class AreaChartData
+    {
+        public int Ordem { get; set; }
+        public string Hora { get; set; }
+        public decimal Num { get; set; }
+    }
+
+
+
+}

@@ -1,0 +1,281 @@
+﻿@page "/linha1/ph"
+@using f10.pulsar.mes.Components
+
+@implements IDisposable
+@inject NavigationManager NavigationManager
+@inject Utils utils
+@inject IJSRuntime JSRuntime
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("TL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - PH's</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+                        <button @onclick="Update" title="Atualizar"><i class="icon style1 fa-refresh"></i></button>
+                        <button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                    </div>
+                </div>
+
+                @if (tinas != null)
+                {
+                    if (showchart == false)
+                    {
+                        <div class="row uniform">
+                            @if (tinas.Count == phDB.Count)
+                            {
+                                @for (int i = 0; i < tinas.Count; i++)
+                                {
+                                    <div class="3u 6u(medium) 12u$(small)">
+                                        <Ph Title="@($"{tinas[i].Designacao}")" hist_ph="1" sp_ph="(int)phDB[i].PhSP" ph="(int)phDB[i].Ph"></Ph>
+                                        @{
+                                            var whois = tinas[i].Tina1;
+                                            <div style="text-align:right;margin-top:-45px;margin-right:20px;font-size: 13px">
+                                                <button class="button small special" @onclick="@(() => OpenChart(whois))" title="Ver Gráfico"><i class='icon style1 fa-line-chart'></i></button>
+                                            </div>
+                                        }
+                                        <hr />
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row uniform">
+                            <div class="4u 12u$(medium)">
+                                <SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+                            </div>
+                            <div class="4u 12u$(medium)">
+                                <SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+                            </div>
+                            <div class="4u 12u$(medium)">
+                                <SfButton @onclick="SearchData">Pesquisar</SfButton>
+                                <SfButton @onclick="@(() => { showchart = false;  })" CssClass="pull-right" title="Voltar"><i class='icon style1 fa-arrow-left'></i></SfButton>
+                            </div>
+                        </div>
+
+                        @if (phdt != null && phdt.Count > 0)
+                        {
+                            <SfChart Title="Histórico de Ph" Width="100%" Height="600" Theme="@utils.ctheme">
+                                <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                <ChartTooltipSettings Enable="true" Shared="true" Header="<b>${point.x}H</b>" Format="<b>${point.y} </b>"></ChartTooltipSettings>
+                                <ChartZoomSettings EnableMouseWheelZooming="true" EnablePinchZooming="true" EnableSelectionZooming="true"></ChartZoomSettings>
+                                <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime" IntervalType="Syncfusion.Blazor.Charts.IntervalType.Minutes" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                                </ChartPrimaryXAxis>
+                                <ChartPrimaryYAxis Title="Ph" LabelFormat="{value}">
+                                </ChartPrimaryYAxis>
+                                <ChartAxes>
+                                    <ChartAxis Name="b" Title="" LabelFormat="{value}" Minimum="0" Maximum="1" Interval="1" OpposedPosition="true" Visible="false">
+                                        <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                        <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                    </ChartAxis>
+                                </ChartAxes>
+                                <ChartSeriesCollection>
+                                    <ChartSeries DataSource="@phdt" Name="Ph" XName="Data" YName="Ph" Type="ChartSeriesType.Line" Width="3"></ChartSeries>
+                                    <ChartSeries DataSource="@phdt" Name="Setpoint" XName="Data" YName="PhSP" Type="ChartSeriesType.Line" Width="3"></ChartSeries>
+                                </ChartSeriesCollection>
+                            </SfChart>
+                        }
+                    }
+                }
+
+
+
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+@code {
+    SfSpinner SpinnerObj = new SfSpinner();
+
+    bool dbchecked = false, dbcheckedoff = false;
+    
+    private bool monitor;
+    private bool showchart = false;
+    public DateTime? dti { get; set; } = DateTime.Today;
+    public DateTime? dtf { get; set; } = DateTime.Today;
+    public List<sv.data.Tina> tinas;
+
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        GetDB();
+    }
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            DataFromDB();
+            //DataFromPLC();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+    void IDisposable.Dispose()
+    {
+        monitor = false;
+    }
+
+    public List<Phrt> phDB = new List<Phrt>() { };
+    private async void DataFromDB()
+    {
+        DataLink_L1 dlink = new DataLink_L1();
+        tinas = dlink.db.Tinas.Where(x => x.Linha == "A" && x.PH != null).ToList();
+
+        //BASE DADOS
+        List<Phrt> phDB2 = new List<Phrt>() { };
+        foreach (var item in tinas)
+        {
+            var dang = dlink.db.Phs.OrderBy(x => x.Data).LastOrDefault(x => x.Tina == item.Tina1);
+            if (dang != null)
+            {
+                Phrt itt = new Phrt()
+                    {
+                        Tina = dang.Tina,
+                        Ph = dang.Ph1 * 10,
+                        PhSP = dang.PhSetpoint * 10
+                    };
+                phDB2.Add(itt);
+            }
+            else
+            {
+                Phrt itt = new Phrt()
+                    {
+                        Tina = "",
+                        Ph = 0,
+                        PhSP = 0
+                    };
+                phDB2.Add(itt);
+            }
+        }
+        phDB = phDB2;
+        StateHasChanged();
+        await Task.Delay(500);
+        await JSRuntime.InvokeVoidAsync("termometrocolor");
+    }
+
+    public List<Phrt> phdt = new List<Phrt>() { };
+    private string tina = "";
+    private async Task OpenChart(string numtina)
+    {
+        tina = numtina;
+        showchart = true;
+        monitor = false;
+        SearchData();
+    }
+    private async void SearchData()
+    {
+        await SpinnerObj.ShowAsync();
+
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var dados = dl.db.Phs.
+                    Where(u => u.Tina == tina && u.Data >= dti && u.Data <= dtf.Value.AddDays(1)).
+                    Select(x => new Phrt { Id = x.Id, Data = x.Data, Tina = x.Tina, Ph = x.Ph1, PhSP = x.PhSetpoint }).
+                    OrderByDescending(l => l.Data);
+        phdt = await dados.ToListAsync();
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+    private void Update()
+    {
+        DataFromDB();
+    }
+
+
+    public class Phrt
+    {
+        public int Id { get; set; }
+        public string Lote { get; set; }
+        public string Tina { get; set; }
+        public decimal? Ph { get; set; }
+        public decimal? PhSP { get; set; }
+        public DateTime? Data { get; set; }
+    }
+
+
+}

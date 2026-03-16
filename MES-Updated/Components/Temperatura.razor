@@ -1,0 +1,69 @@
+﻿@using Syncfusion.Blazor.LinearGauge
+@inject Utils utils
+
+<SfLinearGauge Height="400px" Title="@Title" Theme="@utils.ctheme">
+    <LinearGaugeTitleStyle Color="Gray"
+                           Size="15px"
+                           Opacity="0.8">
+    </LinearGaugeTitleStyle>
+
+    <LinearGaugeContainer Width="30" Type="ContainerType.Thermometer">
+
+    </LinearGaugeContainer>
+    <LinearGaugeAxes>
+        <LinearGaugeAxis>
+            <LinearGaugePointers>
+                <LinearGaugePointer PointerValue="@(temp_calib / 10.0)" Width="15" Type="Syncfusion.Blazor.LinearGauge.Point.Bar" Color="@Temp_color">
+                </LinearGaugePointer>
+            </LinearGaugePointers>
+            <LinearGaugeRanges>
+                @*<LinearGaugeRange Start="0" End="@((sp_temp/10) - (hist_temp/10))" Color="LightBlue"></LinearGaugeRange>*@
+                <LinearGaugeRange Start="@((sp_temp/10) - (hist_temp/10))" End="@(sp_temp/10)" Color="Green"></LinearGaugeRange>
+                @*                    <LinearGaugeRange Start="@(sp_temp/10)" End="100" Color="red"></LinearGaugeRange>*@
+
+
+            </LinearGaugeRanges>
+        </LinearGaugeAxis>
+    </LinearGaugeAxes>
+</SfLinearGauge>
+<div style="text-align:center;margin-top:-75px; font-size: 2em">@($"{temp_calib / 10.0}ºC" )</div>
+
+
+@code {
+    [Parameter]
+    public string Title { get; set; }
+    [Parameter]
+    public int sp_temp { get; set; }
+    [Parameter]
+    public int hist_temp { get; set; }
+
+    private string Temp_color = "red";
+    private int temp_calib;
+
+    [Parameter]
+    public int Temp
+    {
+        get { return temp_calib; }
+        set
+        {
+            temp_calib = value;
+            if (temp_calib / 2 < ((sp_temp + hist_temp) / 2))
+            {
+                //Abaixo
+                Temp_color = "#4997D0";
+            }
+            if (temp_calib / 2 + 1 >= ((sp_temp + hist_temp) / 2) && temp_calib / 10 - 1 <= ((sp_temp + hist_temp) / 2) )
+            {
+                //Normal
+                Temp_color = "Green";
+            }
+            if (temp_calib / 2 > (sp_temp + hist_temp / 2))    
+            {
+                //Acima
+                Temp_color = "Red";
+            }
+            StateHasChanged();
+        }
+    }
+
+}

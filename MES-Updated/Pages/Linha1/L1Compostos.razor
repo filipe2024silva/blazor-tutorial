@@ -1,0 +1,369 @@
+﻿@page "/linha1/compostos"
+
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject Utils utils
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("GCDSL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - Gestão de Compostos</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+                        <button class="noprint" @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button @onclick="@(() => { PopupNewComposto = true; })" title="Inserir Composto"><i class="icon style1 fa-plus"></i></button>
+                    </div>
+                </div>
+
+                <div>
+                    @if (Compostos != null && Compostos.Count > 0)
+                    {
+                        @*TABELA*@
+                        <div>
+                            <SfGrid @ref="@Grid" DataSource="@Compostos" AllowFiltering="true" AllowSorting="true" AllowGrouping="true">
+                                <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                                <GridColumns>
+                                    <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+                                        <Template>
+                                            @{
+                                                var whois = (context as pulsar.sv.data.DosagemComposto);
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <p @onclick="@(() => { editcomposto(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label">Editar</span></p>
+                                                </div>
+                                            }
+                                        </Template>
+                                    </GridColumn>
+                                    <GridColumn Field="Nome" HeaderText="Nome"></GridColumn>
+                                    <GridColumn Field="Unidade" HeaderText="Unidade" HideAtMedia="(min-width: 700px)" Width="150"></GridColumn>
+                                    <GridColumn Field="Categoria" HeaderText="Categoria" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                    <GridColumn Field="Valor" HeaderText="Valor" Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="150"></GridColumn>
+                                    <GridColumn Field="QtDisponivel" HeaderText="Qt. Disponivel" Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="150"></GridColumn>
+                                    <GridColumn Field="Preco" HeaderText="Preço (€)" Format="C2" Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="150"></GridColumn>
+                                    <GridColumn Field="Notas" HeaderText="Notas" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                </GridColumns>
+                            </SfGrid>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row uniform" style="margin-top:20px">
+                            <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                                <div class="card text-dark bg-light">
+                                    <div class="card-body">
+                                        <p style="margin:0;">Sem compostos registados.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+
+                @*ADICIONAR COMPOSTO*@
+                <SfDialog Target="#target" Width="500px" Height=auto ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupNewComposto">
+                    <DialogTemplates>
+                        <Header>Inserir Composto</Header>
+                        <Content>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Nome</p>
+                                <SfTextBox Multiline="false" @bind-Value="@selcomposto.Nome" style="margin-left:10px;padding:0"></SfTextBox>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Unidade</p>
+                                <SfTextBox Multiline="false" @bind-Value="@selcomposto.Unidade" style="margin-left:10px;padding:0"></SfTextBox>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Categoria</p>
+                                <SfComboBox @bind-Value="@selcomposto.Categoria" TValue="string" TItem="string" DataSource="@Categorias.AsEnumerable()" Width="100%" Style="margin-bottom: 10px" AllowCustom="true">
+                                </SfComboBox>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Valor</p>
+                                <SfNumericTextBox @bind-Value="@selcomposto.Valor" style="margin-left: 10px;padding:0"></SfNumericTextBox>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Qt. Disponível</p>
+                                <SfNumericTextBox @bind-Value="@selcomposto.QtDisponivel" style="margin-left: 10px;padding:0"></SfNumericTextBox>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Preço</p>
+                                <SfNumericTextBox @bind-Value="@selcomposto.Preco" Currency="€" Step="0.01" style="margin-left: 10px;padding:0"></SfNumericTextBox>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Notas</p>
+                                <SfTextBox Multiline="true" @bind-Value="@selcomposto.Notas" style="height:100px;margin-left:10px;margin-top:10px;padding:0"></SfTextBox>
+                            </div>
+                            <button class="button special pull-right" @onclick="@(() => { Add_Composto(0); })" style="margin:10px">Guardar</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupNewComposto = false; idComposto = 0; selcomposto = new pulsar.sv.data.DosagemComposto() { }; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*EDITAR COMPOSTO*@
+                <SfDialog Target="#target" Width="500px" Height=auto ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupEditComposto">
+                    <DialogTemplates>
+                        <Header>Editar Composto</Header>
+                        <Content>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Nome</p>
+                                <SfTextBox Multiline="false" @bind-Value="@selcomposto.Nome" style="margin-left:10px;padding:0"></SfTextBox>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Unidade</p>
+                                <SfTextBox Multiline="false" @bind-Value="@selcomposto.Unidade" style="margin-left:10px;padding:0"></SfTextBox>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Categoria</p>
+                                <SfComboBox @bind-Value="@selcomposto.Categoria" TValue="string" TItem="string" DataSource="@Categorias.AsEnumerable()" Width="100%" Style="margin-bottom: 10px" AllowCustom="true">
+                                </SfComboBox>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Valor</p>
+                                <SfNumericTextBox @bind-Value="@selcomposto.Valor" style="margin-left: 10px;padding:0"></SfNumericTextBox>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Qt. Disponível</p>
+                                <SfNumericTextBox @bind-Value="@selcomposto.QtDisponivel" style="margin-left: 10px;padding:0"></SfNumericTextBox>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Preço</p>
+                                <SfNumericTextBox @bind-Value="@selcomposto.Preco" Currency="€" Step="0.01" style="margin-left: 10px;padding:0"></SfNumericTextBox>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:8em;margin:0;margin-top:10px;">Notas</p>
+                                <SfTextBox Multiline="true" @bind-Value="@selcomposto.Notas" style="height:100px;margin-left:10px;margin-top:10px;padding:0"></SfTextBox>
+                            </div>
+                            
+                            <button class="button special pull-left" @onclick="@(() => { PopupDelComposto = true; })" style="margin:10px">Eliminar</button>
+                            <button class="button special pull-right" @onclick="@(() => { Add_Composto(idComposto); })" style="margin:10px">Guardar</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupEditComposto = false; idComposto = 0; selcomposto = new pulsar.sv.data.DosagemComposto() { }; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ELIMINAR COMPOSTO*@
+                <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelComposto">
+                    <DialogTemplates>
+                        <Header>Eliminar Composto</Header>
+                        <Content>
+                            <p>
+                                A eliminação do composto de dosagem é permanente.<br />
+                                Pretende realmente eliminar o composto?
+                            </p>
+                            <button class="button special pull-right" @onclick="@(() => { Del_Composto(selcomposto.Id); })" style="margin:10px">Sim</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupDelComposto = false; })" style="margin:10px">Não</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+
+@code {
+    SfGrid<pulsar.sv.data.DosagemComposto> Grid;
+    SfSpinner SpinnerObj = new SfSpinner();
+
+    bool dbchecked = false, dbcheckedoff = false;
+    public List<pulsar.sv.data.DosagemComposto> Compostos = new List<pulsar.sv.data.DosagemComposto>() { };
+    List<string> Categorias = new List<string> { };
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            SearchCompostos();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+    private async void SearchCompostos()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            //TABELA
+            var pdocs = from rt in dl.db.DosagemCompostos
+                        select new pulsar.sv.data.DosagemComposto { Id = rt.Id, Nome = rt.Nome, Categoria = rt.Categoria, Notas = rt.Notas, QtDisponivel = rt.QtDisponivel, Unidade = rt.Unidade, Valor = rt.Valor, Preco = rt.Preco };
+            var dados = await pdocs.OrderBy(x => x.Nome).ToListAsync();
+            Compostos = dados;
+            Categorias = dados.Select(x => x.Categoria).Distinct().ToList();
+        }
+        finally
+        {
+            await SpinnerObj.HideAsync();
+            dl.Dispose();
+            StateHasChanged();
+        }
+    }
+
+    private bool PopupNewComposto = false;
+    private bool PopupEditComposto = false;
+    private bool PopupDelComposto = false;
+    private int idComposto = 0;
+    public pulsar.sv.data.DosagemComposto selcomposto = new pulsar.sv.data.DosagemComposto() { };
+
+    private async void editcomposto(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var doc = dl.db.DosagemCompostos.First(x => x.Id == id);
+        selcomposto = doc;
+        idComposto = selcomposto.Id;
+
+        PopupEditComposto = true;
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Add_Composto(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (selcomposto.Nome != null && selcomposto.Nome != "")
+        {
+            if (id == 0)
+            {
+                dl.db.DosagemCompostos.Add(new sv.data.DosagemComposto { Nome = selcomposto.Nome, Categoria = selcomposto.Categoria, Notas = selcomposto.Notas, QtDisponivel = selcomposto.QtDisponivel, Unidade = selcomposto.Unidade, Valor = selcomposto.Valor, Preco = selcomposto.Preco });
+                await dl.db.SaveChangesAsync();
+                utils.UserLog($"Inseriu o composto de dosagem '{selcomposto.Nome}'", "DataLink_L1");
+            }
+            else
+            {
+                dl.db.DosagemCompostos.First(x => x.Id == id).Nome = selcomposto.Nome;
+                dl.db.DosagemCompostos.First(x => x.Id == id).Unidade = selcomposto.Unidade;
+                dl.db.DosagemCompostos.First(x => x.Id == id).Categoria = selcomposto.Categoria;
+                dl.db.DosagemCompostos.First(x => x.Id == id).Valor = selcomposto.Valor;
+                dl.db.DosagemCompostos.First(x => x.Id == id).QtDisponivel = selcomposto.QtDisponivel;
+                dl.db.DosagemCompostos.First(x => x.Id == id).Notas = selcomposto.Notas;
+                dl.db.DosagemCompostos.First(x => x.Id == id).Preco = selcomposto.Preco;
+
+                await dl.db.SaveChangesAsync();
+                utils.UserLog($"Alterou o composto de dosagem '{selcomposto.Nome}'", "DataLink_L1");
+            }
+
+            PopupNewComposto = false;
+            PopupEditComposto = false;
+            selcomposto = new pulsar.sv.data.DosagemComposto() { };
+            idComposto = 0;
+
+            SearchCompostos();
+        }
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Del_Composto(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        dl.db.DosagemCompostos.Remove(dl.db.DosagemCompostos.First(x => x.Id == id));
+        await dl.db.SaveChangesAsync();
+        utils.UserLog($"Eliminou o composto de dosagem '{selcomposto.Nome}'", "DataLink_L1");
+
+        PopupEditComposto = false;
+        PopupDelComposto = false;
+        selcomposto = new pulsar.sv.data.DosagemComposto() { };
+
+        await SpinnerObj.HideAsync();
+        SearchCompostos();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/dosagens/");
+    }
+}

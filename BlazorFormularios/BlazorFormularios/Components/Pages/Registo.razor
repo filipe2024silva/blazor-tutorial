@@ -1,0 +1,27 @@
+﻿@page "/registo"
+@using System.ComponentModel.DataAnnotations
+
+<h3>Registo com POST Real (EditForm)</h3>
+
+<EditForm Model="@utilizador" Action="/registo-utilizador" Method="post" Enhance>
+	<DataAnnotationsValidator />
+	<ValidationSummary />
+	<div class="mb-3"> 
+		<label>Nome</label>
+		<InputText @bind-Value="utilizador.Nome" name="Nome" class="form-control" />
+		<ValidationMessage For="@(() => utilizador.Nome)" />
+	</div>
+
+	<button class="btn btn-primary">Enviar</button>
+</EditForm>
+
+@code {
+
+	private Utilizador utilizador = new();
+
+	public class Utilizador
+	{
+		[Required(ErrorMessage = "O nome é obrigatório.")]
+		public string Nome { get; set; } = string.Empty;
+	}
+}

@@ -1,0 +1,330 @@
+﻿@page "/linha1/utilizadores"
+@using f10.pulsar.mes.Components
+@using f10.pulsar.mes.DTOs
+@using f10.pulsar.mes.Enums
+
+@inject UtilizadoresService UtilizadoresService
+@inject PermissionsService PermissionsService
+@inject Utils Utils
+@inject NavigationManager NavigationManager
+
+<BasePage State="State" LoadingText="A carregar utilizadores..." OnReload="LoadAsync">
+
+    <div class="row">
+        <div class="8u 12u$(medium)">
+            <h1>LINHA 1 - Gestão de Utilizadores</h1>
+        </div>
+
+        <div class="4u 12u$(medium)" style="display:flex;justify-content:flex-end;">
+            <button title="Adicionar Utilizador" @onclick="NewUser">
+                <i class="icon style1 fa-plus"></i>
+            </button>
+
+            <button class="noprint" @onclick="BackStreetButton" title="Voltar atrás">
+                <i class="icon style1 fa-arrow-left"></i>
+            </button>
+        </div>
+    </div>
+
+
+    <SfGrid DataSource="@Users" AllowFiltering="true" AllowSorting="true">
+        <GridColumns>
+            <GridColumn HeaderText="" Width="80">
+                <Template>
+                    @{
+                        var u = (context as pulsar.sv.data.Utilizadores);
+                        <span class="icon style1 fa-edit"
+                              style="cursor:pointer"
+                              @onclick="() => EditUserAsync(u!.Id)">
+                        </span>
+                    }
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="User" HeaderText="Nome" />
+            <GridColumn Field="Email" HeaderText="Email" HideAtMedia="(min-width: 700px)" />
+        </GridColumns>
+
+        <GridTemplates>
+            <EmptyRecordTemplate>
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Sem utilizadores registados.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EmptyRecordTemplate>
+        </GridTemplates>
+    </SfGrid>
+
+
+    @* DIALOG ADICIONAR / EDITAR *@
+    <SfDialog Target="#target"
+              Width="800px"
+              ShowCloseIcon="false"
+              IsModal="true"
+              @bind-Visible="PopupEditUser">
+
+        <DialogTemplates>
+            <Header>
+                @(SelectedId == 0 ? "Adicionar Utilizador" : "Editar Utilizador")
+            </Header>
+
+            <Content>
+                <div class="row" style="margin-top:1em;margin-bottom:1em;max-height:300px;overflow:auto">
+
+                    <div class="6u 12u$(medium)">
+                        <div style="display:flex; margin:0.5em">
+                            <p style="width:8em;margin-top:10px">Nome</p>
+                            <SfTextBox @bind-Value="SelectedUser.Nome" />
+                        </div>
+
+                        <div style="display:flex; margin:0.5em">
+                            <p style="width:8em;margin-top:10px">Email</p>
+                            <SfTextBox @bind-Value="SelectedUser.Email" />
+                        </div>
+
+                        <div style="display:flex; margin:0.5em">
+                            <p style="width:8em;margin-top:10px">Username</p>
+                            <SfTextBox @bind-Value="SelectedUser.User" />
+                        </div>
+
+                        <div style="display:flex; margin:0.5em">
+                            <p style="width:6em;margin-top:10px">Password</p>
+                            <p style="width:10em;margin-top:10px;margin-left:10px">
+                                @(string.IsNullOrEmpty(PlainPassword) ? "********" : PlainPassword)
+                            </p>
+
+                            <button style="margin-left:10px"
+                                    @onclick="GeneratePass">
+                                Gerar Pass
+                            </button>
+                        </div>
+                        <p style="margin-top:10px;color:red">@ErrorMsg</p>
+                    </div>
+
+                    <div class="6u 12u$(medium)">
+                        <div style="display:flex; margin:0.5em">
+                            <p style="width:8em;margin-top:10px">ID Cartão</p>
+                            <SfTextBox @bind-Value="SelectedUser.CardId" />
+                        </div>
+
+                        <SfTreeView TValue="PermissoesAccessDTO"
+                                    @ref="Tree"
+                                    ShowCheckBox="true"
+                                    AllowMultiSelection="false">
+                            <TreeViewEvents TValue="PermissoesAccessDTO"
+                                            NodeChecking="BeforeCheck" />
+                            <TreeViewFieldsSettings TValue="PermissoesAccessDTO"
+                                                    DataSource="@Permissions"
+                                                    Id="Id"
+                                                    Text="Name"
+                                                    IsChecked="IsChecked" />
+                        </SfTreeView>
+                    </div>
+                </div>
+
+                <div style="margin-top:1em; display:flex; justify-content:space-between">
+                    @if (SelectedId != 0)
+                    {
+                        <SfButton class="button special"
+                                  @onclick="AskDelete">
+                            Eliminar
+                        </SfButton>
+                    }
+
+                    <div>
+                        <SfButton class="button special"
+                                  @onclick="SaveAsync">
+                            Guardar
+                        </SfButton>
+
+                        <SfButton class="button"
+                                  @onclick="CloseDialog">
+                            Cancelar
+                        </SfButton>
+                    </div>
+                </div>
+
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
+
+    @* CONFIRMAÇÃO DELETE *@
+    <SfDialog Width="400px"
+              ShowCloseIcon="false"
+              IsModal="true"
+              @bind-Visible="PopupDeleteConfirm">
+
+        <DialogTemplates>
+            <Header>Eliminar Utilizador</Header>
+            <Content>
+                <p>
+                    A eliminação do utilizador é permanente.<br />
+                    Pretende realmente eliminar o utilizador?
+                </p>
+
+                <SfButton class="button special pull-right"
+                          @onclick="ConfirmDelete"
+                          style="margin:10px">
+                    Sim
+                </SfButton>
+
+                <SfButton class="button pull-right"
+                          @onclick="CancelDelete"
+                          style="margin:10px">
+                    Não
+                </SfButton>
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
+
+</BasePage>
+
+@code {
+
+    List<pulsar.sv.data.Utilizadores> Users = new();
+    List<PermissoesAccessDTO> Permissions = new();
+
+    SfTreeView<PermissoesAccessDTO>? Tree;
+
+    pulsar.sv.data.Utilizadores SelectedUser = new();
+    int SelectedId;
+
+    bool PopupEditUser = false;
+    bool PopupDeleteConfirm = false;
+
+    string? PlainPassword;
+    string ErrorMsg = "";
+    PageState State = PageState.Loading;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Utils.CanAccess("UTL1"))
+        {
+            State = PageState.NoAccess;
+            StateHasChanged();
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        State = PageState.Loading;
+        StateHasChanged();
+
+        try
+        {
+            Users = await UtilizadoresService.GetAllAsync();
+            State = PageState.Ready;
+        }
+        catch
+        {
+            State = PageState.NoDatabase;
+        }
+
+        StateHasChanged();
+    }
+
+    private void NewUser()
+    {
+        SelectedUser = new();
+        SelectedId = 0;
+        PlainPassword = null;
+        Permissions = PermissionsService.GetAll();
+        PopupEditUser = true;
+    }
+
+    private async Task EditUserAsync(int id)
+    {
+        SelectedUser = await UtilizadoresService.GetByIdAsync(id) ?? new();
+        SelectedUser.Pass = "";
+        PlainPassword = null;
+
+        SelectedId = id;
+        Permissions = PermissionsService.GetForUser(SelectedUser.Nivel);
+
+        PopupEditUser = true;
+    }
+
+    void BeforeCheck(NodeCheckEventArgs args)
+    {
+        if (args.Action == "check" && Tree != null)
+            Tree.UncheckAllAsync(Tree.CheckedNodes);
+
+        Permissions.ForEach(p => p.IsChecked = false);
+
+        var selected = Permissions.First(x => x.Id == args.NodeData.Id);
+        selected.IsChecked = true;
+
+        SelectedUser.Nivel = selected.Id;
+    }
+
+    private void GeneratePass()
+    {
+        PlainPassword = Utils.GeneratePass();
+    }
+
+    private async Task SaveAsync()
+    {
+        ErrorMsg = "";
+
+        if (SelectedId == 0 && string.IsNullOrWhiteSpace(PlainPassword))
+        {
+            ErrorMsg = "Deve gerar uma Password!";
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(PlainPassword))
+            SelectedUser.Pass = PlainPassword;
+
+        await UtilizadoresService.SaveAsync(SelectedUser, SelectedId);
+
+        CloseDialog();
+        await LoadAsync();
+    }
+
+    private void AskDelete()
+    {
+        PopupDeleteConfirm = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (SelectedId == 0)
+            return;
+
+        await UtilizadoresService.DeleteAsync(SelectedId);
+
+        CloseDialog();
+        await LoadAsync();
+    }
+
+    private void CancelDelete()
+    {
+        PopupDeleteConfirm = false;
+    }
+
+    private void CloseDialog()
+    {
+        PopupEditUser = false;
+        PopupDeleteConfirm = false;
+
+        SelectedUser = new();
+        SelectedId = 0;
+        Permissions = new();
+        PlainPassword = null;
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+}

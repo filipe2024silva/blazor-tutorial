@@ -1,0 +1,1271 @@
+﻿@page "/linha1/dosagens"
+@using System.Globalization
+
+@using f10.pulsar.sv.data
+@inject NavigationManager NavigationManager
+@inject Utils utils
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("DSL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - DOSAGENS</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+                        <button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                    </div>
+                </div>
+
+                <div class="row uniform">
+                    <div class="4u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+                    </div>
+                    <div class="4u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+                    </div>
+                    <div class="4u 12u$(medium)">
+                        <SfButton @onclick="SearchData"><i class='icon style1 fa-search' title="Pesquisar"></i></SfButton>
+                        <SfButton @onclick="@(() => { PopupTask = true; seltask.Id = 0; seltask.Notas = ""; seltask.AllDay = false; Urgente = false; seltask.Inicio = DateTime.Now; seltask.Fim = DateTime.Now.AddMinutes(30); seltask.Recorrente = false; seltask.Recorrencia = "Diário"; seltask.Exceptions = ""; Eternal = true; })" CssClass="pull-right" title="Agendar Dosagem"><i class='icon style1 fa-calendar-plus-o'></i></SfButton>
+                        <SfButton @onclick="@(() => { PopupDosagem = true; seldosagem.Id = 0; seldosagem.Notas = ""; seldosagem.DataRealizada = DateTime.Now; })" CssClass="pull-right" style="margin-right:1em;" title="Registar Dosagem"><i class='icon style1 fa-eyedropper'></i></SfButton>
+                        <SfButton @onclick="@(() => { NavigationManager.NavigateTo("linha1/compostos"); })" CssClass="pull-right" style="margin-right:1em;" title="Gerir Compostos"><i class='icon style1 fa-list'></i></SfButton>
+                    </div>
+                </div>
+
+                //ESTATISTICAS
+                <div class="row uniform">
+                    @if (Dosagens != null && Dosagens.Count() > 0)
+                    {
+                        <div class="4u 12u$(medium)" style="height:450px;">
+                            @if (Dosagens != null && Dosagens.Count() > 0)
+                            {
+                                <SfChart Title="Top Tina" Width="100%" Height="400" Theme="@utils.ctheme">
+                                    <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                    <ChartArea>
+                                        <ChartAreaBorder Width="0"></ChartAreaBorder>
+                                    </ChartArea>
+                                    <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                        <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                    </ChartPrimaryXAxis>
+                                    <ChartPrimaryYAxis Title="" LabelFormat="{value}" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                                        <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                        <ChartAxisLabelStyle Color="transparent"></ChartAxisLabelStyle>
+                                        <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                        <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                    </ChartPrimaryYAxis>
+                                    <ChartSeriesCollection>
+                                        <ChartSeries DataSource="@ChartData" Name="" XName="Dia" YName="Num" Type="ChartSeriesType.Bar">
+                                            <ChartMarker>
+                                                <ChartDataLabel Visible="true" Position="Syncfusion.Blazor.Charts.LabelPosition.Top"></ChartDataLabel>
+                                            </ChartMarker>
+                                        </ChartSeries>
+                                    </ChartSeriesCollection>
+                                </SfChart>
+                            }
+                        </div>
+                        <div class="4u 12u$(medium)" style="height:450px;">
+                            @if (Dosagens != null && Dosagens.Count() > 0)
+                            {
+                                <SfChart Title="Top Composto" Width="100%" Height="400" Theme="@utils.ctheme">
+                                    <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                    <ChartArea>
+                                        <ChartAreaBorder Width="0"></ChartAreaBorder>
+                                    </ChartArea>
+                                    <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                        <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                    </ChartPrimaryXAxis>
+                                    <ChartPrimaryYAxis Title="" LabelFormat="{value}" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                                        <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                        <ChartAxisLabelStyle Color="transparent"></ChartAxisLabelStyle>
+                                        <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                        <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                    </ChartPrimaryYAxis>
+                                    <ChartSeriesCollection>
+                                        <ChartSeries DataSource="@ChartDataComposto" Name="" XName="Dia" YName="Num" Type="ChartSeriesType.Bar">
+                                            <ChartMarker>
+                                                <ChartDataLabel Visible="true" Position="Syncfusion.Blazor.Charts.LabelPosition.Top"></ChartDataLabel>
+                                            </ChartMarker>
+                                        </ChartSeries>
+                                    </ChartSeriesCollection>
+                                </SfChart>
+                            }
+                        </div>
+                        <div class="4u 12u$(medium)" style="height:450px;">
+                            <div style="display: flex; flex-direction:column; justify-content:center; height:450px;">
+                                <ul class="alt">
+                                    <li><i class="icon style1 fa-eyedropper"></i> <strong> @diassman</strong> Dias sem dosagens</li>
+                                    <li><i class="icon style1 fa-list"></i> <strong> @opefetuadas</strong> Dosagens efetuadas</li>
+                                    <li><i class="icon style1 fa-calendar"></i> <strong> @opagendadas</strong> Dosagens agendadas</li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="12u 12u$(medium)">
+                            <div style="display: flex; flex-direction:row; justify-content:center;">
+                                <p>
+                                    <i class="icon style1 fa-eyedropper"></i> <strong> @diassman</strong> Dias sem dosagens |
+                                    <i class="icon style1 fa-list"></i> <strong> @opefetuadas</strong> Dosagens efetuadas |
+                                    <i class="icon style1 fa-calendar"></i> <strong> @opagendadas</strong> Dosagens agendadas
+                                </p>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                //TABELA
+                <div class="row uniform">
+                    @if (Dosagens != null && Dosagens.Count() > 0)
+                    {
+                        <div>
+                            <SfGrid DataSource="@Dosagens" AllowFiltering="true" AllowSorting="true" AllowGrouping="true" AllowSelection="false" EnableHover="false">
+                                <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                                <GridEvents QueryCellInfo="CustomizeCell" TValue="Schedule"></GridEvents>
+                                <GridSortSettings>
+                                    <GridSortColumns>
+                                        <GridSortColumn Field="Inicio" Direction="SortDirection.Ascending"></GridSortColumn>
+                                        <GridSortColumn Field="DataRealizada" Direction="SortDirection.Ascending"></GridSortColumn>
+                                    </GridSortColumns>
+                                </GridSortSettings>
+                                <GridTemplates>
+                                    <DetailTemplate>
+                                        @{
+                                            var whois = (context as Schedule);
+                                            <p>@((MarkupString)whois.Notas.Replace("\n", "<br />"))</p>
+                                        }
+                                    </DetailTemplate>
+                                </GridTemplates>
+
+                                <GridColumns>
+                                    <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="50">
+                                        <Template>
+                                            @{
+                                                var whois = (context as Schedule);
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    @if (whois.DataRealizada == null)
+                                                    {
+                                                        <p @onclick="@(() => { edittask(whois.Id, whois.Inicio, whois.Fim); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer" title="Editar"><span class="label">Editar</span></p>
+                                                    }
+                                                    else
+                                                    {
+                                                        <p @onclick="@(() => { editdosagem(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer" title="Editar"><span class="label">Editar</span></p>
+                                                    }
+                                                </div>
+                                            }
+                                        </Template>
+                                    </GridColumn>
+                                    <GridColumn HeaderText="U" Width="6">
+                                        <Template>
+                                            @{
+                                                var whois = (context as Schedule);
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    @if (whois.Inicio != null && whois.Inicio == whois.Fim.Value)
+                                                    {
+                                                        <p @onclick="@(() => { edittask(whois.Id, whois.Inicio, whois.Fim); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer" title="Editar"><span class="label">Editar</span></p>
+                                                    }
+                                                    else
+                                                    {
+                                                        <p @onclick="@(() => { editdosagem(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label" title="Editar">Editar</span></p>
+                                                    }
+                                                </div>
+                                            }
+                                        </Template>
+                                    </GridColumn>
+                                    <GridColumn Field="Tina" HeaderText="Tina"></GridColumn>
+                                    <GridColumn Field="Composto" HeaderText="Composto"></GridColumn>
+                                    <GridColumn Field="Valor" HeaderText="Valor"></GridColumn>
+                                    <GridColumn Field="Unidade" HeaderText="Unidade"></GridColumn>
+                                    <GridColumn Field="Inicio" HeaderText="Inicio" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                    <GridColumn Field="Fim" HeaderText="Fim" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                    <GridColumn Field="DataRealizada" HeaderText="Realizada em" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                    <GridColumn Field="OperadorRealizou" HeaderText="Realizada por" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                </GridColumns>
+                            </SfGrid>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                            <div class="card text-dark bg-light">
+                                <div class="card-body">
+                                    <p style="margin:0;">Sem operações de dosagem efetuadas/agendadas para o período selecionado.</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @*ADICIONAR DOSAGEM*@
+                <SfDialog Target="#target" Width="500px" Height=auto ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupDosagem">
+                    <DialogTemplates>
+                        <Header>Registar Dosagem</Header>
+                        <Content>
+                            <div style="margin-top:1em;margin-bottom:1em;overflow:auto">
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Tina</p>
+                                    <SfDropDownList Value="@seldosagem.Tina" TValue="string" TItem="Recc" DataSource="@Tinas.AsEnumerable()" Width="100%" Style="height:100%;margin-bottom: 10px">
+                                        <DropDownListEvents OnValueSelect="@SelTina_SelectionChanged" TValue="string" TItem="Recc"></DropDownListEvents>
+                                        <DropDownListFieldSettings Value="Id" Text="Rec"></DropDownListFieldSettings>
+                                    </SfDropDownList>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Composto</p>
+                                    <SfDropDownList Value="@seldosagem.Composto" TValue="string" TItem="Recc" DataSource="@Compostos.AsEnumerable()" Width="100%" Style="height:100%;margin-bottom: 10px">
+                                        <DropDownListEvents OnValueSelect="@SelComposto_SelectionChanged" TValue="string" TItem="Recc"></DropDownListEvents>
+                                        <DropDownListFieldSettings Value="Rec" Text="Rec"></DropDownListFieldSettings>
+                                    </SfDropDownList>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Quantidade</p>
+                                    <SfNumericTextBox @bind-Value="@seldosagem.Valor" style="margin-left:10px;padding:0"></SfNumericTextBox>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Unidade</p>
+                                    <SfTextBox Multiline="false" @bind-Value="@seldosagem.Unidade" style="margin-left:10px;padding:0" Enabled="false"></SfTextBox>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Notas</p>
+                                    <SfTextBox Multiline="true" @bind-Value="@seldosagem.Notas" style="margin-left:10px;padding:0;height:80px"></SfTextBox>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Inicio</p>
+                                    <SfDateTimePicker @bind-Value="@seldosagem.DataRealizada" style="margin-left:10px;padding:0"></SfDateTimePicker>
+                                </div>
+                                <div style="display: flex; justify-content: center; margin:0.5em">
+                                    <p style="margin-top:10px;color:red">@Erromsg</p>
+                                </div>
+                            </div>
+                            @if (seldosagem.Id != 0)
+                            {
+                                <button class="button special pull-left" @onclick="@(() => { PopupDelDosagem = true; })" style="margin:10px">Eliminar</button>
+                            }
+                            <button class="button special pull-right" @onclick="@(() => { Add_Dosagem(seldosagem.Id); })" style="margin:10px">Guardar</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupDosagem = false; seldosagem = new DosagemRealizada() { }; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ELIMINAR DOSAGEM*@
+                <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelDosagem">
+                    <DialogTemplates>
+                        <Header>Eliminar Dosagem</Header>
+                        <Content>
+                            <p>
+                                A eliminação da informação de dosagem é permanente.<br />
+                                Pretende realmente eliminar a informação de dosagem?
+                            </p>
+                            <button class="button special pull-right" @onclick="@(() => { Del_Dosagem(seldosagem.Id); })" style="margin:10px">Sim</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupDelDosagem = false; })" style="margin:10px">Não</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ADICIONAR TASK*@
+                <SfDialog Target="#target" Width="500px" Height=auto ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupTask">
+                    <DialogTemplates>
+                        <Header>Agendar Dosagem</Header>
+                        <Content>
+                            <div style="margin-top:1em;margin-bottom:1em;overflow:auto">
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Tina</p>
+                                    <SfDropDownList Value="@seltask.Tina" TValue="string" TItem="Recc" DataSource="@Tinas.AsEnumerable()" Width="100%" Style="height:100%;margin-bottom: 10px">
+                                        <DropDownListEvents OnValueSelect="@SelTina_SelectionChanged" TValue="string" TItem="Recc"></DropDownListEvents>
+                                        <DropDownListFieldSettings Value="Id" Text="Rec"></DropDownListFieldSettings>
+                                    </SfDropDownList>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Composto</p>
+                                    <SfDropDownList Value="@seltask.Composto" TValue="string" TItem="Recc" DataSource="@Compostos.AsEnumerable()" Width="100%" Style="height:100%;margin-bottom: 10px">
+                                        <DropDownListEvents OnValueSelect="@SelComposto_SelectionChanged" TValue="string" TItem="Recc"></DropDownListEvents>
+                                        <DropDownListFieldSettings Value="Rec" Text="Rec"></DropDownListFieldSettings>
+                                    </SfDropDownList>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Quantidade</p>
+                                    <SfNumericTextBox @bind-Value="@seltask.Valor" style="margin-left:10px;padding:0"></SfNumericTextBox>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Unidade</p>
+                                    <SfTextBox Multiline="false" @bind-Value="@seltask.Unidade" style="margin-left:10px;padding:0" Enabled="false"></SfTextBox>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Notas</p>
+                                    <SfTextBox Multiline="true" @bind-Value="@seltask.Notas" style="margin-left:10px;padding:0;height:80px"></SfTextBox>
+                                </div>
+
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:6.5em;margin:0;margin-top:10px;color:red">Urgente</p>
+                                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                                        <SfCheckBox @bind-Checked="@Urgente" @onchange="@(() => { StateHasChanged(); })"></SfCheckBox>
+                                    </div>
+                                </div>
+                                @if (Urgente == false)
+                                {
+                                    <div style="display: flex; justify-content: left; margin:0.5em">
+                                        <p style="width:8em;margin:0;margin-top:10px;">Inicio</p>
+                                        <SfDateTimePicker @bind-Value="@seltask.Inicio" style="margin-left:10px;padding:0"></SfDateTimePicker>
+                                    </div>
+                                    <div style="display: flex; justify-content: left; margin:0.5em">
+                                        <p style="width:8em;margin:0;margin-top:10px;">Fim</p>
+                                        <SfDateTimePicker @bind-Value="@seltask.Fim" style="margin-left:10px;padding:0"></SfDateTimePicker>
+                                    </div>
+                                }
+
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:6.5em;margin:0;margin-top:10px;">Recorrente</p>
+                                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                                        <SfCheckBox @bind-Checked="@seltask.Recorrente" @onchange="@(() => { StateHasChanged(); })"></SfCheckBox>
+                                    </div>
+                                </div>
+                                @if (seltask.Recorrente == true)
+                                {
+                                    <div style="display: flex; justify-content: left; margin:0.5em">
+                                        <p style="width:8em;margin:0;margin-top:10px;">Recorrência</p>
+                                        <SfDropDownList Value="@seltask.Recorrencia" TValue="string" TItem="Recc" DataSource="@Recs.AsEnumerable()" Width="100%" Style="height:100%;margin-bottom: 10px">
+                                            <DropDownListEvents OnValueSelect="@SelRecorrence_SelectionChanged" TValue="string" TItem="Recc"></DropDownListEvents>
+                                            <DropDownListFieldSettings Value="Id" Text="Rec"></DropDownListFieldSettings>
+                                        </SfDropDownList>
+                                    </div>
+                                    <div style="display: flex; justify-content: left; margin:0.5em">
+                                        <p style="width:6.5em;margin:0;margin-top:10px;">Sem fim</p>
+                                        <div style="margin-left:10px;margin-top:10px;padding:0">
+                                            <SfCheckBox @bind-Checked="@Eternal" @onchange="@(() => { StateHasChanged(); })"></SfCheckBox>
+                                        </div>
+                                    </div>
+                                    if (Eternal == false)
+                                    {
+                                        <div style="display: flex; justify-content: left; margin:0.5em">
+                                            <p style="width:8em;margin:0;margin-top:10px;">Até</p>
+                                            <SfDatePicker @bind-Value="@seltask.RecorrenciaEnd" style="margin-left:10px;padding:0"></SfDatePicker>
+                                        </div>
+                                    }
+                                }
+
+                                <div style="display: flex; justify-content: center; margin:0.5em">
+                                    <p style="margin-top:10px;color:red">@Erromsg</p>
+                                </div>
+                            </div>
+                              @if (seltask.Id != 0)
+                              {
+                                  if (seltask.Recorrente == true)
+                                  {
+                                      <button class="button special pull-left" @onclick="@(() => { PopupDelTask_rec = true; })" style="margin:10px">Eliminar</button>
+                                  }
+                                  else
+                                  {
+                                      <button class="button special pull-left" @onclick="@(() => { PopupDelTask_norec = true; })" style="margin:10px">Eliminar</button>
+                                  }
+                              }
+                              <button class="button special pull-right" @onclick="@(() => { Add_Task(seltask.Id); })" style="margin:10px">Guardar</button>
+                              <button class="button pull-right" @onclick="@(() => { PopupTask = false; seltask = new DosagemAgendada() { }; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ELIMINAR TASK*@
+                <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelTask_rec">
+                    <DialogTemplates>
+                        <Header>Eliminar Agendamento</Header>
+                        <Content>
+                            <p>
+                                O presente agendamento de dosagem é uma operação recorrente.<br />
+                                Pretende eliminar apenas o agendamento atual ou toda a recorrência?
+                            </p>
+                            <button class="button special pull-right" @onclick="@(() => { Del_all = false; Del_Task(seltask.Id); })" style="margin:10px">Agendamento Atual</button>
+                            <button class="button special pull-right" @onclick="@(() => { Del_all = true; Del_Task(seltask.Id); })" style="margin:10px">Toda a Recorrência</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupDelTask_rec = false; Del_all = false; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ELIMINAR AGENDAMENTO*@
+                <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelTask_norec">
+                    <DialogTemplates>
+                        <Header>Eliminar Agendamento</Header>
+                        <Content>
+                            <p>
+                                A eliminação do agendamento da dosagem é permanente.<br />
+                                Pretende realmente eliminar o agendamento da dosagem?
+                            </p>
+                            <button class="button special pull-right" @onclick="@(() => { Del_Task(seltask.Id); })" style="margin:10px">Sim</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupDelTask_norec = false; })" style="margin:10px">Não</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+
+
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+@code {
+    SfSpinner SpinnerObj = new SfSpinner();
+    f10.pulsar.mes.data.User who = new f10.pulsar.mes.data.User();
+
+    bool dbchecked = false, dbcheckedoff = false;
+    public DateTime? dti { get; set; } = DateTime.Today;
+    public DateTime? dtf { get; set; } = DateTime.Today;
+    public string Erromsg = "";
+    public List<Schedule> Dosagens = new List<Schedule>() { };
+    public List<AreaChartData> ChartData = new List<AreaChartData> { };
+    public List<AreaChartData> ChartDataComposto = new List<AreaChartData> { };
+    private string diassman = "";
+    private string opefetuadas = "";
+    private string opagendadas = "";
+
+    protected override void OnInitialized()
+    {
+        who = (f10.pulsar.mes.data.User)utils.f10session["user"];
+        base.OnInitialized();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            LoadTinas();
+            LoadCompostos();
+            SearchData();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+
+    List<Recc> Tinas = new List<Recc> { };
+    List<Recc> Compostos = new List<Recc> { };
+
+    private async void LoadTinas()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var dados = await dl.db.Tinas.ToListAsync();
+
+        foreach (var item in dados)
+        {
+            Tinas.Add(new Recc { Id = item.Num + " - " + item.Designacao, Rec = item.Num + " - " + item.Designacao });
+        }
+
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+        dl.Dispose();
+    }
+
+    private async void LoadCompostos()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var dados = await  dl.db.DosagemCompostos.ToListAsync();
+
+        foreach (var item in dados)
+        {
+            Compostos.Add(new Recc { Id = item.Id.ToString(), Rec = item.Nome });
+        }
+
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+        dl.Dispose();
+    }
+
+    private async void SearchData()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        //TABELA
+        var pagenda = from rt in dl.db.DosagensAgenda where (rt.Inicio >= dti && rt.Inicio <= dtf.Value.AddDays(1)) || (rt.Inicio < dtf && rt.Recorrente == true) select rt;
+        var agenda = await pagenda.ToListAsync();
+        var pdosagem = from rt in dl.db.Dosagens where rt.DataRealizada >= dti && rt.DataRealizada <= dtf.Value.AddDays(1) select rt;
+        var dosagem = await pdosagem.ToListAsync();
+
+        List<Schedule> buffer = new List<Schedule>() { };
+        foreach (DosagemAgendada item in agenda)
+        {
+            if (item.Recorrente == false)
+            {
+                buffer.Add(new Schedule { Id = item.Id, Composto = item.Composto, Exceptions = item.Exceptions, Inicio = item.Inicio, Fim = item.Fim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, Tina = item.Tina, Unidade = item.Unidade, Valor = item.Valor, DataRealizada = null, OperadorRealizou = null });
+            }
+            else
+            {
+                switch (item.Recorrencia)
+                {
+                    case "Diário":
+                        for (int i = 0; i < (dtf - dti).Value.Days; i++)
+                        {
+                            bool write = true;
+
+                            //veririca onde começa
+                            if (dti.Value.Date.AddDays(i) < item.Inicio.Value.Date)
+                            {
+                                write = false;
+                            }
+
+                            //verifica dim de recorrência
+                            if (item.RecorrenciaEnd != null)
+                            {
+                                if (dti.Value.AddDays(i) >= item.RecorrenciaEnd)
+                                {
+                                    write = false;
+                                }
+                            }
+
+                            DateTime dataini = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Inicio.Value.ToShortTimeString());
+                            DateTime datafim = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Fim.Value.ToShortTimeString());
+
+                            //verifica exceções
+                            if (write == true)
+                            {
+                                if (item.Exceptions != "")
+                                {
+                                    bool towrite = true;
+                                    foreach (string exs in item.Exceptions.Split(";"))
+                                    {
+                                        DateTime a;
+                                        if (DateTime.TryParse(exs, out a) == true)
+                                        {
+                                            if (a.ToShortDateString() == dti.Value.AddDays(i).ToShortDateString())
+                                            {
+                                                towrite = false;
+                                            }
+                                        }
+                                    }
+                                    if (towrite == true)
+                                    {
+                                        buffer.Add(new Schedule { Id = item.Id, Composto = item.Composto, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, Tina = item.Tina, Unidade = item.Unidade, Valor = item.Valor, DataRealizada = null, OperadorRealizou = null });
+                                    }
+                                }
+                                else
+                                {
+                                    buffer.Add(new Schedule { Id = item.Id, Composto = item.Composto, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, Tina = item.Tina, Unidade = item.Unidade, Valor = item.Valor, DataRealizada = null, OperadorRealizou = null });
+                                }
+                            }
+                        }
+                        break;
+                    case "Semanal":
+                        for (int i = 0; i < (dtf - dti).Value.Days; i++)
+                        {
+                            bool write = true;
+
+                            //verifica onde começa
+                            if (dti.Value.Date.AddDays(i) < item.Inicio.Value.Date)
+                            {
+                                write = false;
+                            }
+
+                            //verifica o dia da semana
+                            if (dti.Value.AddDays(i).DayOfWeek != item.Inicio.Value.DayOfWeek)
+                            {
+                                write = false;
+                            }
+
+                            //verifica dim de recorrência
+                            if (item.RecorrenciaEnd != null)
+                            {
+                                if (dti.Value.AddDays(i) >= item.RecorrenciaEnd)
+                                {
+                                    write = false;
+                                }
+                            }
+
+                            DateTime dataini = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Inicio.Value.ToShortTimeString());
+                            DateTime datafim = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Fim.Value.ToShortTimeString());
+
+                            //verifica exceções
+                            if (write == true)
+                            {
+                                if (item.Exceptions != "")
+                                {
+                                    bool towrite = true;
+                                    foreach (string exs in item.Exceptions.Split(";"))
+                                    {
+                                        DateTime a;
+                                        if (DateTime.TryParse(exs, out a) == true)
+                                        {
+                                            if (a.ToShortDateString() == dti.Value.AddDays(i).ToShortDateString())
+                                            {
+                                                towrite = false;
+                                            }
+                                        }
+                                    }
+                                    if (towrite == true)
+                                    {
+                                        buffer.Add(new Schedule { Id = item.Id, Composto = item.Composto, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, Tina = item.Tina, Unidade = item.Unidade, Valor = item.Valor, DataRealizada = null, OperadorRealizou = null });
+                                    }
+                                }
+                                else
+                                {
+                                    buffer.Add(new Schedule { Id = item.Id, Composto = item.Composto, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, Tina = item.Tina, Unidade = item.Unidade, Valor = item.Valor, DataRealizada = null, OperadorRealizou = null });
+                                }
+                            }
+                        }
+                        break;
+                    case "Quinzenal":
+                        for (int i = 0; i < (dtf - dti).Value.Days; i++)
+                        {
+                            bool write = true;
+
+                            //verifica onde começa
+                            if (dti.Value.Date.AddDays(i) < item.Inicio.Value.Date)
+                            {
+                                write = false;
+                            }
+
+                            //verifica o dia da semana
+                            if (dti.Value.AddDays(i).DayOfWeek != item.Inicio.Value.DayOfWeek)
+                            {
+                                write = false;
+                            }
+                            else
+                            {
+                                //verifica a semana par ou impar
+                                int weeknumini = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(item.Inicio.Value, CalendarWeekRule.FirstDay, DayOfWeek.Monday);
+                                int weeknumtod = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(dti.Value.AddDays(i), CalendarWeekRule.FirstDay, DayOfWeek.Monday);
+
+                                if (weeknumini % 2 != weeknumtod % 2)
+                                {
+                                    write = false;
+                                }
+                            }
+
+                            //verifica dim de recorrência
+                            if (item.RecorrenciaEnd != null)
+                            {
+                                if (dti.Value.AddDays(i) >= item.RecorrenciaEnd)
+                                {
+                                    write = false;
+                                }
+                            }
+
+                            DateTime dataini = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Inicio.Value.ToShortTimeString());
+                            DateTime datafim = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Fim.Value.ToShortTimeString());
+
+                            //verifica exceções
+                            if (write == true)
+                            {
+                                if (item.Exceptions != "")
+                                {
+                                    bool towrite = true;
+                                    foreach (string exs in item.Exceptions.Split(";"))
+                                    {
+                                        DateTime a;
+                                        if (DateTime.TryParse(exs, out a) == true)
+                                        {
+                                            if (a.ToShortDateString() == dti.Value.AddDays(i).ToShortDateString())
+                                            {
+                                                towrite = false;
+                                            }
+                                        }
+                                    }
+                                    if (towrite == true)
+                                    {
+                                        buffer.Add(new Schedule { Id = item.Id, Composto = item.Composto, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, Tina = item.Tina, Unidade = item.Unidade, Valor = item.Valor, DataRealizada = null, OperadorRealizou = null });
+                                    }
+                                }
+                                else
+                                {
+                                    buffer.Add(new Schedule { Id = item.Id, Composto = item.Composto, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, Tina = item.Tina, Unidade = item.Unidade, Valor = item.Valor, DataRealizada = null, OperadorRealizou = null });
+                                }
+                            }
+                        }
+                        break;
+                    case "Mensal":
+                        for (int i = 0; i < (dtf - dti).Value.Days; i++)
+                        {
+                            bool write = true;
+
+                            //verifica onde começa
+                            if (dti.Value.Date.AddDays(i) < item.Inicio.Value.Date)
+                            {
+                                write = false;
+                            }
+
+                            //verifica o dia do mês
+                            if (dti.Value.AddDays(i).Day != item.Inicio.Value.Day)
+                            {
+                                write = false;
+                            }
+
+                            //verifica dim de recorrência
+                            if (item.RecorrenciaEnd != null)
+                            {
+                                if (dti.Value.AddDays(i) >= item.RecorrenciaEnd)
+                                {
+                                    write = false;
+                                }
+                            }
+
+                            DateTime dataini = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Inicio.Value.ToShortTimeString());
+                            DateTime datafim = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Fim.Value.ToShortTimeString());
+
+                            //verifica exceções
+                            if (write == true)
+                            {
+                                if (item.Exceptions != "")
+                                {
+                                    bool towrite = true;
+                                    foreach (string exs in item.Exceptions.Split(";"))
+                                    {
+                                        DateTime a;
+                                        if (DateTime.TryParse(exs, out a) == true)
+                                        {
+                                            if (a.ToShortDateString() == dti.Value.AddDays(i).ToShortDateString())
+                                            {
+                                                towrite = false;
+                                            }
+                                        }
+                                    }
+                                    if (towrite == true)
+                                    {
+                                        buffer.Add(new Schedule { Id = item.Id, Composto = item.Composto, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, Tina = item.Tina, Unidade = item.Unidade, Valor = item.Valor, DataRealizada = null, OperadorRealizou = null });
+                                    }
+                                }
+                                else
+                                {
+                                    buffer.Add(new Schedule { Id = item.Id, Composto = item.Composto, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, Tina = item.Tina, Unidade = item.Unidade, Valor = item.Valor, DataRealizada = null, OperadorRealizou = null });
+                                }
+                            }
+                        }
+                        break;
+                    case "Anual":
+                        for (int i = 0; i < (dtf - dti).Value.Days; i++)
+                        {
+                            bool write = true;
+
+                            //verifica onde começa
+                            if (dti.Value.Date.AddDays(i) < item.Inicio.Value.Date)
+                            {
+                                write = false;
+                            }
+
+                            //verifica o dia do ano
+                            if (dti.Value.AddDays(i).DayOfYear != item.Inicio.Value.DayOfYear)
+                            {
+                                write = false;
+                            }
+
+                            //verifica dim de recorrência
+                            if (item.RecorrenciaEnd != null)
+                            {
+                                if (dti.Value.AddDays(i) >= item.RecorrenciaEnd)
+                                {
+                                    write = false;
+                                }
+                            }
+
+                            DateTime dataini = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Inicio.Value.ToShortTimeString());
+                            DateTime datafim = DateTime.Parse(dti.Value.AddDays(i).ToShortDateString() + " " + item.Fim.Value.ToShortTimeString());
+
+                            //verifica exceções
+                            if (write == true)
+                            {
+                                if (item.Exceptions != "")
+                                {
+                                    bool towrite = true;
+                                    foreach (string exs in item.Exceptions.Split(";"))
+                                    {
+                                        DateTime a;
+                                        if (DateTime.TryParse(exs, out a) == true)
+                                        {
+                                            if (a.ToShortDateString() == dti.Value.AddDays(i).ToShortDateString())
+                                            {
+                                                towrite = false;
+                                            }
+                                        }
+                                    }
+                                    if (towrite == true)
+                                    {
+                                        buffer.Add(new Schedule { Id = item.Id, Composto = item.Composto, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, Tina = item.Tina, Unidade = item.Unidade, Valor = item.Valor, DataRealizada = null, OperadorRealizou = null });
+                                    }
+                                }
+                                else
+                                {
+                                    buffer.Add(new Schedule { Id = item.Id, Composto = item.Composto, Exceptions = item.Exceptions, Inicio = dataini, Fim = datafim, Notas = item.Notas, Operador = item.Operador, Recorrencia = item.Recorrencia, RecorrenciaEnd = item.RecorrenciaEnd, Recorrente = item.Recorrente.Value, Tina = item.Tina, Unidade = item.Unidade, Valor = item.Valor, DataRealizada = null, OperadorRealizou = null });
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        foreach (DosagemRealizada item in dosagem)
+        {
+            if (item.Idmarcar == -1)
+            {
+                buffer.Add(new Schedule { Id = item.Id, Composto = item.Composto, Exceptions = "", Inicio = null, Fim = null, Notas = item.Notas, Operador = "", Recorrencia = "", RecorrenciaEnd = null, Recorrente = false, Tina = item.Tina, Unidade = item.Unidade, Valor = item.Valor, DataRealizada = item.DataRealizada, OperadorRealizou = item.Operador });
+            }
+            else
+            {
+                Schedule marcacao = buffer.FirstOrDefault(x => x.Id == item.Idmarcar);
+                if (marcacao != null)
+                {
+                    marcacao.Id = item.Id;
+                    marcacao.Valor = item.Valor;
+                    marcacao.Notas = item.Notas;
+                    marcacao.DataRealizada = item.DataRealizada;
+                    marcacao.OperadorRealizou = item.Operador;
+                }
+            }
+        }
+        Dosagens = buffer;
+
+
+        //gráfico top equipamentos
+        var topq = buffer.GroupBy(eq => eq.Tina).Select(q => new AreaChartData { Dia = q.Key, Num = q.Count() }).OrderByDescending(ord => ord.Num).Take(10);
+        List<AreaChartData> topequip = new List<AreaChartData>();
+        foreach (var item in topq.OrderBy(ord => ord.Num))
+        {
+            topequip.Add(new AreaChartData { Dia = item.Dia, Num = item.Num });
+        }
+        ChartData = topequip;
+
+        //gráfico top composto
+        var topc = buffer.GroupBy(eq => eq.Composto).Select(q => new AreaChartData { Dia = q.Key, Num = q.Count() }).OrderByDescending(ord => ord.Num).Take(10);
+        List<AreaChartData> topcomposto = new List<AreaChartData>();
+        foreach (var item in topc.OrderBy(ord => ord.Num))
+        {
+            topcomposto.Add(new AreaChartData { Dia = item.Dia, Num = item.Num });
+        }
+        ChartDataComposto = topcomposto;
+
+        //dias sem dosagens, dosagens efetuadas, dosagens agendadas
+        var LasOp = await dl.db.Dosagens.OrderByDescending(ze => ze.Id).Take(1).ToListAsync();
+        if (LasOp.Count() > 0)
+        {
+            diassman = DateTime.Today.Subtract(LasOp.First().DataRealizada).Days.ToString();
+        }
+        else
+        {
+            diassman = "--";
+        }
+        opefetuadas = (await dl.db.Dosagens.ToListAsync()).Count().ToString();
+        opagendadas = (await dl.db.DosagensAgenda.ToListAsync()).Count().ToString();
+
+
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+        dl.Dispose();
+    }
+
+    //DOSAGEM
+    private bool PopupDosagem = false;
+    private bool PopupDelDosagem = false;
+    public DosagemRealizada seldosagem = new DosagemRealizada() { };
+
+    private async void editdosagem(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var doc = dl.db.Dosagens.First(x => x.Id == id);
+        seldosagem = doc;
+
+        PopupDosagem = true;
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Add_Dosagem(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (id == 0)
+        {
+            if (seldosagem.Tina != "" && seldosagem.Composto != "" && seldosagem.Valor != 0 && seldosagem.Unidade != "")
+            {
+                dl.db.Dosagens.Add(new DosagemRealizada { Idmarcar = -1, Tina = seldosagem.Tina, Composto = seldosagem.Composto, Valor = seldosagem.Valor, Unidade = seldosagem.Unidade, DataRealizada = seldosagem.DataRealizada, Notas = seldosagem.Notas, Operador = who.name });
+            }
+            else
+            {
+                Erromsg = "Deve preencher corretamente os campos!";
+            }
+
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Inseriu a dosagem de {seldosagem.Valor} {seldosagem.Unidade} do composto '{seldosagem.Composto}', na tina '{seldosagem.Tina}'", "DataLink_L1");
+        }
+        else
+        {
+            dl.db.Dosagens.First(x => x.Id == id).Tina = seldosagem.Tina;
+            dl.db.Dosagens.First(x => x.Id == id).Composto = seldosagem.Composto;
+            dl.db.Dosagens.First(x => x.Id == id).Valor = seldosagem.Valor;
+            dl.db.Dosagens.First(x => x.Id == id).Unidade = seldosagem.Unidade;
+            dl.db.Dosagens.First(x => x.Id == id).Notas = seldosagem.Notas;
+            dl.db.Dosagens.First(x => x.Id == id).DataRealizada = seldosagem.DataRealizada;
+            dl.db.Dosagens.First(x => x.Id == id).Operador = who.name;
+
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Alterou a dosagem de {seldosagem.Valor} {seldosagem.Unidade} do composto '{seldosagem.Composto}', na tina '{seldosagem.Tina}'", "DataLink_L1");
+        }
+
+        PopupDosagem = false;
+        seldosagem = new DosagemRealizada() { };
+
+        await SpinnerObj.HideAsync();
+        SearchData();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Del_Dosagem(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        dl.db.Dosagens.Remove(dl.db.Dosagens.First(x => x.Id == id));
+        await dl.db.SaveChangesAsync();
+        utils.UserLog($"Eliminou a dosagem de {seldosagem.Valor} {seldosagem.Unidade} do composto '{seldosagem.Composto}', na tina '{seldosagem.Tina}'", "DataLink_L1");
+
+
+        PopupDosagem = false;
+        PopupDelDosagem = false;
+        seldosagem = new DosagemRealizada() { };
+
+        await SpinnerObj.HideAsync();
+        SearchData();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    //TASK
+    List<Recc> Recs = new List<Recc> {
+               new Recc() { Id = "Diário", Rec = "Diário" },
+               new Recc() { Id = "Semanal", Rec = "Semanal" },
+               new Recc() { Id = "Quinzenal", Rec = "Quinzenal" },
+               new Recc() { Id = "Mensal", Rec = "Mensal" },
+               new Recc() { Id = "Anual", Rec = "Anual" },
+            };
+    private bool PopupTask = false;
+    private bool PopupDelTask_rec = false;
+    private bool PopupDelTask_norec = false;
+    private bool Del_all = false;
+    public bool Urgente = false;
+    public bool Eternal = true;
+    public DosagemAgendada seltask = new DosagemAgendada() { };
+
+    public void SelRecorrence_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<Recc> args)
+    {
+        seltask.Recorrencia = args.ItemData.Rec;
+    }
+
+    private async void edittask(int id, DateTime? inicio, DateTime? fim)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var doc = dl.db.DosagensAgenda.First(x => x.Id == id);
+        seltask = doc;
+        seltask.Inicio = inicio.Value;
+        seltask.Fim = fim.Value;
+
+        if (seltask.Fim == seltask.Inicio)
+        {
+            Urgente = true;
+        }
+        else
+        {
+            Urgente = false;
+        }
+
+        if (seltask.RecorrenciaEnd != null)
+        {
+            Eternal = false;
+        }
+        else
+        {
+            Eternal = true;
+        }
+
+        PopupTask = true;
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Add_Task(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (Urgente == true)
+        {
+            seltask.Inicio = DateTime.Now;
+            seltask.Fim = seltask.Inicio;
+        }
+        else
+        {
+            if (seltask.Fim == seltask.Inicio)
+            {
+                seltask.Fim = seltask.Inicio.Value.AddMinutes(30);
+            }
+        }
+
+        if (Eternal == true)
+        {
+            seltask.RecorrenciaEnd = null;
+        }
+
+        if (id == 0)
+        {
+            if (seltask.Tina != "" && seltask.Composto != "" && seltask.Valor != 0 && seltask.Unidade != "")
+            {
+                dl.db.DosagensAgenda.Add(new DosagemAgendada { Tina = seltask.Tina, Composto = seltask.Composto, Valor = seltask.Valor, Unidade = seltask.Unidade, Notas = seltask.Notas, AllDay = seltask.AllDay, Inicio = seltask.Inicio, Fim = seltask.Fim, Recorrente = seltask.Recorrente, Recorrencia = seltask.Recorrencia, Exceptions = seltask.Exceptions, RecorrenciaEnd = seltask.RecorrenciaEnd, Operador = "Qualquer Utilizador", Criador = who.name });
+            }
+            else
+            {
+                Erromsg = "Deve preencher corretamente os campos!";
+            }
+
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Adicionou o agendamento de dosagem de {seltask.Valor} {seltask.Unidade} do composto '{seltask.Composto}', na tina '{seltask.Tina}'", "DataLink_L1");
+        }
+        else
+        {
+            dl.db.DosagensAgenda.First(x => x.Id == id).Tina = seltask.Tina;
+            dl.db.DosagensAgenda.First(x => x.Id == id).Composto = seltask.Composto;
+            dl.db.DosagensAgenda.First(x => x.Id == id).Valor = seltask.Valor;
+            dl.db.DosagensAgenda.First(x => x.Id == id).Unidade = seltask.Unidade;
+            dl.db.DosagensAgenda.First(x => x.Id == id).Notas = seltask.Notas;
+            dl.db.DosagensAgenda.First(x => x.Id == id).AllDay = seltask.AllDay;
+            dl.db.DosagensAgenda.First(x => x.Id == id).Inicio = seltask.Inicio;
+            dl.db.DosagensAgenda.First(x => x.Id == id).Fim = seltask.Fim;
+            dl.db.DosagensAgenda.First(x => x.Id == id).Recorrente = seltask.Recorrente;
+            dl.db.DosagensAgenda.First(x => x.Id == id).Recorrencia = seltask.Recorrencia;
+            dl.db.DosagensAgenda.First(x => x.Id == id).Exceptions = seltask.Exceptions;
+            dl.db.DosagensAgenda.First(x => x.Id == id).RecorrenciaEnd = seltask.RecorrenciaEnd;
+            dl.db.DosagensAgenda.First(x => x.Id == id).Criador = who.name;
+
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Alterou o agendamento de dosagem de {seltask.Valor} {seltask.Unidade} do composto '{seltask.Composto}', na tina '{seltask.Tina}'", "DataLink_L1");
+        }
+
+        PopupTask = false;
+        seltask = new DosagemAgendada() { };
+        Urgente = false;
+        Eternal = true;
+
+        await SpinnerObj.HideAsync();
+        SearchData();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Del_Task(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (seltask.Recorrente == true)
+        {
+            if (Del_all == true)
+            {
+                dl.db.DosagensAgenda.Remove(dl.db.DosagensAgenda.First(x => x.Id == id));
+                await dl.db.Dosagens.Where(x => x.Idmarcar == id).ForEachAsync(x => x.Idmarcar = -1);
+            }
+            else
+            {
+                dl.db.DosagensAgenda.First(x => x.Id == id).Exceptions += seltask.Inicio + ";";
+            }
+        }
+        else
+        {
+            dl.db.DosagensAgenda.Remove(dl.db.DosagensAgenda.First(x => x.Id == id));
+            await dl.db.Dosagens.Where(x => x.Idmarcar == id).ForEachAsync(x => x.Idmarcar = -1);
+        }
+        await dl.db.SaveChangesAsync();
+        utils.UserLog($"Eliminou o agendamento de dosagem de {seltask.Valor} {seltask.Unidade} do composto '{seltask.Composto}', na tina '{seltask.Tina}'", "DataLink_L1");
+
+        PopupTask = false;
+        PopupDelTask_rec = false;
+        PopupDelTask_norec = false;
+        seltask = new DosagemAgendada() { };
+        Urgente = false;
+        Eternal = true;
+        Del_all = false;
+
+        await SpinnerObj.HideAsync();
+        SearchData();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    public void SelTina_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<Recc> args)
+    {
+        if (PopupTask == true)
+        {
+            seltask.Tina = args.ItemData.Rec;
+        }
+        if (PopupDosagem == true)
+        {
+            seldosagem.Tina = args.ItemData.Rec;
+        }
+    }
+
+    public void SelComposto_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<Recc> args)
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var doc = dl.db.DosagemCompostos.First(x => x.Id == int.Parse(args.ItemData.Id));
+        if (PopupTask == true)
+        {
+            seltask.Composto = doc.Nome;
+            seltask.Unidade = doc.Unidade;
+            seltask.Valor = doc.Valor;
+        }
+        if (PopupDosagem == true)
+        {
+            seldosagem.Composto = doc.Nome;
+            seldosagem.Unidade = doc.Unidade;
+            seldosagem.Valor = doc.Valor;
+        }
+
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    public void CustomizeCell(QueryCellInfoEventArgs<Schedule> args)
+    {
+        if (args.Column.HeaderText == "U")
+        {
+            if (args.Data.Inicio != null && args.Data.Fim == args.Data.Inicio)
+            {
+                args.Cell.AddClass(new string[] { "above-0" });
+            }
+            if (args.Data.Valor == 0)
+            {
+                args.Cell.AddClass(new string[] { "below-0" });
+            }
+        }
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+    public class Recc
+    {
+        public string Id { get; set; }
+        public string Rec { get; set; }
+    }
+
+    public class Schedule
+    {
+        public int Id { get; set; }
+        public string Tina { get; set; }
+        public string Composto { get; set; }
+        public string Unidade { get; set; }
+        public double Valor { get; set; }
+        public string Notas { get; set; }
+        public DateTime? Inicio { get; set; }
+        public DateTime? Fim { get; set; }
+        public bool Recorrente { get; set; }
+        public string Recorrencia { get; set; }
+        public string Exceptions { get; set; }
+        public DateTime? RecorrenciaEnd { get; set; }
+        public string Operador { get; set; }
+        public bool Urgente { get; set; }
+
+        public DateTime? DataRealizada { get; set; }
+        public string? OperadorRealizou { get; set; }
+    }
+
+    public class AreaChartData
+    {
+        public string Dia { get; set; }
+        public int Num { get; set; }
+    }
+}

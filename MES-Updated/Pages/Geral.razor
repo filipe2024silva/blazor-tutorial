@@ -1,0 +1,713 @@
+﻿@page "/geral"
+@using Syncfusion.Blazor.Spinner
+@using Syncfusion.Blazor.Charts
+@using Microsoft.EntityFrameworkCore
+@using System.Diagnostics
+@using f10.pulsar.sv.data.mariadb
+@inject NavigationManager NavigationManager
+@inject Utils utils
+@inject MySqlDataContext _dbContextMES
+@inject PulsarDataContext _dbContextLinha1
+@inject IJSRuntime JSRuntime
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <p style="margin:0;">Sem ligação às bases de dados.</p>
+                                <a href="/" class="special button" style="margin-top:1em">Voltar</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("G") == true)
+            {
+                <header>
+                    <div class="row">
+                        <div class="8u 12u$(medium)">
+                            <h1>Bom dia, @who.name<br /></h1>
+                            @*<p>Tem 20 mensagens por ler e 3 tarefas para realizar hoje.</p>*@
+                        </div>
+                        <div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+                            <button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                            <button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                        </div>
+                    </div>
+                </header>
+
+
+
+                @if (isupdating == false)
+                {
+                    if (utils.L1ON == true)
+                    {
+                        <section>
+                            @*GRÁFICO PRODUÇÃO GERAL*@
+                            <div class="row uniform">
+                                <div class="12u 12u$(medium)">
+                                    <SfChart Title="Cargas por Hora" Width="100%" Height="400" Theme="@utils.ctheme">
+                                        <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                        <ChartTooltipSettings Enable="true" Shared="true" Header="Nº de Cargas" Format="<b>${point.x}H : ${point.y}</b>"></ChartTooltipSettings>
+                                        <ChartPrimaryXAxis Title="Hora" EdgeLabelPlacement="EdgeLabelPlacement.Shift" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                        </ChartPrimaryXAxis>
+                                        <ChartPrimaryYAxis Title="Número de Cargas" LabelFormat="{value}">
+                                        </ChartPrimaryYAxis>
+                                        <ChartSeriesCollection>
+                                            <ChartSeries DataSource="@L1ChartData" Name="Linha 1" XName="Hora" YName="Num" Type="ChartSeriesType.Line" Width="3"></ChartSeries>
+                                        </ChartSeriesCollection>
+                                    </SfChart>
+                                </div>
+                            </div>
+                        </section>
+
+                        <div class="12u" style="display: flex;justify-content:flex-end;">
+                            <button @onclick="@(() => { SearchData(); })" title="Atualizar"><i class="icon style1 fa-refresh"></i></button>
+                            <button @onclick="@(() => { Comparar = false; })" style="margin-left:0.5em" title="Ver por linha"><i class="icon style1 fa-list"></i></button>
+                            <button @onclick="@(() => { Comparar = true; })" style="margin-left:0.5em" title="Comparar linhas"><i class="icon style1 fa-th"></i></button>
+                        </div>
+                    }
+
+                    @if (Comparar == false)
+                    {
+                        <section style="margin-top:2em">
+                            @if (utils.L1ON == true)
+                            {
+                                <h3 style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1"); })">LINHA 1</h3>
+                                @if (abreolhos == true)
+                                {
+                                    <div class="row uniform">
+                                        <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                            <div class="kpi2">
+                                                <div class="kpi2__inside">
+                                                    <i class="kpi2__icon fa fa-user bg-info text-light"></i>
+                                                    <div class="kpi2__text">
+                                                        <div class="kpi2__title">@L1User</div>
+                                                        <div class="kpi2__subtitle">Operador Atual</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                            <div class="kpi2">
+                                                <div class="kpi2__inside">
+                                                    <i class="kpi2__icon fa fa-retweet bg-info text-light"></i>
+                                                    <div class="kpi2__text">
+                                                        <div class="kpi2__title">@L1Estado</div>
+                                                        <div class="kpi2__subtitle">Estado da Linha</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                            <div class="kpi2">
+                                                <div class="kpi2__inside">
+                                                    <i class="kpi2__icon fa fa-tasks bg-info text-light"></i>
+                                                    <div class="kpi2__text">
+                                                        <div class="kpi2__title">@L1Programa</div>
+                                                        <div class="kpi2__subtitle">Programa atual</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @if (L1alarmes > 0)
+                                        {
+                                            <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/alarmes"); })">
+                                                    <div class="kpi2__inside">
+                                                        <i class="kpi2__icon fa fa-exclamation-triangle bg-danger text-light"></i>
+                                                        <div class="kpi2__text">
+                                                            <div class="kpi2__title">@L1alarmes</div>
+                                                            <div class="kpi2__subtitle">Alarmes Ativos</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/alarmes"); })">
+                                                    <div class="kpi2__inside">
+                                                        <i class="kpi2__icon fa fa-exclamation-triangle bg-info text-light"></i>
+                                                        <div class="kpi2__text">
+                                                            <div class="kpi2__title">@L1alarmes</div>
+                                                            <div class="kpi2__subtitle">Alarmes Ativos</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                            <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/relatorios"); })">
+                                                <div class="kpi2__inside">
+                                                    <i class="kpi2__icon fa fa-trophy bg-info text-light"></i>
+                                                    <div class="kpi2__text">
+                                                        <div class="kpi2__title">@L1cargas</div>
+                                                        <div class="kpi2__subtitle">Cargas</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                            <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/relatorios"); })">
+                                                <div class="kpi2__inside">
+                                                    <i class="kpi2__icon fa fa-random bg-info text-light"></i>
+                                                    <div class="kpi2__text">
+                                                        <div class="kpi2__title">@L1TopRef.Hora</div>
+                                                        <div class="kpi2__subtitle">Peça mais produzida (@L1TopRef.Num cargas)</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                            <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/oee"); })">
+                                                <div class="kpi2__inside">
+                                                    <i class="kpi2__icon fa fa-area-chart bg-info text-light"></i>
+                                                    <div class="kpi2__text">
+                                                        <div class="kpi2__title">@L1oee%</div>
+                                                        <div class="kpi2__subtitle">OEE</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <h3>SEM LIGAÇÃO À LINHA 1</h3>
+                            }
+                        </section>
+                    }
+                    else
+                    {
+                        <div class="6u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                            <section style="margin-top:2em">
+                                @if (utils.L1ON == true)
+                                {
+                                    <h3 style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1"); })">LINHA 1</h3>
+                                    @if (abreolhos == true)
+                                    {
+                                        <div class="row uniform">
+                                            <div class="12u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                <div class="kpi2">
+                                                    <div class="kpi2__inside">
+                                                        <i class="kpi2__icon fa fa-user bg-info text-light"></i>
+                                                        <div class="kpi2__text">
+                                                            <div class="kpi2__title">@L1User</div>
+                                                            <div class="kpi2__subtitle">Operador Atual</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="12u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                <div class="kpi2">
+                                                    <div class="kpi2__inside">
+                                                        <i class="kpi2__icon fa fa-retweet bg-info text-light"></i>
+                                                        <div class="kpi2__text">
+                                                            <div class="kpi2__title">@L1Estado</div>
+                                                            <div class="kpi2__subtitle">Estado da Linha</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="12u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                <div class="kpi2">
+                                                    <div class="kpi2__inside">
+                                                        <i class="kpi2__icon fa fa-tasks bg-info text-light"></i>
+                                                        <div class="kpi2__text">
+                                                            <div class="kpi2__title">@L1Programa</div>
+                                                            <div class="kpi2__subtitle">Programa atual</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @if (L1alarmes > 0)
+                                            {
+                                                <div class="12u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                    <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/alarmes"); })">
+                                                        <div class="kpi2__inside">
+                                                            <i class="kpi2__icon fa fa-exclamation-triangle bg-danger text-light"></i>
+                                                            <div class="kpi2__text">
+                                                                <div class="kpi2__title">@L1alarmes</div>
+                                                                <div class="kpi2__subtitle">Alarmes Ativos</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="12u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                    <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/alarmes"); })">
+                                                        <div class="kpi2__inside">
+                                                            <i class="kpi2__icon fa fa-exclamation-triangle bg-info text-light"></i>
+                                                            <div class="kpi2__text">
+                                                                <div class="kpi2__title">@L1alarmes</div>
+                                                                <div class="kpi2__subtitle">Alarmes Ativos</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                            <div class="12u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/relatorios"); })">
+                                                    <div class="kpi2__inside">
+                                                        <i class="kpi2__icon fa fa-trophy bg-info text-light"></i>
+                                                        <div class="kpi2__text">
+                                                            <div class="kpi2__title">@L1cargas</div>
+                                                            <div class="kpi2__subtitle">Cargas</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="12u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/relatorios"); })">
+                                                    <div class="kpi2__inside">
+                                                        <i class="kpi2__icon fa fa-random bg-info text-light"></i>
+                                                        <div class="kpi2__text">
+                                                            <div class="kpi2__title">@L1TopRef.Hora</div>
+                                                            <div class="kpi2__subtitle">Peça mais produzida (@L1TopRef.Num cargas)</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="12u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/oee"); })">
+                                                    <div class="kpi2__inside">
+                                                        <i class="kpi2__icon fa fa-area-chart bg-info text-light"></i>
+                                                        <div class="kpi2__text">
+                                                            <div class="kpi2__title">@L1oee%</div>
+                                                            <div class="kpi2__subtitle">OEE</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <h3>SEM LIGAÇÃO À LINHA 1</h3>
+                                }
+                            </section>
+                        </div>
+                    }
+                }
+
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-light bg-dark">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+
+@code {
+    SfSpinner SpinnerObj = new SfSpinner();
+    User who = new User();
+
+    public bool isupdating = false;
+    bool dbchecked = false, dbcheckedoff = false;
+    public DateTime? dti { get; set; } = DateTime.Today;
+    public DateTime? dtf { get; set; } = DateTime.Today;
+    private bool Comparar = false;
+    private bool abreolhos = false;
+
+    public List<Dadosrt> L1RefsTrabalho = new List<Dadosrt>() { };
+    public List<AreaChartData> L1ChartData = new List<AreaChartData> { };
+    public AreaChartData L1TopRef = new AreaChartData { };
+    public string L1User = "N/A";
+    public decimal L1cargas = 0;
+    public decimal L1oee = 0;
+    public decimal L1alarmes = 0;
+    public string L1Estado = "N/A";
+    public string L1Programa = "N/A";
+
+    protected override void OnInitialized()
+    {
+        who = (User)utils.f10session["user"];
+        base.OnInitialized();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+    private async void GetDB()
+    {
+
+        if (await _dbContextMES.Database.CanConnectAsync())
+        {
+            utils.MESON = true;
+        }
+        else
+        {
+            utils.MESON = false;
+        }
+        if (await _dbContextLinha1.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+        }
+        else
+        {
+            utils.L1ON = false;
+        }
+
+        if (utils.MESON == true && utils.L1ON == true)
+        {
+            dbchecked = true;
+            dbcheckedoff = false;
+            StateHasChanged();
+            SearchData();
+        }
+        else
+        {
+            dbchecked = false;
+            dbcheckedoff = true;
+            StateHasChanged();
+        }
+
+
+    }
+    private async void SearchData()
+    {
+        isupdating = true;
+        await SpinnerObj.ShowAsync();
+        abreolhos = false;
+
+        try
+        {
+
+            #region LINHA 4
+
+            if (utils.L1ON == true)
+            {
+                _dbContextLinha1.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+                //UTILIZADOR
+                var L1puser = _dbContextLinha1.Users.
+                Where(u => u.Comportamento == "LOGIN" || u.Comportamento == "LOGOUT").
+                OrderByDescending(l => l.Tempo).Take(1);
+                var L1dadosuser = await L1puser.ToListAsync();
+                if (L1dadosuser.Count > 0)
+                {
+                    if (L1dadosuser.First().Comportamento == "LOGIN")
+                    {
+                        L1User = L1dadosuser.First().Username;
+                    }
+                    else
+                    {
+                        L1User = "N/A";
+                    }
+                }
+
+                //ESTADO
+                L1Estado = (await _dbContextLinha1.Registos.OrderByDescending(x => x.TempoFinal).Take(1).ToListAsync()).FirstOrDefault()?.Estado ?? "";
+
+                //PROGRAMA
+                var L1pg = (await _dbContextLinha1.ReferenciaTrabalhos.OrderByDescending(x => x.Id).Take(1).ToListAsync()).FirstOrDefault()?.Campo1 ?? "";
+                L1Programa = !string.IsNullOrEmpty(L1pg) ? (await _dbContextLinha1.PlcProgramas.Where(x => x.Num == byte.Parse(L1pg)).ToListAsync()).First().Nome : "";
+
+                //ALARMES
+                L1alarmes = (await _dbContextLinha1.Alarmes.Where(x => x.DataFim == null).Select(x => x.Id).ToListAsync()).Count;
+
+                //TABELA
+                var L1phistory = from rt in _dbContextLinha1.ReferenciaTrabalhos
+                                 join reg in _dbContextLinha1.Registos on rt.Lote equals reg.Lote
+                                 group reg by new
+                                 {
+                                     rt.Id,
+                                     rt.Lote,
+                                     rt.Referencia,
+                                     rt.Ordemfabrico,
+                                     rt.Suspensao,
+                                     rt.Operador,
+                                     rt.Unidades,
+                                     rt.UnidadesMas,
+                                     rt.UnidadesTeoricas,
+                                     rt.AreaTotal,
+                                     rt.Descarga,
+                                     rt.LoteData,
+                                 } into gr
+                                 where gr.Key.LoteData >= dti && gr.Key.LoteData <= dtf.Value.AddDays(1)
+                                 orderby gr.Max(t => t.TempoFinal) descending
+                                 select new Dadosrt
+                                 {
+                                     Id = gr.Key.Id.ToString(),
+                                     Lote = gr.Key.Lote,
+                                     OF = gr.Key.Ordemfabrico,
+                                     Suspensao = gr.Key.Suspensao,
+                                     Referencia = gr.Key.Referencia,
+                                     Operador = gr.Key.Operador,
+                                     Inicio = gr.Min(t => t.TempoInicial),
+                                     Fim = gr.Max(t => t.TempoFinal),
+                                     Tempo = (gr.Max(t => t.TempoFinal).Value.Subtract(gr.Min(t => t.TempoInicial).Value)).ToString(@"dd\:hh\:mm\:ss"),
+                                     Unidades = gr.Key.Unidades,
+                                     Boas = gr.Key.Unidades - gr.Key.UnidadesMas,
+                                     Mas = gr.Key.UnidadesMas,
+                                     Teoricas = gr.Key.UnidadesTeoricas,
+                                     Area = gr.Key.AreaTotal,
+                                     Descarga = gr.Key.Descarga,
+                                     LoteData = gr.Key.LoteData
+
+                                 };
+                var L1dados = await L1phistory.ToListAsync();
+                L1RefsTrabalho = L1dados;
+
+                //GRÁFICO NUMERO DE BARRAS POR HORA
+                List<AreaChartData> ac2 = new List<AreaChartData>() { };
+                var dadosdia2 = L1dados.Where(ca => ca.Referencia != "").GroupBy(gr => gr.LoteData.Value.Hour).OrderBy(or => or.Key);
+                foreach (var item in dadosdia2)
+                {
+                    AreaChartData aci = new AreaChartData()
+                    {
+                        Hora = item.Key.ToString(),
+                        Ordem = item.Key,
+                        Num = item.Count(),
+                    };
+                    ac2.Add(aci);
+                }
+
+                for (int i = 0; i < 23; i++)
+                {
+                    if (ac2.Where(z => z.Ordem == i).Count() == 0)
+                    {
+                        ac2.Add(new AreaChartData { Ordem = i, Hora = i.ToString(), Num = 0 });
+                    }
+                }
+                L1ChartData = ac2.OrderBy(bitch => bitch.Ordem).ToList();
+
+
+                //TOP PEÇA
+                var L1topq = L1dados.Where(ca => ca.Referencia != "").GroupBy(eq => eq.Referencia).Select(q => new AreaChartData { Hora = q.Key, Num = q.Count() }).OrderByDescending(ord => ord.Num).Take(1);
+                List<AreaChartData> L1tref = new List<AreaChartData>();
+                foreach (var item in L1topq.OrderBy(ord => ord.Num))
+                {
+                    L1tref.Add(new AreaChartData { Hora = item.Hora, Num = item.Num });
+                }
+                if (L1tref.Count > 0)
+                {
+                    L1TopRef = L1tref[0];
+                }
+
+
+                //CARGAS POR DIA
+                var L1pdiaT = from rt in _dbContextLinha1.ReferenciaTrabalhos
+                              where rt.LoteData >= dti & rt.LoteData <= dtf.Value.AddDays(1) && string.Compare(rt.Referencia.ToUpper(), "") != 0
+                              group rt by new { rt.LoteData } into gr
+                              orderby gr.Min(t => t.LoteData)
+                              select new
+                              {
+                                  Dia = gr.Key.ToString(),
+                                  Num = gr.Count()
+                              };
+                var L1CargasDia = await L1pdiaT.ToListAsync();
+
+
+                //CARREGA PAUSAS
+                var L1pPausasT = from rt in _dbContextLinha1.OeeStops
+                                 where rt.TempoInicial >= dti & rt.TempoInicial <= dtf.Value.AddDays(1)
+                                 select new
+                                 {
+                                     ti = rt.TempoInicial,
+                                     tf = rt.TempoFinal,
+                                     tt = rt.TempoFinal.Value.Subtract(rt.TempoInicial.Value),
+                                     Ocorrencia = rt.Ocorrencia
+                                 };
+                var L1PausasDia = await L1pPausasT.ToListAsync();
+
+                string L1hinicio;
+                string L1hfim;
+                decimal L1ndisp;
+                decimal L1ndesemp;
+                decimal L1nqual;
+
+                //DISPONIBILIDADE
+                decimal L1uturno;
+
+                L1hinicio = (await _dbContextLinha1.Configs.Where(x => x.Name == "HorarioInicio").FirstAsync()).Value;
+                L1hfim = (await _dbContextLinha1.Configs.Where(x => x.Name == "HorarioFim").FirstAsync()).Value;
+
+                if (DateTime.Now.Hour >= DateTime.Parse(L1hinicio).Hour && DateTime.Now.Hour < DateTime.Parse(L1hfim).Hour)
+                {
+                    L1hfim = DateTime.Now.ToString("HH:mm");
+                    L1uturno = (decimal)(TimeSpan.Parse(L1hfim) - TimeSpan.Parse(L1hinicio)).TotalHours;
+                }
+                else
+                {
+                    L1uturno = decimal.Parse((await _dbContextLinha1.Configs.FirstAsync(x => x.Name == "OEEturno")).Value);
+                }
+
+                decimal L1upausa = (decimal)L1PausasDia.Sum(z => z.tt.TotalHours);
+                var L1tprod = L1uturno - L1upausa;
+                if (L1uturno > 0)
+                {
+                    L1ndisp = Math.Round(L1tprod / L1uturno * 100, 1);
+                }
+                else
+                {
+                    L1ndisp = 100;
+                }
+
+
+                //DESEMPENHO
+                decimal L1ureal = L1CargasDia.Sum(x => x.Num);
+                L1cargas = L1dados.Where(ca => ca.Referencia != "").Count();
+                decimal L1uteorica = decimal.Parse((await _dbContextLinha1.Configs.FirstAsync(x => x.Name == "OEEcargas")).Value);
+                if (L1ureal > 0 && L1uteorica > 0 && L1uturno > 0)
+                {
+                    L1ndesemp = Math.Round((L1ureal / (L1uturno * L1uteorica)) * 100, 1);
+                }
+                else
+                {
+                    L1ndesemp = 100;
+                }
+
+                //QUALIDADE
+                decimal L1uboas = (decimal)L1dados.Sum(x => x.Boas);
+                decimal L1utodas = (decimal)L1dados.Sum(x => x.Unidades);
+                if (L1uboas > 0 && L1utodas > 0)
+                {
+                    L1nqual = Math.Round(L1uboas / L1utodas * 100, 1);
+                }
+                else
+                {
+                    L1nqual = 100;
+                }
+
+                //OEE
+                L1oee = Math.Round(((L1ndisp / 100) * (L1ndesemp / 100) * (L1nqual / 100)) * 100, 1);
+
+                _dbContextLinha1.Dispose();
+            }
+
+            #endregion
+
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Erro SearchData: {ex.Message} \n {ex.StackTrace}");
+        }
+        finally
+        {
+            await SpinnerObj.HideAsync();
+            isupdating = false;
+            abreolhos = true;
+
+            string msgtospeak = "";
+
+            if (utils.L1ON == true)
+            {
+                if (L1cargas > 0)
+                {
+                    msgtospeak = msgtospeak + " A Linha 1, produziu até ao momento " + L1cargas + " cargas, apresentando um OEE de" + L1oee + "%!";
+                }
+                else
+                {
+                    msgtospeak = msgtospeak + " A Linha 1, ainda não produziu hoje!";
+                }
+            }
+            if (L1cargas == 0)
+            {
+                msgtospeak = "Hoje, a Linha 1 ainda não produziu!";
+            }
+
+            Fala(msgtospeak);
+            StateHasChanged();
+        }
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    private async Task Fala(string msg)
+    {
+        _dbContextMES.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            var qq = _dbContextMES.Settings.FirstOrDefault(x => x.userid == who.id && x.setting == "sound");
+            if (qq != null)
+            {
+                if (Convert.ToBoolean(qq.result) == true)
+                {
+                    await JSRuntime.InvokeVoidAsync("txtSpeech", msg);
+                }
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("txtSpeech", msg);
+            }
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+
+    public class Dadosrt
+    {
+        public string Id { get; set; }
+        public string Lote { get; set; }
+        public string OF { get; set; }
+        public string Suspensao { get; set; }
+        public string Referencia { get; set; }
+        public string Operador { get; set; }
+        public DateTime? Inicio { get; set; }
+        public DateTime? Fim { get; set; }
+        public string Tempo { get; set; }
+        public int? Unidades { get; set; }
+        public int? Boas { get; set; }
+        public int? Mas { get; set; }
+        public int? Teoricas { get; set; }
+        public decimal? Area { get; set; }
+        public bool? Descarga { get; set; }
+        public DateTime? LoteData { get; set; }
+    }
+    public class AreaChartData
+    {
+        public int Ordem { get; set; }
+        public string Hora { get; set; }
+        public int Num { get; set; }
+    }
+
+}

@@ -1,0 +1,531 @@
+﻿@page "/linha1/disponibilidade"
+@using System.Diagnostics
+
+@inject NavigationManager NavigationManager
+@inject Utils utils
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="() => { dbcheckedoff = false; GetDB(); }" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("DL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - DISPONIBILIDADE</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+                        <button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                        <button @onclick="GetMotivosParagens" title="Motivos Paragens"><i class='icon style1 fa-cog'></i></button>
+                    </div>
+                </div>
+
+                <div class="row uniform">
+                    <div class="4u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+                    </div>
+                    <div class="4u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+                    </div>
+                    <div class="4u 12u$(medium)">
+                        <SfButton @onclick="SearchData">Pesquisar</SfButton>
+                    </div>
+                </div>
+
+                @if (historicoDisp != null && historicoDisp.Count() > 0)
+                {
+
+                    <div class="row uniform" style=" margin:auto; padding: 0;">
+
+                        <div>
+                            <SfAccumulationChart Title="Disponiblidade" Width="190%" Height="80%" Theme="@utils.ctheme">
+                                <AccumulationChartTooltipSettings Enable="true"></AccumulationChartTooltipSettings>
+                                <AccumulationChartLegendSettings Visible="false"></AccumulationChartLegendSettings>
+                                <AccumulationChartSeriesCollection>
+                                    <AccumulationChartSeries DataSource="@disppieChart" XName="Key" YName="Value" StartAngle="270" EndAngle="90" Radius="140%" InnerRadius="40%" Explode="true">
+                                        <AccumulationDataLabelSettings Visible="true" Name="text">
+                                            <AccumulationChartDataLabelFont FontWeight="Bold" Size="auto"></AccumulationChartDataLabelFont>
+                                        </AccumulationDataLabelSettings>
+                                    </AccumulationChartSeries>
+                                </AccumulationChartSeriesCollection>
+                            </SfAccumulationChart>
+                        </div>
+                    </div>
+
+                    <div class="row uniform">
+                        <div>
+                            <SfGrid DataSource="@historicoDisp" AllowFiltering="false" AllowSorting="false" AllowGrouping="false" Width="100%" AllowPaging="true">
+                                <GridPageSettings PageSize="20" />
+                                <GridColumns>
+                                    <GridColumn Field="TempoInicial" HeaderText="Inicio" Width="15%"></GridColumn>
+                                    <GridColumn Field="TempoFinal" HeaderText="Fim" Width="15%"></GridColumn>
+                                    <GridColumn HeaderText="Total" Width="10%">
+                                        <Template>
+                                            @{
+                                                if (context != null)
+                                                {
+                                                    var prg = (context as pulsar.sv.data.OeeStop);
+                                                    var tt = (prg.TempoFinal - prg.TempoInicial).Value.ToString(@"hh\h\:mm\m\:ss\s");
+                                                    <div style="display: flex; justify-content: space-between;">
+                                                        @tt
+                                                    </div>
+                                                }
+                                            }
+                                        </Template>
+                                    </GridColumn>
+                                    <GridColumn Field="Ocorrencia" HeaderText="Motivo"></GridColumn>
+                                    <GridColumn Field="Utilizador" HeaderText="Operador" Width="20%"></GridColumn>
+                                </GridColumns>
+                            </SfGrid>
+                        </div>
+                    </div>
+
+                }
+                else
+                {
+                    <div class="row uniform" style="margin-top:20px">
+                        <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                            <div class="card text-dark bg-light">
+                                <div class="card-body">
+                                    <p style="margin:0;">Sem dados para apresentar relativamente ao período de tempo selecionado.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupMotivosParagens">
+                    <DialogTemplates>
+                        <Header>Motivos Paragens</Header>
+                        <Content>
+                            <div class="table-wrapper" style="margin:1em;">
+                                <table>
+                                    <tbody>
+                                        <tr style="border:0px;background-color:#fff">
+                                            @foreach (var m in cadaMotivo)
+                                            {
+                                                <SfTextBox TValue="string" ValueChange="@ValueChangeHandler" Value="@m" Width="80"></SfTextBox>
+                                                <span class="pull-right" @onclick="@(() => { RemoveMotivosParagens(@m); })"><i class="icon style1 fa-remove"></i></span>
+                                            }
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </Content>
+                        <FooterTemplate>
+                            <SfButton class="button pull-left" @onclick="@(() => { AddMotivoParagem(); })" style="margin:10px; font-size: 0.6em;" title="Adicionar Motivo"><i class="icon style1 fa-plus"></i></SfButton>
+
+                            <SfButton class="button special pull-right" @onclick="@(() => { SaveMotivosParagens(); })" style="margin:10px; font-size: 0.6em;">Guardar</SfButton>
+                            <SfButton class="button pull-right" @onclick="@(() => { PopupMotivosParagens = false; })" style="margin:10px; font-size: 0.6em;">Cancelar</SfButton>
+                        </FooterTemplate>
+                    </DialogTemplates>
+                </SfDialog>
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+@code {
+    SfGrid<dadosrt> Grid;
+    SfSpinner SpinnerObj = new SfSpinner();
+
+    bool dbchecked = false, dbcheckedoff = false;
+    public DateTime? dti { get; set; } = DateTime.Today;
+    public DateTime? dtf { get; set; } = DateTime.Today;
+    bool PopupMotivosParagens = false;
+    string hinicio;
+    string hfim;
+    decimal ndisp;
+
+    public List<pulsar.sv.data.OeeStop> historicoDisp = new List<pulsar.sv.data.OeeStop>() { };
+    public List<KVPStringDecimal> disppieChart = new List<KVPStringDecimal> { };
+    public List<ChartStripline> StripLines = new List<ChartStripline>
+    {
+        new ChartStripline { Visible = true, StartFromAxis = false, Start="75", Size = 1, ZIndex = ZIndex.Behind,
+            Opacity = 0.5, Color = "black", Text= "Objetivo", Rotation = 0, VerticalAlignment = Anchor.End, HorizontalAlignment = Anchor.Middle}
+    };
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+    private async void GetDB()
+    {
+        DataLink_L1 dl1 = new DataLink_L1(true);
+
+        if (await dl1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            dl1.Dispose();
+            StateHasChanged();
+            SearchData();
+
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            dl1.Dispose();
+            StateHasChanged();
+        }
+    }
+    private async void SearchData()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1(true);
+
+
+        try
+        {
+            //DADOS
+
+            historicoDisp = await dl.db.OeeStops.Where(d => d.TempoInicial >= dti && d.TempoFinal <= dtf.Value.AddDays(1)).ToListAsync();
+            //decimal uturno = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEturno")).Value);
+            //decimal uteorica = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEcargas")).Value);
+            // List<dadosrt> finalist = new List<dadosrt>() { };
+            // foreach (var item in dados)
+            // {
+            //     decimal ureal = item.Num;
+            //     decimal ndesemp;
+            //     if (ureal > 0 & uteorica > 0 & uturno > 0)
+            //     {
+            //         ndesemp = Math.Round(((ureal / (uturno * uteorica)) * 100), 1);
+            //     }
+            //     else
+            //     {
+            //         ndesemp = 100;
+            //     }
+            //     finalist.Add(new dadosrt { Dia = DateTime.Parse(item.Dia).ToShortDateString(), Num = ndesemp });
+            // }
+
+
+            StripLines.First().Start = (await dl.db.Configs.FirstAsync(x => x.Name == "OEEobjetivo")).Value;
+
+
+        }
+        finally
+        {
+            dl.Dispose();
+            await GetDisp();
+            await SpinnerObj.HideAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetDisp()
+    {
+        DataLink_L1 dl = new DataLink_L1(true);
+
+        try
+        {
+            var phistory = from rt in dl.db.ReferenciaTrabalhos
+                           join reg in dl.db.Registos on rt.Lote equals reg.Lote
+                           group reg by new
+                           {
+                               rt.Lote,
+                               rt.Referencia,
+                               rt.Ordemfabrico,
+                               rt.Suspensao,
+                               rt.Operador,
+                               rt.Unidades,
+                               rt.UnidadesMas,
+                               rt.UnidadesTeoricas,
+                               rt.AreaTotal,
+                               rt.Descarga,
+                               rt.LoteData
+                           } into gr
+                           where gr.Key.LoteData >= dti & gr.Key.LoteData <= dtf.Value.AddDays(1) && gr.Key.Referencia != ""
+                           orderby gr.Max(t => t.TempoFinal) descending
+                           select new Dadosrt
+                           {
+                               Id = gr.Key.Lote + "|" + gr.Key.Referencia,
+                               Lote = gr.Key.Lote,
+                               OF = gr.Key.Ordemfabrico,
+                               Suspensao = gr.Key.Suspensao,
+                               Referencia = gr.Key.Referencia,
+                               Operador = gr.Key.Operador,
+                               Inicio = gr.Min(t => t.TempoInicial),
+                               Fim = gr.Max(t => t.TempoFinal),
+                               Tempo = (gr.Max(t => t.TempoFinal).Value.Subtract(gr.Min(t => t.TempoInicial).Value)).ToString(@"dd\:hh\:mm\:ss"),
+                               Unidades = gr.Key.Unidades,
+                               Boas = gr.Key.Unidades - gr.Key.UnidadesMas,
+                               Mas = gr.Key.UnidadesMas,
+                               Teoricas = gr.Key.UnidadesTeoricas,
+                               Area = gr.Key.AreaTotal,
+                               LoteData = gr.Key.LoteData
+                           };
+
+            List<Dadosrt> dados = await phistory.ToListAsync();
+
+            //CARGAS POR DIA
+            var pdiaT = from rt in dados
+                        where string.Compare(rt.Referencia.ToUpper(), "") != 0
+                        group rt by new { rt.LoteData } into gr
+                        orderby gr.Min(t => t.LoteData)
+                        select new
+                        {
+                            Dia = gr.Key.ToString(),
+                            Num = gr.Count()
+                        };
+            var CargasDia = pdiaT.ToList();
+
+
+            //CARREGA PAUSAS
+            var pPausasT = from rt in dl.db.OeeStops
+                           where rt.TempoInicial >= dti & rt.TempoFinal <= dtf.Value.AddDays(1)
+                           select new
+                           {
+                               ti = rt.TempoInicial,
+                               tf = rt.TempoFinal,
+                               tt = rt.TempoFinal.Value.Subtract(rt.TempoInicial.Value),
+                               Ocorrencia = rt.Ocorrencia
+                           };
+
+            var PausasDia = await pPausasT.ToListAsync();
+
+            //DISPONIBILIDADE
+            decimal uturno;
+
+            //verifica se é ou não tempo real
+            if (dti == DateTime.Today && dtf == DateTime.Today)
+            {
+                hinicio = (await dl.db.Configs.Where(x => x.Name == "HorarioInicio").FirstAsync()).Value;
+                hfim = (await dl.db.Configs.Where(x => x.Name == "HorarioFim").FirstAsync()).Value;
+
+                if (DateTime.Now.Hour >= DateTime.Parse(hinicio).Hour && DateTime.Now <= DateTime.Parse(hfim).AddDays(1))
+                {
+                    hfim = DateTime.Now.ToShortTimeString();
+                    uturno = (decimal)(TimeSpan.Parse(hfim) - TimeSpan.Parse(hinicio)).TotalHours;
+                }
+                else
+                {
+                    uturno = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEturno")).Value);
+                }
+            }
+            else
+            {
+                uturno = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEturno")).Value) * CargasDia.Count;
+            }
+
+            decimal upausa = (decimal)PausasDia.Sum(z => z.tt.TotalHours);
+            var tprod = uturno - upausa;
+            if (uturno > 0)
+            {
+                ndisp = Math.Round(tprod / uturno * 100, 1);
+            }
+            else
+            {
+                ndisp = 100;
+            }
+            List<KVPStringDecimal> iidisp = new List<KVPStringDecimal>();
+            //iidisp.Add("Disponibilidade", Math.Round(ndisp, 1));
+            iidisp.Add(new KVPStringDecimal("Disponibilidade", Math.Round(ndisp, 1)));
+
+            if (ndisp < 100)
+            {
+                //iidisp.Add("Perda", 100 - Math.Round(ndisp, 1));
+                iidisp.Add(new KVPStringDecimal("Perda", 100 - Math.Round(ndisp, 1)));
+            }
+            else
+            {
+                //iidisp.Add("Perda", 0);
+                iidisp.Add(new KVPStringDecimal("Perda", 0));
+            }
+            disppieChart = iidisp;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Erro ao carregar Disponibilidade: {ex.Message}\n {ex.StackTrace}");
+        }
+        finally
+        {
+            dl.Dispose();
+        }
+
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+    //Cosntrutores
+    public class dadosrt
+    {
+        public string Dia { get; set; }
+        public decimal Num { get; set; }
+    }
+    public class KVPStringDecimal
+    {
+        public string Key { get; set; }
+        public decimal Value { get; set; }
+
+        public KVPStringDecimal(string k, decimal v)
+        {
+            Key = k;
+            Value = v;
+        }
+    }
+    public class Dadosrt
+    {
+        public string Id { get; set; }
+        public string Lote { get; set; }
+        public string OF { get; set; }
+        public string Suspensao { get; set; }
+        public string Referencia { get; set; }
+        public string Operador { get; set; }
+        public DateTime? Inicio { get; set; }
+        public DateTime? Fim { get; set; }
+        public string Tempo { get; set; }
+        public int? Unidades { get; set; }
+        public int? Boas { get; set; }
+        public int? Mas { get; set; }
+        public int? Teoricas { get; set; }
+        public decimal? Area { get; set; }
+        public DateTime? LoteData { get; set; }
+    }
+
+
+    #region Paragens
+
+    string[] cadaMotivo;
+
+    private async void GetMotivosParagens()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1(true);
+
+        var motivos = dl.db.Configs.FirstOrDefault(x => x.Name == "motivosParagens").Value;
+        cadaMotivo = motivos.Split(";");
+
+        PopupMotivosParagens = true;
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+    }
+
+    private void AddMotivoParagem()
+    {
+        string novoMotivo = "Novo Motivo";
+        var list = cadaMotivo.ToList();
+        list.Add(novoMotivo);
+        cadaMotivo = list.ToArray();
+        StateHasChanged();
+    }
+
+    private async void SaveMotivosParagens()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        string todosMotivos = string.Join(";", cadaMotivo);
+        var e = dl.db.Configs.First(w => w.Name == "motivosParagens");
+        e.Value = todosMotivos;
+
+        await dl.db.SaveChangesAsync();
+        dl.Dispose();
+
+        PopupMotivosParagens = false;
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+    }
+
+    private void ValueChangeHandler(ChangedEventArgs args)
+    {
+        int index = Array.IndexOf(cadaMotivo, args.PreviousValue);
+
+        if (index >= 0)
+        {
+            cadaMotivo[index] = args.Value;
+            StateHasChanged();
+        }
+    }
+
+    private async void RemoveMotivosParagens(string motivoRemover)
+    {
+        await SpinnerObj.ShowAsync();
+
+        int indexToRemove = Array.IndexOf(cadaMotivo, motivoRemover);
+        if (indexToRemove != -1)
+        {
+            string[] novoArray = new string[cadaMotivo.Length - 1];
+            if (indexToRemove > 0)
+            {
+                Array.Copy(cadaMotivo, 0, novoArray, 0, indexToRemove);
+            }
+            if (indexToRemove < cadaMotivo.Length - 1)
+            {
+                Array.Copy(cadaMotivo, indexToRemove + 1, novoArray, indexToRemove, cadaMotivo.Length - indexToRemove - 1);
+            }
+            cadaMotivo = novoArray;
+        }
+
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+    }
+
+
+    #endregion
+
+}
+

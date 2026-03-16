@@ -1,0 +1,231 @@
+﻿@page "/linha1/desempenho"
+
+@inject NavigationManager NavigationManager
+@inject Utils utils
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="() => { dbcheckedoff = false; GetDB(); }" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("DL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - DESEMPENHO</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+                        <button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                    </div>
+                </div>
+
+                <div class="row uniform">
+                    <div class="4u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+                    </div>
+                    <div class="4u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+                    </div>
+                    <div class="4u 12u$(medium)">
+                        <SfButton @onclick="SearchData">Pesquisar</SfButton>
+                    </div>
+                </div>
+
+                @if (historicoDesemp != null && historicoDesemp.Count() > 0)
+                {
+                    <div class="row uniform">
+                        <div class="12u 12u$(medium)">
+                            <SfChart Title="" Width="100%" Height="100%" Theme="@utils.ctheme">
+                                <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                <ChartTooltipSettings Enable="true" Shared="true" Header="Índice de Desempenho" Format="<b>${point.x} : ${point.y}%</b>"></ChartTooltipSettings>
+                                <ChartPrimaryXAxis Title="Dia" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                </ChartPrimaryXAxis>
+                                <ChartPrimaryYAxis StripLines="@StripLines" Title="Índice de Desempenho" LabelFormat="{value}" Minimum="0" Interval="5">
+                                </ChartPrimaryYAxis>
+                                <ChartSeriesCollection>
+                                    <ChartSeries DataSource="@historicoDesemp" Name="Desempenho" XName="Dia" YName="Num" Type="ChartSeriesType.Column">
+                                    </ChartSeries>
+                                </ChartSeriesCollection>
+                            </SfChart>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="row uniform" style="margin-top:20px">
+                        <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                            <div class="card text-dark bg-light">
+                                <div class="card-body">
+                                    <p style="margin:0;">Sem dados para apresentar relativamente ao período de tempo selecionado.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+@code {
+    SfGrid<Dadosrt> Grid;
+    SfSpinner SpinnerObj = new SfSpinner();
+
+    bool dbchecked = false, dbcheckedoff = false;
+    public DateTime? dti { get; set; } = DateTime.Today.AddDays(-30);
+    public DateTime? dtf { get; set; } = DateTime.Today;
+
+    public List<Dadosrt> historicoDesemp = new List<Dadosrt>() { };
+    public List<ChartStripline> StripLines = new List<ChartStripline>
+    {
+        new ChartStripline { Visible = true, StartFromAxis = false, Start="75", Size = 1, ZIndex = ZIndex.Behind,
+            Opacity = 0.5, Color = "black", Text= "Objetivo", Rotation = 0, VerticalAlignment = Anchor.End, HorizontalAlignment = Anchor.Middle}
+    };
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            SearchData();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+    private async void SearchData()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            //DADOS
+            var pdiaT = from rt in dl.db.ReferenciaTrabalhos
+                        where rt.LoteData >= dti & rt.LoteData <= dtf.Value.AddDays(1) & string.Compare(rt.Referencia.ToUpper(), "") != 0
+                        group rt by new { rt.LoteData.Date } into gr
+                        orderby gr.Key.Date
+                        select new Dadosrt
+                        {
+                            Dia = gr.Key.Date.ToString(),
+                            Num = gr.Count()
+                        };
+
+            var dados = await pdiaT.ToListAsync();
+            decimal uturno = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEturno")).Value);
+            decimal uteorica = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEcargas")).Value);
+            List<Dadosrt> finalist = new List<Dadosrt>() { };
+            foreach (var item in dados)
+            {
+                decimal ureal = item.Num;
+                decimal ndesemp;
+                if (ureal > 0 & uteorica > 0 & uturno > 0)
+                {
+                    ndesemp = Math.Round(((ureal / (uturno * uteorica)) * 100), 1);
+                }
+                else
+                {
+                    ndesemp = 100;
+                }
+                finalist.Add(new Dadosrt { Dia = DateTime.Parse(item.Dia).ToShortDateString(), Num = ndesemp });
+            }
+            historicoDesemp = finalist;
+
+            StripLines.First().Start = (await dl.db.Configs.FirstAsync(x => x.Name == "OEEobjetivo")).Value;
+        }
+        finally
+        {
+            await SpinnerObj.HideAsync();
+            StateHasChanged();
+        }
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+
+    public class Dadosrt
+    {
+        public string Dia { get; set; }
+        public decimal Num { get; set; }
+
+    }
+
+}
+

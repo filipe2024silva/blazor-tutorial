@@ -1,0 +1,597 @@
+﻿@page "/linha1/geral"
+@using Syncfusion.Blazor.Spinner
+@using Microsoft.EntityFrameworkCore
+@using System.Diagnostics
+
+@inject NavigationManager NavigationManager
+@inject Utils utils
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="() => { dbcheckedoff = false; GetDB(); }" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                <div class="8u 12u$(medium)">
+                    <h1>LINHA 1 - VISÃO GERAL</h1>
+                    @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                </div>
+                <div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+                    <button class="noprint" @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                    <button class="noprint" onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                    <button @onclick="@(() => { SearchData(); })" title="Atualizar"><i class="icon style1 fa-refresh"></i></button>
+                </div>
+            </div>
+
+            @if (abreolhos == true)
+            {
+                @*STATS*@
+                <section style="margin-top:2em">
+                    <div class="row uniform">
+                        <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                            <div class="kpi2">
+                                <div class="kpi2__inside">
+                                    <i class="kpi2__icon fa fa-user bg-info text-light"></i>
+                                    <div class="kpi2__text">
+                                        <div class="kpi2__title">@L1User</div>
+                                        <div class="kpi2__subtitle">Operador Atual</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                            <div class="kpi2">
+                                <div class="kpi2__inside">
+                                    <i class="kpi2__icon fa fa-retweet bg-info text-light"></i>
+                                    <div class="kpi2__text">
+                                        <div class="kpi2__title">@L1Estado</div>
+                                        <div class="kpi2__subtitle">Estado da Linha</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                            <div class="kpi2">
+                                <div class="kpi2__inside">
+                                    <i class="kpi2__icon fa fa-tasks bg-info text-light"></i>
+                                    <div class="kpi2__text">
+                                        <div class="kpi2__title">@L1Programa</div>
+                                        <div class="kpi2__subtitle">Programa atual</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @if (L1alarmes > 0)
+                        {
+                            <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/alarmes"); })">
+                                    <div class="kpi2__inside">
+                                        <i class="kpi2__icon fa fa-exclamation-triangle bg-danger text-light"></i>
+                                        <div class="kpi2__text">
+                                            <div class="kpi2__title">@L1alarmes</div>
+                                            <div class="kpi2__subtitle">Alarmes Ativos</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/alarmes"); })">
+                                    <div class="kpi2__inside">
+                                        <i class="kpi2__icon fa fa-exclamation-triangle bg-info text-light"></i>
+                                        <div class="kpi2__text">
+                                            <div class="kpi2__title">@L1alarmes</div>
+                                            <div class="kpi2__subtitle">Alarmes Ativos</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                            <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/relatorios"); })">
+                                <div class="kpi2__inside">
+                                    <i class="kpi2__icon fa fa-trophy bg-info text-light"></i>
+                                    <div class="kpi2__text">
+                                        <div class="kpi2__title">@L1cargas</div>
+                                        <div class="kpi2__subtitle">Cargas</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                            <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/relatorios"); })">
+                                <div class="kpi2__inside">
+                                    <i class="kpi2__icon fa fa-random bg-info text-light"></i>
+                                    <div class="kpi2__text">
+                                        <div class="kpi2__title">@L1TopRef.Hora</div>
+                                        <div class="kpi2__subtitle">Peça mais produzida (@L1TopRef.Num cargas)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="3u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                            <div class="kpi2" style="cursor:pointer" @onclick="@(() => { NavigationManager.NavigateTo("/linha1/oee"); })">
+                                <div class="kpi2__inside">
+                                    <i class="kpi2__icon fa fa-area-chart bg-info text-light"></i>
+                                    <div class="kpi2__text">
+                                        <div class="kpi2__title">@L1oee%</div>
+                                        <div class="kpi2__subtitle">OEE</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                @*TABELA*@
+                <div>
+                    @if (Ttinas != null && Ttinas.Count > 0)
+                    {
+                        <SfGrid DataSource="@Ttinas" AllowExcelExport="true" AllowResizing="false">
+                            <GridEvents QueryCellInfo="CustomizeCell" TValue="Regs"></GridEvents>
+                            <GridColumns>
+                                <GridColumn Field="Tina" HeaderText="Tina" Width="100"></GridColumn>
+                                <GridColumn Field="Designacao" HeaderText="Designação" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                <GridColumn HeaderText="Carga">
+                                    <Template>
+                                        @{
+                                            var whois = (context as Regs);
+                                            <a href="@($"/linha1/relatorio/{whois.CargaID}")"><span class="label">@whois.Carga</span></a>
+                                        }
+                                    </Template>
+                                </GridColumn>
+                                <GridColumn Field="Temperatura" HeaderText="Temperatura" Width="150" TextAlign="TextAlign.Center">
+                                    <Template>
+                                        @{
+                                            var whois = (context as Regs);
+                                            if (whois.Temperatura != null)
+                                            {
+                                                @($"{whois.Temperatura}ºC")
+                                            }
+                                        }
+                                    </Template>
+                                </GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    }
+                </div>
+            }
+
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+
+@code {
+    SfSpinner SpinnerObj = new SfSpinner();
+    public List<Regs> Ttinas = new List<Regs>() { };
+
+    bool dbchecked = false, dbcheckedoff = false;
+    private bool abreolhos = false;
+    public DateTime? dti { get; set; } = DateTime.Today;
+    public DateTime? dtf { get; set; } = DateTime.Today;
+    public List<Dadosrt> L1RefsTrabalho = new List<Dadosrt>() { };
+    public AreaChartData L1TopRef = new AreaChartData { };
+    public string L1User = "N/A";
+    public decimal L1cargas = 0;
+    public decimal L1oee = 0;
+    public decimal L1alarmes = 0;
+    public string L1Estado = "N/A";
+    public string L1Programa = "N/A";
+
+    public ushort[] temp_calib = new ushort[10];
+    public ushort[] sp_temp = new ushort[10];
+    public ushort[] hist_temp = new ushort[10];
+    public UInt32[] lotes = new UInt32[40];
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            SearchData();
+            //DataFromPLC();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+    private async void SearchData()
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+        await SpinnerObj.ShowAsync();
+        abreolhos = false;
+
+        try
+        {
+            #region TABELA
+
+            var pTinas = from rg in dl.db.Tinas
+                         select new Regs
+                         {
+                             Tina = rg.Tina1,
+                             Num = rg.Num.Value,
+                             Designacao = rg.Designacao,
+                             TRectificador = rg.Rectificador.Value,
+                             TTemperatura = rg.Temp.Value,
+                             TempSP = 0,
+                             TempHST = 0,
+                             CorBanho = rg.CorBanho,
+                             Carga = "",
+                             CargaID = ""
+                         };
+            var dadosTinas = await pTinas.ToListAsync();
+            Ttinas = dadosTinas;
+
+            #endregion
+
+            #region TEMPERATURAS
+
+            var qtinas = Ttinas.Where(x => x.TTemperatura == true).ToList();
+
+            //BASE DADOS
+            foreach (var item in qtinas)
+            {
+                var dang = dl.db.TemperaturaLogs.OrderBy(x => x.Id).LastOrDefault(x => x.Tina == item.Num.ToString());
+                if (dang != null)
+                {
+                    item.Temperatura = dang.Temperatura;
+                    item.TempSP = dang.TemperaturaDesejada;
+                }
+            }
+
+            #endregion
+
+            #region CARGAS
+
+
+            //    //BASE DE DADOS
+            var pCargas = from rg in dl.db.Registos
+                          where rg.TempoInicial >= DateTime.Today && rg.TempoFinal == null
+                          join rt in dl.db.ReferenciaTrabalhos on rg.Lote equals rt.Lote
+                          orderby rg.TempoInicial
+                          select new
+                          {
+                              Id = rt.Id,
+                              Tina = rg.Tina,
+                              Lote = rg.Lote,
+                              Ref = rt.Referencia,
+                              TI = rg.TempoInicial
+                          };
+            var dadosCargas = await pCargas.ToListAsync();
+
+            if (dadosCargas.Any())
+            {
+                foreach (var it in Ttinas)
+                {
+                    var dang = dadosCargas.LastOrDefault(x => x.Tina == it.Tina);
+                    if (dang != null)
+                    {
+                        it.CargaID = dang.Id.ToString();
+                        it.Carga = dang.Ref;
+                    }
+                }
+            }
+
+            #endregion
+
+            #region STATS
+
+            string login = "Login";
+            string logout = "Logout";
+
+            //UTILIZADOR
+            var L1puser = dl.db.Users.Where(u => u.Comportamento == login.ToUpper() || u.Comportamento == logout.ToUpper()).OrderByDescending(l => l.Tempo).Take(1);
+            var L1dadosuser = await L1puser.ToListAsync();
+            if (L1dadosuser.Count > 0)
+            {
+                if (L1dadosuser.First().Comportamento == login.ToUpper())
+                {
+                    L1User = L1dadosuser.First().Username;
+                }
+                else
+                {
+                    L1User = "N/A";
+                }
+            }
+
+            //ESTADO
+            L1Estado = (await dl.db.Registos.OrderByDescending(x => x.TempoFinal).Take(1).ToListAsync()).FirstOrDefault()?.Estado ?? "";
+
+            //PROGRAMA
+            var L1pg = (await dl.db.ReferenciaTrabalhos.OrderByDescending(x => x.Id).Take(1).ToListAsync()).FirstOrDefault()?.Campo1 ?? "";
+
+            L1Programa = !string.IsNullOrEmpty(L1pg) ? await dl.db.PlcProgramas.Where(x => x.Num == byte.Parse(L1pg)).Select(x => x.Nome).FirstOrDefaultAsync() ?? "" : "";
+
+            //ALARMES
+            L1alarmes = (await dl.db.Alarmes.Where(x => x.DataFim == null).Select(x => x.Id).ToListAsync()).Count;
+
+            //TABELA
+            var L1phistory = from rt in dl.db.ReferenciaTrabalhos
+                             join reg in dl.db.Registos on rt.Lote equals reg.Lote
+                             group reg by new
+                             {
+                                 rt.Id,
+                                 rt.Lote,
+                                 rt.Referencia,
+                                 rt.Ordemfabrico,
+                                 rt.Suspensao,
+                                 rt.Operador,
+                                 rt.Unidades,
+                                 rt.UnidadesMas,
+                                 rt.UnidadesTeoricas,
+                                 rt.AreaTotal,
+                                 rt.Descarga,
+                                 rt.LoteData
+                             } into gr
+                             where gr.Key.LoteData >= dti && gr.Key.LoteData <= dtf.Value.AddDays(1)
+                             orderby gr.Max(t => t.TempoFinal) descending
+                             select new Dadosrt
+                             {
+                                 Id = gr.Key.Id.ToString(),
+                                 Lote = gr.Key.Lote,
+                                 OF = gr.Key.Ordemfabrico,
+                                 Suspensao = gr.Key.Suspensao,
+                                 Referencia = gr.Key.Referencia,
+                                 Operador = gr.Key.Operador,
+                                 Inicio = gr.Min(t => t.TempoInicial),
+                                 Fim = gr.Max(t => t.TempoFinal),
+                                 Tempo = (gr.Max(t => t.TempoFinal).Value.Subtract(gr.Min(t => t.TempoInicial).Value)).ToString(@"dd\:hh\:mm\:ss"),
+                                 Unidades = gr.Key.Unidades,
+                                 Boas = gr.Key.Unidades - gr.Key.UnidadesMas,
+                                 Mas = gr.Key.UnidadesMas,
+                                 Teoricas = gr.Key.UnidadesTeoricas,
+                                 Area = gr.Key.AreaTotal,
+                                 LoteData = gr.Key.LoteData
+                             };
+            var L1dados = await L1phistory.ToListAsync();
+            L1RefsTrabalho = L1dados;
+
+            //TOP PEÇA
+            var L1topq = L1RefsTrabalho.GroupBy(eq => eq.Referencia).Select(q => new AreaChartData { Hora = q.Key, Num = q.Count() }).OrderByDescending(ord => ord.Num).Take(1);
+            List<AreaChartData> L1tref = new List<AreaChartData>();
+            foreach (var item in L1topq.OrderBy(ord => ord.Num))
+            {
+                L1tref.Add(new AreaChartData { Hora = item.Hora, Num = item.Num });
+            }
+            if (L1tref.Count > 0)
+            {
+                L1TopRef = L1tref[0];
+            }
+
+            //CARGAS POR DIA
+            var L1pdiaT = from rt in dl.db.ReferenciaTrabalhos
+                          where rt.LoteData >= dti & rt.LoteData <= dtf.Value.AddDays(1) && string.Compare(rt.Referencia.ToUpper(), "") != 0
+                          group rt by new { rt.LoteData } into gr
+                          orderby gr.Min(t => t.LoteData)
+                          select new
+                          {
+                              Dia = gr.Key.ToString(),
+                              Num = gr.Count()
+                          };
+            var L1cargasDia = await L1pdiaT.ToListAsync();
+
+
+            //CARREGA PAUSAS
+            var L1pPausasT = from rt in dl.db.OeeStops
+                             where rt.TempoInicial >= dti & rt.TempoInicial <= dtf.Value.AddDays(1)
+                             select new
+                             {
+                                 ti = rt.TempoInicial,
+                                 tf = rt.TempoFinal,
+                                 tt = rt.TempoFinal.Value.Subtract(rt.TempoInicial.Value),
+                                 Ocorrencia = rt.Ocorrencia
+                             };
+            var L1PausasDia = await L1pPausasT.ToListAsync();
+
+            string L1hinicio;
+            string L1hfim;
+            decimal L1ndisp;
+            decimal L1ndesemp;
+            decimal L1nqual;
+
+            //DISPONIBILIDADE
+            decimal L1uturno;
+            L1hinicio = (await dl.db.Configs.Where(x => x.Name == "HorarioInicio").FirstAsync()).Value;
+            L1hfim = (await dl.db.Configs.Where(x => x.Name == "HorarioFim").FirstAsync()).Value;
+
+            if (DateTime.Now.Hour >= DateTime.Parse(L1hinicio).Hour && DateTime.Now.Hour < DateTime.Parse(L1hfim).Hour)
+            {
+                L1hfim = DateTime.Now.ToShortTimeString();
+                L1uturno = (decimal)(TimeSpan.Parse(L1hfim) - TimeSpan.Parse(L1hinicio)).TotalHours;
+            }
+            else
+            {
+                L1uturno = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEturno")).Value);
+            }
+
+            decimal L1upausa = (decimal)L1PausasDia.Sum(z => z.tt.TotalHours);
+            var L1tprod = L1uturno - L1upausa;
+            if (L1uturno > 0)
+            {
+                L1ndisp = Math.Round(L1tprod / L1uturno * 100, 1);
+            }
+            else
+            {
+                L1ndisp = 100;
+            }
+
+
+            //DESEMPENHO
+            decimal L1ureal = L1cargasDia.Sum(x => x.Num);
+            L1cargas = L1dados.Where(ca => ca.Referencia != "").Count();
+            decimal L1uteorica = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEcargas")).Value);
+            if (L1ureal > 0 && L1uteorica > 0 && L1uturno > 0)
+            {
+                L1ndesemp = Math.Round((L1ureal / (L1uturno * L1uteorica)) * 100, 1);
+            }
+            else
+            {
+                L1ndesemp = 100;
+            }
+            //L1ndesemp = 0;
+            //QUALIDADE
+            decimal L1uboas = (decimal)L1dados.Sum(x => x.Boas);
+            decimal L1utodas = (decimal)L1dados.Sum(x => x.Unidades);
+            if (L1uboas > 0 && L1utodas > 0)
+            {
+                L1nqual = Math.Round(L1uboas / L1utodas * 100, 1);
+            }
+            else
+            {
+                L1nqual = 100;
+            }
+
+            //OEE
+            L1oee = Math.Round(((L1ndisp / 100) * (L1ndesemp / 100) * (L1nqual / 100)) * 100, 1);
+
+
+            #endregion
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Erro ao carregar página Geral da linha: {ex.Message} \n {ex.StackTrace}");
+        }
+        finally
+        {
+            await SpinnerObj.HideAsync();
+            abreolhos = true;
+            StateHasChanged();
+            dl.Dispose();
+        }
+    }
+
+    public void CustomizeCell(QueryCellInfoEventArgs<Regs> args)
+    {
+        if (args.Column.Field == "Tina")
+        {
+            if (args.Data.CorBanho != null && args.Data.CorBanho != "")
+            {
+                args.Cell.AddStyle(new string[] { "background-color:" + args.Data.CorBanho + ";color:white; font-weight: bold" });
+
+            }
+        }
+        if (args.Column.Field == "Temperatura")
+        {
+            if (args.Data.Temperatura < (args.Data.TempSP - args.Data.TempHST))
+            {
+                args.Cell.AddStyle(new string[] { "background-color:#4997D0;color:white;" });
+            }
+            if (args.Data.Temperatura >= (args.Data.TempSP - args.Data.TempHST) && args.Data.Temperatura <= args.Data.TempSP)
+            {
+                args.Cell.AddStyle(new string[] { "background-color:#FF5349;color:white;" });
+            }
+            if (args.Data.Temperatura > args.Data.TempSP)
+            {
+                args.Cell.AddStyle(new string[] { "background-color:Red;color:white;" });
+            }
+        }
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+
+
+    public class Regs
+    {
+        public string Tina { get; set; }
+        public int Num { get; set; }
+        public string Designacao { get; set; }
+        public bool TRectificador { get; set; }
+        public bool TTemperatura { get; set; }
+        public decimal? Temperatura { get; set; }
+        public decimal? TempSP { get; set; }
+        public decimal? TempHST { get; set; }
+        public string CorBanho { get; set; }
+        public string Carga { get; set; }
+        public string CargaID { get; set; }
+    }
+    public class Dadosrt
+    {
+        public string Id { get; set; }
+        public string Lote { get; set; }
+        public string OF { get; set; }
+        public string Suspensao { get; set; }
+        public string Referencia { get; set; }
+        public string Operador { get; set; }
+        public DateTime? Inicio { get; set; }
+        public DateTime? Fim { get; set; }
+        public string Tempo { get; set; }
+        public int? Unidades { get; set; }
+        public int? Boas { get; set; }
+        public int? Mas { get; set; }
+        public int? Teoricas { get; set; }
+        public decimal? Area { get; set; }
+        public DateTime? LoteData { get; set; }
+    }
+    public class AreaChartData
+    {
+        public int Ordem { get; set; }
+        public string Hora { get; set; }
+        public int Num { get; set; }
+    }
+
+}

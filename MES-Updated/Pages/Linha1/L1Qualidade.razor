@@ -1,0 +1,617 @@
+﻿@page "/linha1/qualidade"
+@using System.Diagnostics
+
+@inject NavigationManager NavigationManager
+@inject Utils utils
+
+<div id="main">
+	<div class="inner">
+
+		@if (dbchecked == false)
+		{
+			<div class="row uniform" style="margin-top:20px">
+				<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+					<div class="card text-dark bg-light">
+						<div class="card-body">
+							@if (dbcheckedoff == false)
+							{
+								<div>
+									<div class="bounceball"></div>
+									<div class="bounceballtext">A verificar ligação à base de dados</div>
+								</div>
+							}
+							else
+							{
+								<h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+								<p style="margin:0;">Operações recomendadas:</p>
+								<ul>
+									<li>Verifique se a linha se encontra em funcionamento</li>
+									<li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+									<li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+								</ul>
+								<div class="row" style="margin-top:1em">
+									<div class="12u$" style="display: flex;justify-content:flex-start;">
+										<button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+										<a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+									</div>
+								</div>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+		}
+		else
+		{
+			@if (utils.CanAccess("QL1") == true)
+			{
+				<div class="row">
+					<div class="8u 12u$(medium)">
+						<h1>LINHA 1 - QUALIDADE</h1>
+						@*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+					</div>
+					<div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+						<button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+						<button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+					</div>
+				</div>
+
+				<div class="row uniform">
+					<div class="4u 12u$(medium)">
+						<SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+					</div>
+					<div class="4u 12u$(medium)">
+						<SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+					</div>
+					<div class="4u 12u$(medium)">
+						<SfButton @onclick="SearchData">Pesquisar</SfButton>
+					</div>
+				</div>
+
+				<div class="row uniform">
+					<SfTab>
+						<TabItems>
+							<TabItem>
+								<ChildContent>
+									<TabHeader Text="GERAL"></TabHeader>
+								</ChildContent>
+								<ContentTemplate>
+									@*RefsTrabalho != null && RefsTrabalho.Count > 0*@
+									@if (2 > 1)
+									{
+										<div class="row uniform" style="margin-top:20px">
+											<div class="3u 12u$(medium)">
+												@*GRÁFICO*@
+												<SfAccumulationChart Title="Qualidade" Width="100%" Height="400" Theme="@utils.ctheme">
+													<AccumulationChartLegendSettings Visible="true" Position="Syncfusion.Blazor.Charts.LegendPosition.Bottom">
+													</AccumulationChartLegendSettings>
+													<AccumulationChartTooltipSettings Enable="false"></AccumulationChartTooltipSettings>
+													<AccumulationChartSeriesCollection>
+														<AccumulationChartSeries DataSource="@RoundChartData" XName="Dia" YName="Num" Radius="70%" InnerRadius="0%" Explode="true" ExplodeOffset="10%" ExplodeIndex="3">
+															<AccumulationDataLabelSettings Visible="true" Name="text">
+																<AccumulationChartDataLabelFont FontWeight="600" Color="white"></AccumulationChartDataLabelFont>
+															</AccumulationDataLabelSettings>
+														</AccumulationChartSeries>
+													</AccumulationChartSeriesCollection>
+												</SfAccumulationChart>
+
+												<div>
+													<ul class="alt">
+														<li>Unidades Produzidas: @btotal</li>
+														<li>Unidades Conformes: @bboas</li>
+														<li>Unidades N/Conformes: @bbmas</li>
+														<li>Índice de Qualidade: @biqual</li>
+													</ul>
+												</div>
+											</div>
+											<div class="9u 12u$(medium)">
+												@*TABELA*@
+												<SfGrid @ref="@Grid" DataSource="@RefsTrabalho" AllowFiltering="true" AllowSorting="true" AllowGrouping="true" AllowResizing="true" AllowPaging="true">
+													<GridPageSettings PageSize="20" />
+													<GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+													<GridEvents OnRecordDoubleClick="RecordDoubleClickHandler" TValue="Dadosrt"></GridEvents>
+													<GridEvents QueryCellInfo="CustomizeCell" TValue="Dadosrt"></GridEvents>
+													<GridColumns>
+														<GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="50">
+															<Template>
+																@{
+																	var whois = (context as Dadosrt);
+																	<a href="@($"/linha1/relatorio/{whois.Id}")" class="icon style1 fa-folder-open"><span class="label">Abrir Relatório</span></a>
+																}
+															</Template>
+														</GridColumn>
+														<GridColumn Field="Iqual" HeaderText="Iqual" Width="100"></GridColumn>
+														<GridColumn Field="Lote" HeaderText="Lote" Width="200"></GridColumn>
+														<GridColumn Field="Referencia" HeaderText="Código">
+															<FilterTemplate>
+																<SfDropDownList Placeholder="Código" ID="Referencia" @bind-Value="@((context as PredicateModel<string>).Value)" TItem="string" TValue="string" DataSource="@(Materiais)">
+																	<DropDownListFieldSettings Value="Referencia" Text="Referencia"></DropDownListFieldSettings>
+																</SfDropDownList>
+															</FilterTemplate>
+															<Template>
+																@{
+																	var whois = (context as Dadosrt);
+																	if (whois.Referencia == "" && whois.Notas != "" && whois.Notas != null)
+																	{
+																		@(whois.Referencia + " - " + whois.Notas)
+																	}
+																	else
+																	{
+																		@(whois.Referencia)
+																	}
+																}
+															</Template>
+														</GridColumn>
+														<GridColumn Field="Unidades" HeaderText="Un." Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="100">
+															<Template>
+																@{
+																	var whois = (context as Dadosrt);
+																	<div style="display: flex;justify-content:left;">
+																		<div @onclick="@(()=> { selrow = whois; editunit = true; })" class="icon style1 fa-edit" style="cursor:pointer" title="Editar Unidades"></div>
+																		<div style="margin-left: 0.5em">@whois.Unidades</div>
+																	</div>
+																}
+															</Template>
+														</GridColumn>
+														<GridColumn Field="Boas" HeaderText="Conf." Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="100"></GridColumn>
+														<GridColumn Field="Mas" HeaderText="N/Conf." Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="100"></GridColumn>
+														<GridColumn Field="Unidadescalc" HeaderText="Conf/Nconf" Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="200">
+															<Template>
+																@{
+																	var whatthefuck = (context as Dadosrt);
+																	<div style="display: flex; flex-direction:row;">
+																		<div style="background-color: #E45757; width:@whatthefuck.Unidadescalc; height:20px; text-align:left"></div>
+																		<div style="background-color: #50BFE6; width:@whatthefuck.Unidadesrest; height:20px; text-align:left"></div>
+																	</div>
+																}
+															</Template>
+														</GridColumn>
+													</GridColumns>
+												</SfGrid>
+											</div>
+										</div>
+									}
+									else
+									{
+										<div class="row uniform" style="margin-top:20px">
+											<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+												<div class="card text-dark bg-light">
+													<div class="card-body">
+														<p style="margin:0;">Sem dados para apresentar relativamente ao período de tempo selecionado.</p>
+													</div>
+												</div>
+											</div>
+										</div>
+									}
+								</ContentTemplate>
+							</TabItem>
+							<TabItem>
+								<ChildContent>
+									<TabHeader Text="DEFEITOS"></TabHeader>
+								</ChildContent>
+								<ContentTemplate>
+									@*TbDefeitos != null && TbDefeitos.Count() > 0*@
+									@if (2 > 1)
+									{
+										<div class="row uniform" style="margin-top:20px">
+											<div class="5u 12u$(medium)">
+												<SfChart Title="Histórico de não conformidade" Width="100%" Height="400" Theme="@utils.ctheme">
+													<ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+													<ChartTooltipSettings Enable="true" Shared="true" Header="Nº de não conformidades" Format="<b>${point.x} : ${point.y} não conformidades</b>"></ChartTooltipSettings>
+													<ChartPrimaryXAxis Title="Dia" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+													</ChartPrimaryXAxis>
+													<ChartPrimaryYAxis Title="Número de não conformidades" LabelFormat="{value}">
+													</ChartPrimaryYAxis>
+													<ChartSeriesCollection>
+														<ChartSeries DataSource="@ChartHistDefeitos" Name="Nº de não conformidades" XName="Defeito" YName="Num" Type="ChartSeriesType.Line" Width="3">
+															<ChartTrendlines>
+																<ChartTrendline Type="TrendlineTypes.Linear" Width="1" Name="Tendência" Fill="#000000">
+																</ChartTrendline>
+															</ChartTrendlines>
+														</ChartSeries>
+													</ChartSeriesCollection>
+												</SfChart>
+												<SfChart Title="Top Defeitos" Width="100%" Height="300" Theme="@utils.ctheme">
+													<ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+													<ChartArea>
+														<ChartAreaBorder Width="0"></ChartAreaBorder>
+													</ChartArea>
+													<ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+														<ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+													</ChartPrimaryXAxis>
+													<ChartPrimaryYAxis Title="" LabelFormat="{value}" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+														<ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+														<ChartAxisLabelStyle Color="transparent"></ChartAxisLabelStyle>
+														<ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+														<ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+													</ChartPrimaryYAxis>
+													<ChartSeriesCollection>
+														<ChartSeries DataSource="@ChartTopDefeitos" Name="" XName="Defeito" YName="Num" Type="ChartSeriesType.Bar">
+															<ChartMarker>
+																<ChartDataLabel Visible="true" Position="Syncfusion.Blazor.Charts.LabelPosition.Top"></ChartDataLabel>
+															</ChartMarker>
+														</ChartSeries>
+													</ChartSeriesCollection>
+												</SfChart>
+											</div>
+											<div class="7u 12u$(medium)">
+												@*TABELA*@
+												@*TbDefeitos != null*@
+												@if (2 > 1)
+												{
+													<SfGrid DataSource="@TbDefeitos" AllowFiltering="true" AllowSorting="true" AllowGrouping="true" AllowResizing="true" AllowPaging="true">
+														<GridPageSettings PageSize="20" />
+														<GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+														<GridGroupSettings Columns="@(new string[] { "Lote" })"></GridGroupSettings>
+														<GridColumns>
+															<GridColumn Field="Lote" HeaderText="Lote" Width="200"></GridColumn>
+															<GridColumn Field="Referencia" HeaderText="Código">
+																<FilterTemplate>
+																	<SfDropDownList Placeholder="Código" ID="Referencia" @bind-Value="@((context as PredicateModel<string>).Value)" TItem="string" TValue="string" DataSource="@(Materiais)">
+																		<DropDownListFieldSettings Value="Referencia" Text="Referencia"></DropDownListFieldSettings>
+																	</SfDropDownList>
+																</FilterTemplate>
+															</GridColumn>
+															<GridColumn Field="Descricao" HeaderText="Defeito" Type="ColumnType.String" HideAtMedia="(min-width: 700px)"></GridColumn>
+															<GridColumn Field="Unidades" HeaderText="N/Conformes" Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" TextAlign="TextAlign.Center" Width="100"></GridColumn>
+														</GridColumns>
+													</SfGrid>
+												}
+											</div>
+										</div>
+									}
+									else
+									{
+										<div class="row uniform" style="margin-top:20px">
+											<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+												<div class="card text-dark bg-light">
+													<div class="card-body">
+														<p style="margin:0;">Sem dados para apresentar relativamente ao período de tempo selecionado.</p>
+													</div>
+												</div>
+											</div>
+										</div>
+									}
+								</ContentTemplate>
+							</TabItem>
+						</TabItems>
+					</SfTab>
+				</div>
+
+
+			}
+			else
+			{
+				<div class="row uniform" style="margin-top:20px">
+					<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+						<div class="card text-dark bg-light">
+							<div class="card-body">
+								<p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+								<a href="/">Voltar</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+		}
+
+		@*EDITAR UNIDADES*@
+		<SfDialog Target="#target" Width="400px" ShowCloseIcon="false" IsModal="true" @bind-Visible="editunit">
+			<DialogTemplates>
+				<Header>Unidades</Header>
+				<Content>
+					<SfNumericTextBox @bind-Value="@selrow.Unidades"></SfNumericTextBox>
+					<SfButton class="button special pull-right" @onclick="EditarUnidades" style="margin:10px">Guardar</SfButton>
+					<SfButton class="button pull-right" @onclick="@(() => { editunit = false; })" style="margin:10px">Cancelar</SfButton>
+				</Content>
+			</DialogTemplates>
+		</SfDialog>
+
+
+		@*LOADING*@
+		<SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+	</div>
+</div>
+
+@code {
+	SfGrid<Dadosrt> Grid;
+	SfSpinner SpinnerObj = new SfSpinner();
+
+	bool dbchecked = false, dbcheckedoff = false;
+	public DateTime? dti { get; set; } = DateTime.Today.AddDays(-7);
+	public DateTime? dtf { get; set; } = DateTime.Today;
+
+	public List<Dadosrt> RefsTrabalho = new List<Dadosrt>() { };
+	public List<dadosdft> TbDefeitos = new List<dadosdft>() { };
+	public List<string> Materiais = new List<string>() { };
+	public List<AreaChartData> ChartData = new List<AreaChartData> { };
+	public List<AreaChartData> RoundChartData = new List<AreaChartData> { };
+	public List<topdefeitos> ChartHistDefeitos = new List<topdefeitos> { };
+	public List<topdefeitos> ChartTopDefeitos = new List<topdefeitos> { };
+	int btotal;
+	int bboas;
+	int bbmas;
+	string biqual;
+
+	protected override void OnAfterRender(bool firstRender)
+	{
+		if (firstRender == true)
+		{
+			GetDB();
+		}
+		base.OnAfterRender(firstRender);
+	}
+	private async void GetDB()
+	{
+		DataLink_L1 DL1 = new DataLink_L1();
+
+		if (await DL1.db.Database.CanConnectAsync())
+		{
+			utils.L1ON = true;
+			dbchecked = true;
+			dbcheckedoff = false;
+			DL1.Dispose();
+			StateHasChanged();
+			await SearchData();
+			PopulateMateriais();
+		}
+		else
+		{
+			utils.L1ON = false;
+			dbchecked = false;
+			dbcheckedoff = true;
+			DL1.Dispose();
+			StateHasChanged();
+		}
+	}
+	private async Task SearchData()
+	{
+		await SpinnerObj.ShowAsync();
+		DataLink_L1 dl = new DataLink_L1();
+		dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+		try
+		{
+			//TABELA
+			var qhistory = from rt in dl.db.ReferenciaTrabalhos
+									join reg in dl.db.Registos on rt.Lote equals reg.Lote
+									group reg by new
+									{
+										rt.Id,
+										rt.Lote,
+										rt.Referencia,
+										rt.Ordemfabrico,
+										rt.Suspensao,
+										rt.Operador,
+										rt.Unidades,
+										rt.UnidadesMas,
+										rt.UnidadesTeoricas,
+										rt.AreaTotal,
+										rt.Descarga,
+										rt.Notas,
+										rt.Opcao1,
+										rt.Opcao2,
+										rt.Opcao4
+									} into gr
+									where gr.Max(t => t.TempoFinal) >= dti && gr.Max(t => t.TempoFinal) < dtf.Value.AddDays(1)
+									 && gr.Key.Descarga == true
+									// && gr.Key.Opcao4 != "Fim de Produção" || gr.Key.Opcao4 != null
+									// && gr.Key.Opcao1 != true || gr.Key.Opcao1 == null
+						   orderby gr.Max(t => t.TempoFinal) descending
+									select new Dadosrt
+							   {
+								   Id = gr.Key.Id.ToString(),
+								   Lote = gr.Key.Lote,
+								   OF = gr.Key.Ordemfabrico,
+								   Suspensao = gr.Key.Suspensao,
+								   Referencia = gr.Key.Referencia,
+								   Operador = gr.Key.Operador,
+								   Unidades = gr.Key.Unidades,
+								   Boas = gr.Key.Unidades - gr.Key.UnidadesMas,
+								   Mas = gr.Key.UnidadesMas,
+								   Unidadescalc = "0px",
+								   Unidadesrest = "0px",
+								   Iqual = "0",
+								   Teoricas = gr.Key.UnidadesTeoricas,
+								   Area = gr.Key.AreaTotal,
+								   Notas = gr.Key.Notas
+							   };
+
+			var dados = await qhistory.ToListAsync();
+
+			foreach (var item in dados)
+			{
+				if (item.Unidades > 0)
+				{
+					item.Unidadescalc = Math.Round(Convert.ToDecimal(((item.Mas * 170) / item.Unidades)), 0).ToString() + "px";
+					item.Unidadesrest = Math.Round(Convert.ToDecimal((170 - (item.Mas * 170) / item.Unidades)), 0).ToString() + "px";
+					item.Iqual = Math.Round(Convert.ToDecimal(((item.Unidades - item.Mas) * 100) / item.Unidades), 1).ToString() + "%";
+				}
+				else
+				{
+					item.Unidadescalc = "170px";
+					item.Unidadesrest = "0px";
+					item.Iqual = "100%";
+				}
+			}
+			RefsTrabalho = dados;
+
+
+			//GRÁFICO QUALIDADE
+			RoundChartData.Clear();
+			if (dados.Count() > 0)
+			{
+				List<AreaChartData> finalist = new List<AreaChartData>();
+				btotal = dados.Sum(w => w.Unidades).Value;
+				bboas = dados.Sum(w => w.Boas).Value;
+				bbmas = dados.Sum(w => w.Mas).Value;
+				if (bboas <= 0)
+				{
+					btotal = dados.Count();
+					bboas = dados.Count();
+				}
+				biqual = Math.Round(Convert.ToDecimal(((bboas - bbmas) * 100) / btotal), 1).ToString() + "%";
+				finalist.Add(new AreaChartData { Dia = "Conformes", Num = bboas });
+				finalist.Add(new AreaChartData { Dia = "N/Conformes", Num = bbmas });
+				RoundChartData = finalist;
+			}
+
+			//TABELA DEFEITOS
+			var qdefeitos = await dl.db.Qualidade.Where(q => q.Lote != null).ToListAsync();
+
+			var qdefeitosFiltrados = qdefeitos.Where(q => DateTime.TryParse(q.Lote, out var loteDate)
+											&& loteDate >= dti.Value
+											&& loteDate <= dtf.Value.AddDays(1)).ToList();
+
+			List<dadosdft> flist = new List<dadosdft>() { };
+			foreach (var item in qdefeitos)
+			{
+				flist.Add(new dadosdft { Lote = item.Lote, Referencia = item.Referencia, Descricao = item.Descricao, Unidades = item.Unidades });
+			}
+			TbDefeitos = flist;
+
+			//HISTÓRICO DEFEITOS
+			List<topdefeitos> fchart = new List<topdefeitos>() { };
+			foreach (var item in qdefeitos.GroupBy(gr => gr.Lote.Split(" ")[0]))
+			{
+				fchart.Add(new topdefeitos { Defeito = item.Key, Num = item.Sum(su => su.Unidades).Value });
+			}
+			ChartHistDefeitos = fchart;
+
+			//GRÁFICO TOP DEFEITOS
+			List<topdefeitos> gchart = new List<topdefeitos>() { };
+			foreach (var item in qdefeitos.GroupBy(gr => gr.Descricao))
+			{
+				gchart.Add(new topdefeitos { Defeito = item.Key, Num = item.Sum(su => su.Unidades).Value });
+			}
+			ChartTopDefeitos = gchart.OrderBy(ord => ord.Num).ToList();
+		}
+		catch (Exception ex)
+		{
+			Debug.WriteLine($"Erro ao carregar Qualidade: {ex.Message}\n {ex.StackTrace}");
+		}
+		finally
+		{
+			StateHasChanged();
+			await SpinnerObj.HideAsync();
+		}
+	}
+
+	private async void PopulateMateriais()
+	{
+		await SpinnerObj.ShowAsync();
+		DataLink_L1 dl = new DataLink_L1();
+		dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+		var pMateriais = (from ta in dl.db.ReferenciaTrabalhos
+								select ta.Referencia.ToString()).Distinct();
+		var dadosmat = await pMateriais.ToListAsync();
+
+		Materiais = dadosmat;
+		Materiais.Insert(0, "Todos");
+		StateHasChanged();
+		await SpinnerObj.HideAsync();
+	}
+
+	public void Filtro(@Syncfusion.Blazor.DropDowns.SelectEventArgs<string> args)
+	{
+		if (args.ItemData.ToString() == "Todos")
+		{
+			Grid.ClearFiltering();
+		}
+		else
+		{
+			Grid.FilterByColumn("Referencia", "contains", args.ItemData.ToString());
+		}
+	}
+
+	//EDITAR UNIDADES
+	Dadosrt selrow = new Dadosrt();
+	bool editunit = false;
+	public async void EditarUnidades()
+	{
+		DataLink_L1 dl = new DataLink_L1();
+		dl.db.ReferenciaTrabalhos.First(x => x.Lote == selrow.Lote && x.Referencia == selrow.Referencia).Unidades = selrow.Unidades;
+		await dl.db.SaveChangesAsync();
+		utils.UserLog($"Adicionou {selrow.Unidades} unidades à referência '{selrow.Referencia}' do lote '{selrow.Lote}'", "DataLink_L1");
+		editunit = false;
+		SearchData();
+	}
+
+
+	public void RecordDoubleClickHandler(RecordDoubleClickEventArgs<Dadosrt> args)
+	{
+		NavigationManager.NavigateTo("/linha1/relatorio/" + args.RowData.Id);
+		StateHasChanged();
+	}
+
+	public void CustomizeCell(QueryCellInfoEventArgs<Dadosrt> args)
+	{
+		if (args.Column.Field == "Iqual")
+		{
+			if (args.Data.Mas > 0)
+			{
+				args.Cell.AddClass(new string[] { "above-0" });
+			}
+			else
+			{
+				args.Cell.AddClass(new string[] { "below-0" });
+			}
+		}
+	}
+
+	private void BackStreetButton()
+	{
+		NavigationManager.NavigateTo("/linha1/");
+	}
+
+
+	public class Dadosrt
+	{
+		public string Id { get; set; }
+		public string Lote { get; set; }
+		public string OF { get; set; }
+		public string Suspensao { get; set; }
+		public string Referencia { get; set; }
+		public string Operador { get; set; }
+		public DateTime? Inicio { get; set; }
+		public DateTime? Fim { get; set; }
+		public string Tempo { get; set; }
+		public int? Unidades { get; set; }
+		public int? Boas { get; set; }
+		public int? Mas { get; set; }
+		public int? Teoricas { get; set; }
+		public string Unidadescalc { get; set; }
+		public string Unidadesrest { get; set; }
+		public string Iqual { get; set; }
+		public decimal? Area { get; set; }
+		public string Notas { get; set; }
+		public bool Maintenance { get; set; }
+		public bool Reprocessed { get; set; }
+		public string Vazia { get; set; }
+	}
+
+	public class dadosdft
+	{
+		public string Lote { get; set; }
+		public string Referencia { get; set; }
+		public string Descricao { get; set; }
+		public int? Unidades { get; set; }
+	}
+
+	public class AreaChartData
+	{
+		public string Dia { get; set; }
+		public int Num { get; set; }
+	}
+
+	public class topdefeitos
+	{
+		public string Defeito { get; set; }
+		public int Num { get; set; }
+	}
+
+
+}
+

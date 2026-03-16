@@ -1,0 +1,44 @@
+﻿@using f10.pulsar.mes.Enums
+
+<div id="main">
+    <div class="inner">
+
+        @if (State == PageState.NoAccess)
+        {
+            <NoAccessComponent />
+        }
+        else if (State == PageState.NoDatabase)
+        {
+            <NoDatabaseComponent ShowRetry="true" OnRetry="OnReload" />
+        }
+        else
+        {
+            
+            <div class="page-content @(State != PageState.Ready ? "ui-disabled" : "")">
+                @ChildContent
+            </div>
+
+            @if (State == PageState.Loading)
+            {
+                <div class="page-loading">
+                    <LoadingComponent Text="@LoadingText" />
+                </div>
+            }
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public PageState State { get; set; }
+
+    [Parameter]
+    public string LoadingText { get; set; } = "A carregar…";
+
+    [Parameter, EditorRequired]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback OnReload { get; set; }
+}

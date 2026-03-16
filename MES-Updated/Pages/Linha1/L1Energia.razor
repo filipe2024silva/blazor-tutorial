@@ -1,0 +1,611 @@
+﻿<!-- Define a rota da página -->
+@page "/linha1/energia"
+
+
+@inject NavigationManager NavigationManager
+
+<!-- Injeção do serviço (basedados......) -->
+@inject Utils utils
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Se a conexão com o banco de dados foi verificada -->
+            @if (utils.CanAccess("DL1") == true)
+            {
+                <!-- Se o utilizador tiver permissão-->
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - ENERGIA</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+                        <button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                        <button @onclick="LoadEquipment" title="Equipamentos"><i class='icon style1 fa-cog'></i></button>
+                    </div>
+                </div>
+
+                <div class="row uniform">
+                    <!-- Título indicando os valores atuais, com o nome do equipamento selecionado (se houver) -->
+                    <h3 class="12u$">VALORES ATUAIS @(selectedEquip != null ? " - " + selectedEquip.Designacao : "")</h3>
+                    @if (atual != null)
+                    {
+                        <!-- Expõe a corrente em tempo real em um card -->
+                        <div class="3u">
+                            <SfCard ID="KVA">
+                                <CardContent>
+                                    <h3>Potência Aparente</h3>
+                                    <span style="font-size: 1.5em">@(atual.Vah / 1000) KVAh</span>
+                                </CardContent>
+                            </SfCard>
+                        </div>
+                        <div class="3u">
+                            <SfCard ID="KVAR">
+                                <CardContent>
+                                    <h3>Potência Reativa</h3>
+                                    <span style="font-size: 1.5em">@(atual.Varh / 1000) KVARh</span>
+                                </CardContent>
+                            </SfCard>
+                        </div>
+                        <div class="3u">
+                            <SfCard ID="KWh">
+                                <CardContent>
+                                    <h3>Potência Real</h3>
+                                    <span style="font-size: 1.5em">@(atual.Wh / 1000) KWh</span>
+                                </CardContent>
+                            </SfCard>
+                        </div>
+                        <div class="3u$">
+                            <SfCard ID="PF">
+                                <CardContent>
+                                    <h3>Fator de Potência</h3>
+                                    <span style="font-size: 1.5em">@(atual.PF)</span>
+                                </CardContent>
+                            </SfCard>
+                        </div>
+                        <div class="4u">
+                           
+                            <SfCircularGauge Title="Tensão L1" Height="300px">
+                                <CircularGaugeAxes>
+                                    <CircularGaugeAxis Minimum="0" Maximum="300" Radius="70%" StartAngle="270" EndAngle="90">
+                                        <CircularGaugeRanges>
+                                            <CircularGaugeRange Start="220" End="250">
+                                            </CircularGaugeRange>
+                                        </CircularGaugeRanges>
+                                        <CircularGaugePointers>
+                                            <CircularGaugePointer Value="@((double)atual.VL1.Value)">
+
+                                            </CircularGaugePointer>
+                                        </CircularGaugePointers>
+                                        <CircularGaugeAnnotations>
+                                            <CircularGaugeAnnotation Radius="50%" Angle="180" ZIndex="1">
+                                                <ContentTemplate>
+                                                    <span style="font-size: 1.5em; font-weight: bold">@((double)atual.VL1.Value)V</span>
+                                                </ContentTemplate>
+                                            </CircularGaugeAnnotation>
+                                        </CircularGaugeAnnotations>
+                                    </CircularGaugeAxis>
+                                </CircularGaugeAxes>
+                            </SfCircularGauge>
+                        </div>
+                        <div class="4u">
+                            <SfCircularGauge Title="Tensão L2" Height="300px">
+                                <CircularGaugeAxes>
+                                    <CircularGaugeAxis Minimum="0" Maximum="300" Radius="70%" StartAngle="270" EndAngle="90">
+                                        <CircularGaugeRanges>
+                                            <CircularGaugeRange Start="220" End="250">
+                                            </CircularGaugeRange>
+                                        </CircularGaugeRanges>
+                                        <CircularGaugePointers>
+                                            <CircularGaugePointer Value="@((double)atual.VL2.Value)">
+                                            </CircularGaugePointer>
+                                        </CircularGaugePointers>
+                                        <CircularGaugeAnnotations>
+                                            <CircularGaugeAnnotation Radius="50%" Angle="180" ZIndex="1">
+                                                <ContentTemplate>
+                                                    <span style="font-size: 1.5em; font-weight: bold">@((double)atual.VL2.Value)V</span>
+                                                </ContentTemplate>
+                                            </CircularGaugeAnnotation>
+                                        </CircularGaugeAnnotations>
+                                    </CircularGaugeAxis>
+                                </CircularGaugeAxes>
+                            </SfCircularGauge>
+                        </div>
+                        <div class="4u$">
+                            <SfCircularGauge Title="Tensão L3" Height="300px">
+                                <CircularGaugeAxes>
+                                    <CircularGaugeAxis Minimum="0" Maximum="300" Radius="70%" StartAngle="270" EndAngle="90">
+                                        <CircularGaugeRanges>
+                                            <CircularGaugeRange Start="220" End="250">
+                                            </CircularGaugeRange>
+                                        </CircularGaugeRanges>
+                                        <CircularGaugePointers>
+                                            <CircularGaugePointer Value="@((double)atual.VL3.Value)">
+                                            </CircularGaugePointer>
+                                        </CircularGaugePointers>
+                                        <CircularGaugeAnnotations>
+                                            <CircularGaugeAnnotation Radius="50%" Angle="180" ZIndex="1">
+                                                <ContentTemplate>
+                                                    <span style="font-size: 1.5em; font-weight: bold">@((double)atual.VL3.Value)V</span>
+                                                </ContentTemplate>
+                                            </CircularGaugeAnnotation>
+                                        </CircularGaugeAnnotations>
+                                    </CircularGaugeAxis>
+                                </CircularGaugeAxes>
+                            </SfCircularGauge>
+                        </div>
+                        <div class="4u">
+                            <SfCircularGauge Title="Corrente L1" Height="300px">
+                                <CircularGaugeAxes>
+                                    <CircularGaugeAxis Minimum="0" Maximum="450" Radius="70%" StartAngle="270" EndAngle="90">
+
+                                        <CircularGaugePointers>
+                                            <CircularGaugePointer Value="@((double)atual.AL1.Value)">
+                                            </CircularGaugePointer>
+                                        </CircularGaugePointers>
+                                        <CircularGaugeAnnotations>
+                                            <CircularGaugeAnnotation Radius="50%" Angle="180" ZIndex="1">
+                                                <ContentTemplate>
+                                                    <span style="font-size: 1.5em; font-weight: bold">@((double)atual.AL1.Value)A</span>
+                                                </ContentTemplate>
+                                            </CircularGaugeAnnotation>
+                                        </CircularGaugeAnnotations>
+                                    </CircularGaugeAxis>
+                                </CircularGaugeAxes>
+                            </SfCircularGauge>
+                        </div>
+                        <div class="4u">
+                            <SfCircularGauge Title="Corrente L2" Height="300px">
+                                <CircularGaugeAxes>
+                                    <CircularGaugeAxis Minimum="0" Maximum="450" Radius="70%" StartAngle="270" EndAngle="90">
+
+                                        <CircularGaugePointers>
+                                            <CircularGaugePointer Value="@((double)atual.AL2.Value)">
+                                            </CircularGaugePointer>
+                                        </CircularGaugePointers>
+                                        <CircularGaugeAnnotations>
+                                            <CircularGaugeAnnotation Radius="50%" Angle="180" ZIndex="1">
+                                                <ContentTemplate>
+                                                    <span style="font-size: 1.5em; font-weight: bold">@((double)atual.AL2.Value)A</span>
+                                                </ContentTemplate>
+                                            </CircularGaugeAnnotation>
+                                        </CircularGaugeAnnotations>
+                                    </CircularGaugeAxis>
+                                </CircularGaugeAxes>
+                            </SfCircularGauge>
+                        </div>
+                        <div class="4u$">
+                            <SfCircularGauge Title="Corrente L3" Height="300px">
+                                <CircularGaugeAxes>
+                                    <CircularGaugeAxis Minimum="0" Maximum="450" Radius="70%" StartAngle="270" EndAngle="90">
+
+                                        <CircularGaugePointers>
+                                            <CircularGaugePointer Value="@((double)atual.AL3.Value)">
+                                            </CircularGaugePointer>
+                                        </CircularGaugePointers>
+                                        <CircularGaugeAnnotations>
+                                            <CircularGaugeAnnotation Radius="50%" Angle="180" ZIndex="1">
+                                                <ContentTemplate>
+                                                    <span style="font-size: 1.5em; font-weight: bold">@((double)atual.AL3.Value)A</span>
+                                                </ContentTemplate>
+                                            </CircularGaugeAnnotation>
+                                        </CircularGaugeAnnotations>
+                                    </CircularGaugeAxis>
+                                </CircularGaugeAxes>
+                            </SfCircularGauge>
+                        </div>
+                    }
+
+                </div>
+                <!-- Historico pequisas  (L1) -->
+
+                <h3>HISTÓRICO</h3>
+                <div class="row uniform">
+
+                    <div class="4u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+                    </div>
+                    <div class="4u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+                    </div>
+                    <div class="4u 12u$(medium)">
+                        <SfButton @onclick="SearchData">Pesquisar</SfButton>
+                    </div>
+                </div>
+
+
+                <!-- Validadação de existencia de dados (L1) -->
+                @if (historicoEnergia != null && historicoEnergia.Count() > 0)
+                {
+
+                    <div class="row uniform">
+
+                        <div>
+                            <SfGrid DataSource="@historicoEnergia" @ref="Historicogrid" AllowFiltering="false" AllowSorting="false" AllowGrouping="false" Width="100%" AllowPdfExport AllowExcelExport AllowPaging="true">
+                                <GridPageSettings PageSize="20" />
+
+                                <SfButton @onclick="ExportToExcel">Exportar para Excel</SfButton>
+                                <SfButton @onclick="ExportToPDF">Exportar para PDF</SfButton>
+                                <p></p>
+                                <GridAggregates>
+                                    <GridAggregate>
+                                        <GridAggregateColumns>
+                                            <GridAggregateColumn Field=@nameof(sv.data.Energia.Vah) Type="AggregateType.Sum">
+                                                <FooterTemplate>
+                                                    @{
+                                                        var aggregate = (context as AggregateTemplateContext);
+
+                                                        <div style="text-align: left; font-size: 15px; margin-top: 15px;">
+                                                            <p>
+                                                                Total:<br />
+                                                                <span style="display: block; font-weight: normal;">@aggregate.Sum Vah</span>
+                                                            </p>
+                                                        </div>
+                                                    }
+                                                </FooterTemplate>
+                                            </GridAggregateColumn>
+                                            <GridAggregateColumn Field=@nameof(sv.data.Energia.Varh) Type="AggregateType.Sum">
+                                                <FooterTemplate>
+                                                    @{
+                                                        var aggregate = (context as AggregateTemplateContext);
+                                                        <div style="text-align: left; font-size: 15px; margin-top: 15px;">
+                                                            <p>
+                                                                Total:<br />
+                                                                <span style="display: block; font-weight: normal;">@aggregate.Sum Varh</span>
+                                                            </p>
+                                                        </div>
+                                                    }
+                                                </FooterTemplate>
+                                            </GridAggregateColumn>
+                                            <GridAggregateColumn Field=@nameof(sv.data.Energia.Wh) Type="AggregateType.Sum">
+                                                <FooterTemplate>
+                                                    @{
+                                                        var aggregate = (context as AggregateTemplateContext);
+                                                        <div style="text-align: left; font-size: 15px; margin-top: 15px;">
+                                                            <p>
+                                                                Total:<br />
+                                                                <span style="display: block; font-weight: normal;">@aggregate.Sum Wh</span>
+                                                            </p>
+                                                        </div>
+                                                    }
+                                                </FooterTemplate>
+                                            </GridAggregateColumn>
+                                        </GridAggregateColumns>
+                                    </GridAggregate>
+                                </GridAggregates>
+
+                                <GridColumns>
+                                    <!-- Definição das colunas para os dados" -->
+                                    <GridColumn Field="Data" HeaderText="Data"></GridColumn>
+                                    <GridColumn Field="VL1" HeaderText="V-L1" Width="6%"></GridColumn>
+                                    <GridColumn Field="VL2" HeaderText="V-L2" Width="6%"></GridColumn>
+                                    <GridColumn Field="VL3" HeaderText="V-L3" Width="6%"></GridColumn>
+                                    <GridColumn Field="AL1" HeaderText="A-L1" Width="6%"></GridColumn>
+                                    <GridColumn Field="AL2" HeaderText="A-L2" Width="6%"></GridColumn>
+                                    <GridColumn Field="AL3" HeaderText="A-L3" Width="6%"></GridColumn>
+                                    <GridColumn Field="Vah" HeaderText="Aparente (VAh)" Width="12%"></GridColumn>
+                                    <GridColumn Field="Varh" HeaderText="Reativa (VArh)" Width="12%"></GridColumn>
+                                    <GridColumn Field="Wh" HeaderText="Real (Wh)" Width="10%"></GridColumn>
+                                    <GridColumn Field="PF" HeaderText="Fator" Width="8%"></GridColumn>
+
+
+                                </GridColumns>
+
+
+                            </SfGrid>
+
+
+
+                        </div>
+                    </div>
+
+                }
+                else
+                {
+                    <div class="row uniform" style="margin-top:20px">
+                        <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                            <div class="card text-dark bg-light">
+                                <div class="card-body">
+                                    <p style="margin:0;">Sem dados para apresentar relativamente ao período de tempo selecionado.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupEquips">
+                    <DialogTemplates>
+                        <Header>Vista</Header>
+                        <Content>
+
+                            @foreach (var eq in equipamentos)
+                            {
+                                <div class="row uniform">
+                                    <div class="8u">
+                                        <span style="width:70%">@eq.Designacao</span>
+                                    </div>
+                                    <div class="4u">
+                                        <span class="pull-right" @onclick="@(() => { SelectEquip(@eq); })"><i class="icon style1 fa-check-circle"></i></span>
+                                    </div>
+                                </div>
+
+
+                            }
+
+                        </Content>
+                        <FooterTemplate>
+
+                            <SfButton class="button pull-right" @onclick="@(()=> { PopupEquips = false; })" style="margin:10px; font-size: 0.6em;">Cancelar</SfButton>
+                        </FooterTemplate>
+                    </DialogTemplates>
+                </SfDialog>
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+@code {
+
+    SfGrid<pulsar.sv.data.Energia> Historicogrid;  // Declaração de uma variável para armazenar um componente de grade (grid) de dados
+    SfSpinner SpinnerObj = new SfSpinner();
+
+    bool dbchecked = false, dbcheckedoff = false; // Declaração de variáveis de controle para verificar se a base  de dados está conectado«a ou não
+    public DateTime? dti { get; set; } = DateTime.Today; 
+    public DateTime? dtf { get; set; } = DateTime.Today; 
+    bool PopupEquips = false;
+    pulsar.sv.data.Energia atual = null;
+    List<pulsar.sv.data.Equipamento> equipamentos;
+    pulsar.sv.data.Equipamento selectedEquip;
+    public List<pulsar.sv.data.Energia> historicoEnergia = new List<pulsar.sv.data.Energia>() { }; //Lista para armazenar o histórico de dados de energia
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+
+    }
+
+    // Método para verificar a conexão com o banco de dados
+    private async void GetDB()
+    {
+        // Criação de uma instância da classe de acesso aos dados
+        DataLink_L1 DL1 = new DataLink_L1(true);
+
+        // Verifica se é possível conectar ao banco de dados
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;  // Define uma variável de controlo que indica que a base de dados está conectada
+            dbchecked = true; // Define uma variável de controlo indicando que a conexão foi verificada com sucesso
+            dbcheckedoff = false; // Define uma variável de controlo indicando que a desconexão não ocorreu
+            DL1.Dispose();// Liberta os recursos da conexão com a base de dados
+            StateHasChanged(); // Notifica o componente sobre a mudança de estado
+            await LoadEquipment();
+            GetCurrent();  // Obtém os dados atuais
+
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+
+    private void ExportToExcel()
+    {
+        Historicogrid.ExportToExcelAsync();
+
+
+
+    }
+
+
+    // Método para exportar para PDF
+    private void ExportToPDF()
+    {
+        Historicogrid.ExportToPdfAsync();
+    }
+
+
+
+
+
+    private async void SearchData()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1(true);
+
+
+        try
+        {
+            //DADOS
+            if (selectedEquip.Int1 == 9999)
+                historicoEnergia = await dl.db.Energia.Where(d => d.Data >= dti && d.Data <= dtf.Value.AddDays(1)).ToListAsync();
+            // Busca os dados de energia com base nas datas e em todos os equipamentos
+
+            else// Busca os dados de energia com base nas datas e no equipamento selecionado
+                historicoEnergia = await dl.db.Energia.Where(d => d.Data >= dti && d.Data <= dtf.Value.AddDays(1) && d.EquipId == selectedEquip.Int1).ToListAsync();
+
+
+        }
+        finally
+        {   // Esconde o indicador de carregamento após a busca de dados
+            await SpinnerObj.HideAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetCurrent()
+    {
+        DataLink_L1 dl = new DataLink_L1(true);
+        if (selectedEquip == null)
+            selectedEquip = equipamentos.Last();
+
+        if (selectedEquip.Int1 == 9999)
+        {
+            sv.data.Energia ne = new sv.data.Energia() { AL1 = 0, AL2 = 0, AL3 = 0, VL1 = 0, VL2 = 0, VL3 = 0, Vah = 0, Varh = 0, Wh = 0, PF = 0 };
+            byte num_equip_validos = 0;
+            foreach (var item in equipamentos.Where(e => e.Int1 < 9999))
+            {
+                var temp = await dl.db.Energia.FirstOrDefaultAsync(e => e.EquipId == item.Int1 && e.Data > DateTime.Now.AddMinutes(-10));
+                if (temp != null && temp.Wh > 0)
+                {
+                    num_equip_validos++;
+                    ne.AL1 += temp.AL1;
+                    ne.AL2 += temp.AL2;
+                    ne.AL3 += temp.AL3;
+                    ne.VL1 += temp.VL1;
+                    ne.VL2 += temp.VL2;
+                    ne.VL3 += temp.VL3;
+                    ne.Vah += temp.Vah;
+                    ne.Varh += temp.Varh;
+                    ne.Wh += temp.Wh;
+                    ne.PF += temp.PF;
+                }
+
+
+            }
+            if (num_equip_validos > 0)
+            {
+                ne.PF = Math.Round( ne.PF.Value / num_equip_validos ,2) ;
+                ne.VL1 = Math.Round( ne.VL1.Value / num_equip_validos,2 );
+                ne.VL2 = Math.Round( ne.VL2.Value / num_equip_validos,2 );
+                ne.VL3 = Math.Round(ne.VL3.Value / num_equip_validos, 2);
+            }
+
+            atual = ne;
+        }
+        else
+        {
+            var temp = await dl.db.Energia.FirstOrDefaultAsync(e => e.EquipId == selectedEquip.Int1 && e.Data > DateTime.Now.AddMinutes(-10));
+            if (temp != null && temp.Wh > 0)
+            {
+                atual = temp;
+            }
+            else
+
+            {
+                atual = new sv.data.Energia() { AL1 = 0, AL2 = 0, AL3 = 0, VL1 = 0, VL2 = 0, VL3 = 0, Vah = 0, Varh = 0, Wh = 0, PF = 0 };
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private void BackStreetButton()
+    {
+        atual = null;
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+
+
+    private async Task LoadEquipment()
+    {
+        await SpinnerObj.ShowAsync();
+        try
+        {
+            if (equipamentos == null)
+            {
+                DataLink_L1 dl = new DataLink_L1(true);
+                equipamentos = await dl.db.Equipamentos.Where(e => e.Active == true).ToListAsync();
+                equipamentos.Add(new sv.data.Equipamento() { Int1 = 9999, Designacao = "Global (Todos os equipamentos)", Id = -1 });
+            }
+            else
+            {
+                PopupEquips = true;
+                StateHasChanged();
+            }
+
+
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar equipamentos: {ex.Message}");
+        }
+        finally
+        {
+            await SpinnerObj.HideAsync();
+
+        }
+    }
+
+
+
+    private void SelectEquip(pulsar.sv.data.Equipamento eq)
+    {
+        selectedEquip = eq;
+        PopupEquips = false;
+        GetCurrent();
+        SearchData();//caso tenha dados recarrega com o equipamento selecionado
+        StateHasChanged();
+
+    }
+
+
+
+
+
+}
+

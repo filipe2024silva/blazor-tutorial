@@ -1,0 +1,229 @@
+﻿@page "/"
+@using Syncfusion.Blazor.Notifications
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Spinner
+@using Microsoft.EntityFrameworkCore
+@using f10.pulsar.sv.data.mariadb
+@inject NavigationManager NavigationManager
+@inject Utils utils
+@inject MySqlDataContext _dbContextMES
+@inject PulsarDataContext _dbContextLinha1
+@inject IJSRuntime JSRuntime
+<!-- Main -->
+<div id="main">
+    <div class="inner">
+        <header>
+            <h1>
+                Bom dia, @who.name<br />
+            </h1>
+            @if (mensagens > 0)
+            {
+                <p>Tem @mensagens mensagens! Clique <a href="mensagens">mensagens</a> para saber mais.</p>
+            }
+            else
+            {
+                <p>Não tem nenhuma mensagem.</p>
+            }
+        </header>
+
+        <section class="tiles">
+            <article class="style1">
+                <span class="image">
+                    <img src="images/menu_geral_new.jpg" alt="" />
+                </span>
+                <a href="geral">
+                    <h2>GERAL</h2>
+                    <div class="content">
+                        <p>Dashboard geral da fábrica</p>
+                    </div>
+                </a>
+            </article>
+            <article class="style1">
+                <span class="image">
+                    <img src="images/menu_L4.jpg" ut alt="" />
+                </span>
+                <a href="linha1">
+                    <h2>LINHA 1</h2>
+                    <div class="content">
+                        <p>Gestão da Linha 1</p>
+                    </div>
+                </a>
+            </article>
+            <article class="style1">
+                <span class="image">
+                    <img src="images/menu_caracteristicas.jpg" alt="" />
+                </span>
+                <a href="caracteristicas">
+                    <h2>Características</h2>
+                    <div class="content">
+                        <p>Gestão das Características</p>
+                    </div>
+                </a>
+            </article>
+            <article class="style1">
+                <span class="image">
+                    <img src="images/menu_equipamentos.jpg" alt="" />
+                </span>
+                <a href="equipamentos">
+                    <h2>EQUIPAMENTOS</h2>
+                    <div class="content">
+                        <p>Outros equipamentos presentes na fábrica</p>
+                    </div>
+                </a>
+            </article>
+            <article class="style1">
+                <span class="image">
+                    <img src="images/menu_utilizador.jpg" alt="" />
+                </span>
+                <a href="utilizadores">
+                    <h2>UTILIZADORES</h2>
+                    <div class="content">
+                        <p>Gestão de acessos ao Pulsar MES</p>
+                    </div>
+                </a>
+            </article>
+            <article class="style1">
+                <span class="image">
+                    <img src="images/menu_mensagens.jpg" alt="" />
+                </span>
+                <a href="mensagens">
+                    <h2>Mensagens</h2>
+                    <div class="content">
+                        <p>Gestão de mensagens</p>
+                    </div>
+                </a>
+            </article>
+        </section>
+    </div>
+
+
+    @*MENSAGEM DE ERRO*@
+    <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupError">
+        <DialogTemplates>
+            <Header>Erro de Ligação</Header>
+            <Content>
+                <p>
+                    @errormsg
+                </p>
+                <SfButton class="button special pull-right" @onclick="@(() => { PopupError = false; })" style="margin:10px">Ok</SfButton>
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
+
+
+
+    <SfToast @ref="ToastObj">
+        <ToastPosition X="Right" Y="Bottom"></ToastPosition>
+    </SfToast>
+
+
+    @*LOADING*@
+    <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+
+
+</div>
+
+@code {
+    SfSpinner SpinnerObj = new SfSpinner();
+    SfToast ToastObj = new SfToast();
+    User who = new User();
+    int mensagens = 0;
+    bool PopupError = false;
+    string errormsg = "";
+
+    private ToastModel[] Messages = new ToastModel[] {
+        new ToastModel() {  ContentTemplate = @<div><h2 style='margin:0'><i class='fa fa-warning'></i>LINHA 1</h2><p style='margin-top:1em;margin-bottom:1em'>Existem atualmente 0 alarmes ativos</p><a style='margin:0' href=''>Saiba Mais</a></div>}
+    };
+
+    protected override void OnInitialized()
+    {
+        who = (User)utils.f10session["user"];
+        base.OnInitialized();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            SearchData();
+        }
+        base.OnAfterRender(firstRender);
+    }
+
+    private async void SearchData()
+    {
+        #region Mensagens
+
+        _dbContextMES.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            var dadosfull = await _dbContextMES.Mensagens.Where(x => x.To == "All" || x.To.Contains(who.username + ";")).ToListAsync();
+            foreach (var item in dadosfull)
+            {
+                if (item.Lida.Contains(who.username + ";") == false)
+                {
+                    mensagens += 1;
+                }
+            }
+        }
+        catch (Exception)
+        {
+        }
+        #endregion
+
+        _dbContextLinha1.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+        try
+        {
+
+            int L1alarmes = (await _dbContextLinha1.Alarmes.Where(x => x.DataFim == null).Select(x => x.Id).ToListAsync()).Count;
+            if (L1alarmes > 0)
+            {
+                Messages[1] = new ToastModel()
+                {
+                    Timeout = 0,
+                    ExtendedTimeout = 0,
+                    ShowCloseButton = true,
+                    CssClass = "e-toast-danger",
+                    ContentTemplate = @<div><h2 style='margin:0'><i class='fa fa-warning'></i>LINHA 1</h2><p style='margin-top:1em;margin-bottom:1em'>Existem atualmente @L1alarmes alarmes ativos</p><a style='margin:0' href='/linha1/alarmes'>Saiba Mais</a></div>
+                };
+                await ShowToast(1);
+            }
+
+        }
+        catch (Exception)
+        {
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task ShowToast(int i)
+    {
+        _dbContextMES.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            var qq = _dbContextMES.Settings.FirstOrDefault(x => x.userid == who.id && x.setting == "alarmes");
+            if (qq != null)
+            {
+                if (Convert.ToBoolean(qq.result) == true)
+                {
+                    await Task.Delay(100);
+                    await this.ToastObj.ShowAsync(Messages[i]);
+                }
+            }
+            else
+            {
+                await Task.Delay(100);
+                await this.ToastObj.ShowAsync(Messages[i]);
+            }
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+
+}

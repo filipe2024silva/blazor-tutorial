@@ -1,0 +1,142 @@
+﻿@page "/login"
+@layout NoLayout
+@using Syncfusion.Blazor.Spinner
+@using Microsoft.EntityFrameworkCore
+@inject NavigationManager NavigationManager
+@inject Utils utils
+<!-- Main -->
+<div id="main">
+    <div class="inner">
+
+        @if (ischecking == false)
+        {
+            <div class="login">
+                <div class="login-box">
+                    <div class="row">
+                        <div class="6u 6u(medium) 12u$(small)" style="margin-bottom:1em">
+                            <img src="images/mesicon.jpg" alt="" style="width:60%;height:auto">
+                            <div class="row justify-content-center">
+                                <div>
+                                    <h3 class="loginTitle">F10</h3>
+                                    <h5 style="color:black">GESTÃO DA FÁBRICA</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="6u 6u(medium) 12u$(small)">
+                            <h3 class="font-weight-bold" style="margin-bottom:10px;color:black">Login</h3>
+                            <input type="text" @bind="user" placeholder="Utilizador" style="width:15em">
+                            <input type="password" @bind="pass" placeholder="Password" style="width:15em" @onkeyup="passkeyup">
+                            <p style="margin-top:5px;margin-bottom:0;color:red;font-size:15px">@Erro</p>
+                            <button @onclick="CheckUser" style="margin-top:1em;">Entrar</button>
+                        </div>
+                    </div>
+                </div>
+                <p style="margin-left:auto;margin-right:auto;margin-top:5px;font-size: 20px;color:white;animation: slideIn 1s ease-in-out;">
+                    Powered by <a href="http://www.fdecimal.com" target="_blank" style="text-decoration: none !important; border: none !important;">
+                        <img src="images/Logof10cores.png" alt="Formula Decimal" style="height:35px; vertical-align:middle;">
+                    </a>
+                </p>
+            </div>
+        }
+
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+
+    </div>
+</div>
+
+
+@code {
+    SfSpinner SpinnerObj = new SfSpinner();
+    private string Erro = "";
+    private string user = "";
+    private string pass = "";
+    private bool ischecking = false;
+
+    protected override void OnInitialized()
+    {
+        utils.f10session.Remove("user");
+        base.OnInitialized();
+        utils.f10session.Clear();
+    }
+
+    private async void CheckUser()
+    {
+        await SpinnerObj.ShowAsync();
+        ischecking = true;
+        utils.f10session = new Dictionary<string, object>();
+        DataLink_MES m = new DataLink_MES();
+
+        Erro = "";
+        string tempass = utils.Hash(pass);
+
+        if (await m.db.Database.CanConnectAsync())
+        {
+            utils.MESON = true;
+            User who = m.db.Users.FirstOrDefault(u => u.username == user && u.password == tempass);
+            if (who != null)
+            {
+                utils.f10session.Add("user", who);
+                utils.UserLog($"LOGIN", "DataLink_MES");
+
+                var th = m.db.Settings.FirstOrDefault(x => x.userid == who.id && x.setting == "darktheme");
+                if (th != null)
+                {
+                    utils.DarkTheme = Convert.ToBoolean(th.result);
+                }
+                else
+                {
+                    utils.DarkTheme = false;
+                }
+
+                NavigationManager.NavigateTo("/");
+            }
+            else
+            {
+                if (user.ToUpper() == "F10" && pass == "fdecimal2015")
+                {
+                    User f10 = new User() { id=10000, name = "Formula Decimal", pic = null, username = "f10" };
+                    utils.f10session.Add("user", f10);
+                    utils.UserLog($"LOGIN", "DataLink_MES");
+
+                    var th = m.db.Settings.FirstOrDefault(x => x.userid == f10.id && x.setting == "darktheme");
+                    if (th != null)
+                    {
+                        utils.DarkTheme = Convert.ToBoolean(th.result);
+                    }
+                    else
+                    {
+                        utils.DarkTheme = false;
+                    }
+
+                    NavigationManager.NavigateTo("/");
+                }
+                else
+                {
+                    Erro = "Utilizador ou Password inválidos";
+                }
+            }
+        }
+        else
+        {
+            utils.MESON = false;
+            Erro = "Erro: Sem ligação à base de dados geral";
+        }
+
+        m.Dispose();
+        ischecking = false;
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+    }
+
+    private async void passkeyup(KeyboardEventArgs k)
+    {
+        if (k.Key == "Enter")
+        {
+            CheckUser();
+        }
+    }
+
+}

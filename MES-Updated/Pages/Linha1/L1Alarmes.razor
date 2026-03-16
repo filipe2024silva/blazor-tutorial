@@ -1,0 +1,476 @@
+﻿@page "/linha1/alarmes"
+
+@inject NavigationManager NavigationManager
+@inject Utils utils
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("AL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - ALARMES</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+                        <button class="noprint" @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button class="noprint" onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                        <button @onclick="@(() => { SearchData(); })" title="Atualizar"><i class="icon style1 fa-refresh"></i></button>
+                    </div>
+                </div>
+
+
+                <div class="row uniform">
+                    <div class="12u">
+                        <SfTab>
+                            <TabItems>
+                                <TabItem>
+                                    <ChildContent>
+                                        <TabHeader Text="ATIVOS"></TabHeader>
+                                    </ChildContent>
+                                    <ContentTemplate>
+                                        <div class="row" style="margin-top:20px; margin-bottom:20px;">
+                                            @if (Alarmes != null)
+                                            {
+                                                <div class="4u 12u$(medium)">
+                                                    <div class="card text-white bg-danger">
+                                                        <div class="card-body" style="font-weight: bold;">
+                                                            <h5 class="card-title">@alarmesatFau</h5>
+                                                            <p class="card-title">Falha</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="4u 12u$(medium)">
+                                                    <div class="card text-white bg-warning">
+                                                        <div class="card-body" style="font-weight: bold;">
+                                                            <h5 class="card-title">@alarmesatWar</h5>
+                                                            <p class="card-title">Aviso</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="4u 12u$(medium)">
+                                                    <div class="card text-white bg-success">
+                                                        <div class="card-body" style="font-weight: bold;">
+                                                            <h5 class="card-title">@alarmesprec</h5>
+                                                            <p class="card-title">Por reconhecer</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <div>
+                                            @if (Alarmes != null)
+                                            {
+                                                <SfGrid @ref="@Grid" DataSource="@Alarmes" AllowFiltering="true" AllowSorting="true" AllowGrouping="true" AllowResizing="true" AllowPaging="true">
+                                                    <GridPageSettings PageSize="20" />
+                                                    <GridEvents QueryCellInfo="CustomizeCell" TValue="Alm"></GridEvents>
+                                                    <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                                                    <GridColumns>
+                                                        <GridColumn Field="Counter" HeaderText="" Width="30"></GridColumn>
+                                                        <GridColumn Field="DataInicio" HeaderText="Data Início" Width="160"></GridColumn>
+                                                        <GridColumn Field="Equip" HeaderText="Equipamento" Width="150"></GridColumn>
+                                                        <GridColumn Field="Ocorrencia" HeaderText="Ocorrência" Width="350"></GridColumn>
+                                                        <GridColumn Field="ReconhecidoPor" HeaderText="Reconhecido por" Width="170"></GridColumn>
+                                                        <GridColumn Field="ReconhecidoEm" HeaderText="Reconhecido em" Width="160"></GridColumn>
+                                                        <GridColumn Field="DataFim" HeaderText="Data Fim" Width="160"></GridColumn>
+                                                    </GridColumns>
+                                                </SfGrid>
+                                            }
+                                        </div>
+                                    </ContentTemplate>
+                                </TabItem>
+                                <TabItem>
+                                    <ChildContent>
+                                        <TabHeader Text="HISTÓRICO"></TabHeader>
+                                    </ChildContent>
+                                    <ContentTemplate>
+                                        <div class="row uniform" style="margin-top:auto;">
+                                            <div class="4u 12u$(medium)">
+                                                <SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+                                            </div>
+                                            <div class="4u 12u$(medium)">
+                                                <SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+                                            </div>
+                                            <div class="4u 12u$(medium)">
+                                                <SfButton @onclick="SearchData">Pesquisar</SfButton>
+                                            </div>
+                                        </div>
+
+
+                                        @*GRÁFICOS*@
+                                        <div class="row uniform">
+                                            @if (AlarmesHist != null)
+                                            {
+                                                <div class="8u 12u$(medium)">
+                                                    <SfChart Title="" Width="100%" Height="300" Theme="@utils.ctheme">
+                                                        <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                        <ChartTooltipSettings Enable="true" Shared="true" Header="Alarmes" Format="<b>${point.x} : ${point.y} alarmes</b>"></ChartTooltipSettings>
+                                                        <ChartPrimaryXAxis Title="Dia" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                                        </ChartPrimaryXAxis>
+                                                        <ChartPrimaryYAxis Title="Número de Alarmes" LabelFormat="{value}">
+                                                        </ChartPrimaryYAxis>
+                                                        <ChartSeriesCollection>
+                                                            <ChartSeries DataSource="@ChartHistData" Name="Nº de Alarmes" XName="Dia" YName="Num" Type="ChartSeriesType.Column"></ChartSeries>
+                                                        </ChartSeriesCollection>
+                                                    </SfChart>
+                                                </div>
+                                                <div class="4u 12u$(medium)">
+                                                    <SfAccumulationChart Title="" Width="100%" Height="300" Theme="@utils.ctheme">
+                                                        <AccumulationChartLegendSettings Visible="true" Position="Syncfusion.Blazor.Charts.LegendPosition.Bottom">
+                                                        </AccumulationChartLegendSettings>
+                                                        <AccumulationChartTooltipSettings Enable="false"></AccumulationChartTooltipSettings>
+                                                        <AccumulationChartSeriesCollection>
+                                                            <AccumulationChartSeries DataSource="@RoundChartHistData" XName="Dia" YName="Num" Radius="70%" InnerRadius="40%" Explode="true" ExplodeOffset="10%" ExplodeIndex="3">
+                                                                <AccumulationDataLabelSettings Visible="true" Name="text">
+                                                                    <AccumulationChartDataLabelFont FontWeight="600" Color="white"></AccumulationChartDataLabelFont>
+                                                                </AccumulationDataLabelSettings>
+                                                            </AccumulationChartSeries>
+                                                        </AccumulationChartSeriesCollection>
+                                                    </SfAccumulationChart>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        @*ESTATISTICAS*@
+                                        <div class="row uniform">
+                                            @if (AlarmesHist != null)
+                                            {
+                                                <div class="4u 12u$(medium)">
+                                                    <h3>Top Equipamentos</h3>
+                                                    <SfChart Title="" Width="100%" Height="300" Theme="@utils.ctheme">
+                                                        <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                        <ChartArea>
+                                                            <ChartAreaBorder Width="0"></ChartAreaBorder>
+                                                        </ChartArea>
+                                                        <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                                            <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                                        </ChartPrimaryXAxis>
+                                                        <ChartPrimaryYAxis Title="" LabelFormat="{value}" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                                                            <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                                            <ChartAxisLabelStyle Color="transparent"></ChartAxisLabelStyle>
+                                                            <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                                            <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                                        </ChartPrimaryYAxis>
+                                                        <ChartSeriesCollection>
+                                                            <ChartSeries DataSource="@ChartHistDataF1" Name="" XName="Dia" YName="Num" Type="ChartSeriesType.Bar">
+                                                                <ChartMarker>
+                                                                    <ChartDataLabel Visible="true" Position="Syncfusion.Blazor.Charts.LabelPosition.Top"></ChartDataLabel>
+                                                                </ChartMarker>
+                                                            </ChartSeries>
+                                                        </ChartSeriesCollection>
+                                                    </SfChart>
+                                                </div>
+                                                <div class="4u 12u$(medium)">
+                                                    <h3>Top Ocorrências</h3>
+                                                    <SfChart Title="" Width="100%" Height="300" Theme="@utils.ctheme">
+                                                        <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                        <ChartArea>
+                                                            <ChartAreaBorder Width="0"></ChartAreaBorder>
+                                                        </ChartArea>
+                                                        <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                                            <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                                        </ChartPrimaryXAxis>
+                                                        <ChartPrimaryYAxis Title="" LabelFormat="{value}" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                                                            <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                                            <ChartAxisLabelStyle Color="transparent"></ChartAxisLabelStyle>
+                                                            <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                                            <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                                        </ChartPrimaryYAxis>
+                                                        <ChartSeriesCollection>
+                                                            <ChartSeries DataSource="@ChartHistDataF2" Name="" XName="Dia" YName="Num" Type="ChartSeriesType.Bar">
+                                                                <ChartMarker>
+                                                                    <ChartDataLabel Visible="true" Position="Syncfusion.Blazor.Charts.LabelPosition.Top"></ChartDataLabel>
+                                                                </ChartMarker>
+                                                            </ChartSeries>
+                                                        </ChartSeriesCollection>
+                                                    </SfChart>
+                                                </div>
+                                                <div class="4u 12u$(medium)">
+                                                    <h3>Estatísticas</h3>
+                                                    <ul class="alt">
+                                                        <li>Alarmes Ativos: @alarmesat0</li>
+                                                        <li>Alarmes por reconhecer: @alarmesprec0</li>
+                                                        <li>Data do último alarme: @alarmesultimo0</li>
+                                                    </ul>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        @*TABELA*@
+                                        <div>
+                                            @if (AlarmesHist != null)
+                                            {
+                                                <SfGrid @ref="@Grid" DataSource="@AlarmesHist" AllowFiltering="true" AllowSorting="true" AllowGrouping="true" AllowPaging="true">
+                                                    <GridPageSettings PageSize="20" />
+                                                    <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                                                    <GridColumns>
+                                                        <GridColumn Field="DataInicio" HeaderText="Data Início" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                                        <GridColumn Field="DataFim" HeaderText="Data Fim" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                                        <GridColumn Field="Equip" HeaderText="Equipamento"></GridColumn>
+                                                        <GridColumn Field="Ocorrencia" HeaderText="Ocorrência"></GridColumn>
+                                                        <GridColumn Field="ReconhecidoPor" HeaderText="Reconhecido por" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                                        <GridColumn Field="ReconhecidoEm" HeaderText="Reconhecido em" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                                    </GridColumns>
+                                                </SfGrid>
+                                            }
+                                        </div>
+                                    </ContentTemplate>
+                                </TabItem>
+                            </TabItems>
+                        </SfTab>
+                    </div>
+                </div>
+
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+@code {
+    SfGrid<Alm> Grid = new SfGrid<Alm>();
+    SfSpinner SpinnerObj = new SfSpinner();
+
+    bool dbchecked = false, dbcheckedoff = false;
+    public DateTime? dti { get; set; } = DateTime.Today.AddDays(-7);
+    public DateTime? dtf { get; set; } = DateTime.Today;
+
+    public List<Alm> Alarmes = new List<Alm>() { };
+    public List<Alm> AlarmesHist = new List<Alm>() { };
+    public List<AreaChartData> ChartHistData = new List<AreaChartData> { };
+    public List<AreaChartData> RoundChartHistData = new List<AreaChartData> { };
+    public List<AreaChartData> ChartHistDataF1 = new List<AreaChartData> { };
+    public List<AreaChartData> ChartHistDataF2 = new List<AreaChartData> { };
+    public string alarmesat = "", alarmesatWar = "", alarmesatFau = "", alarmesprec = "", alarmesultimo = "", alarmesat0 = "", alarmesatf0 = "", alarmesatw0 = "", alarmesprec0 = "", alarmesultimo0 = "";
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            SearchData();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+
+    private async void SearchData()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            //ATIVOS
+            var q = from al in dl.db.Alarmes
+                    orderby al.Id descending
+                    join alcfg in dl.db.AlarmesConfigs on al.AlarmeId equals alcfg.Id
+                    where al.ReconhecidoData == null || al.DataFim == null
+                    select new Alm { Id = al.Id, DataInicio = al.DataInicio, Ocorrencia = al.Ocorrencia, DataFim = al.DataFim, Prioridade = al.Prioridade, ReconhecidoPor = al.ReconhecidoPor, ReconhecidoEm = al.ReconhecidoData, Equip = alcfg.Opcao1, Counter = String.Empty };
+            var dados = await q.ToListAsync();
+            foreach (var a in dados)
+            {
+                if (a.DataFim == null && a.Prioridade == "Fault")
+                {
+                    //Aviso ativo por Reconhecer amarelo
+                    a.Counter = "0";
+                }
+
+                if (a.DataFim == null && a.Prioridade == "Warning")
+                {
+                    //Alarme Ativo por Reconhecer vermelho
+                    a.Counter = "1";
+                }
+
+                if (a.DataFim != null)
+                {
+                    //Alarme por Reconhecer verde
+                    a.Counter = "2";
+                }
+            }
+            Alarmes = dados;
+
+            //HISTORICO
+            var qHist = from al in dl.db.Alarmes
+                        orderby al.Id descending
+                        join alcfg in dl.db.AlarmesConfigs on al.AlarmeId equals alcfg.Id
+                        where al.DataInicio >= dti && al.DataInicio <= dtf.Value.AddDays(1)
+                        select new Alm { Id = al.Id, DataInicio = al.DataInicio, Ocorrencia = al.Ocorrencia, DataFim = al.DataFim, Prioridade = al.Prioridade, ReconhecidoPor = al.ReconhecidoPor, ReconhecidoEm = al.ReconhecidoData, Equip = alcfg.Opcao1, Counter = String.Empty };
+            var dadosHist = await qHist.ToListAsync();
+            AlarmesHist = dadosHist;
+
+
+            //GRÁFICO NÚMERO DE ALARMES POR DIA
+            var pHistAlarme = from rt in dl.db.Alarmes
+                              where rt.DataInicio >= dti & rt.DataInicio <= dtf.Value.AddDays(1)
+                              group rt by new { rt.DataInicio.Value.Date } into gr
+                              orderby gr.Min(t => t.DataInicio.Value.Date)
+                              select new AreaChartData { Dia = gr.Key.Date.ToShortDateString(), Num = gr.Count() };
+            var histalarmes = await pHistAlarme.ToListAsync();
+            ChartHistData = histalarmes;
+
+            //GRÁFICO FAULTS VS WARNINGS
+            List<AreaChartData> cfw = new List<AreaChartData>();
+            cfw.Add(new AreaChartData { Dia = "Falhas", Num = dadosHist.Where(w => w.Prioridade == "Fault").Count() });
+            cfw.Add(new AreaChartData { Dia = "Avisos", Num = dadosHist.Where(w => w.Prioridade == "Warning").Count() });
+            RoundChartHistData = cfw;
+
+            //GRÁFICO TOP EQUIPAMENTOS
+            var topq = dadosHist.GroupBy(eq => eq.Equip).Select(q => new AreaChartData { Dia = q.Key, Num = q.Count() }).OrderByDescending(ord => ord.Num).Take(3);
+            List<AreaChartData> topequip = new List<AreaChartData>();
+            foreach (var item in topq.OrderBy(ord => ord.Num))
+            {
+                topequip.Add(new AreaChartData { Dia = item.Dia, Num = item.Num });
+            }
+            ChartHistDataF1 = topequip;
+
+            //GRÁFICO TOP EQUIPAMENTOS
+            var topq2 = dadosHist.GroupBy(eq => eq.Ocorrencia).Select(q => new AreaChartData { Dia = q.Key, Num = q.Count() }).OrderByDescending(ord => ord.Num).Take(3);
+            List<AreaChartData> topequip2 = new List<AreaChartData>();
+            foreach (var item in topq2.OrderBy(ord => ord.Num))
+            {
+                topequip2.Add(new AreaChartData { Dia = item.Dia, Num = item.Num });
+            }
+            ChartHistDataF2 = topequip2;
+
+            //ESTATÍSTICAS
+            if (dados.Count > 0)
+            {
+                alarmesatFau = dados.Where(h => h.DataFim == null && h.Prioridade == "Fault").Count().ToString();
+                alarmesatWar = dados.Where(h => h.DataFim == null && h.Prioridade == "Warning").Count().ToString();
+                alarmesprec = dados.Where(h => h.DataFim != null).Count().ToString();
+            }
+            if (dadosHist.Count > 0)
+            {
+                alarmesat0 = dadosHist.Where(h => h.DataFim == null).Count().ToString();
+                alarmesprec0 = dadosHist.Where(h => h.ReconhecidoEm == null).Count().ToString();
+                alarmesultimo0 = dadosHist.FirstOrDefault().DataInicio.ToString();
+            }
+        }
+        finally
+        {
+            await SpinnerObj.HideAsync();
+            StateHasChanged();
+        }
+    }
+
+    public void CustomizeCell(QueryCellInfoEventArgs<Alm> args)
+    {
+        if (args.Column.Field == "Counter")
+        {
+            if (args.Data.Counter == "0")
+            {
+                args.Cell.AddStyle(new string[] { "background-color: #dc3545; color:#dc3545; font-weight: bold" });
+            }
+            if (args.Data.Counter == "1")
+            {
+                args.Cell.AddStyle(new string[] { "background-color: #ffc107; color:#ffc107; font-weight: bold" });
+            }
+            if (args.Data.Counter == "2")
+            {
+                args.Cell.AddStyle(new string[] { "background-color: #30a444; color:#30a444; font-weight: bold" });
+            }
+        }
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+    public class Alm
+    {
+        public int Id { get; set; }
+        public DateTime? DataInicio { get; set; }
+        public string Ocorrencia { get; set; }
+        public DateTime? DataFim { get; set; }
+        public string Prioridade { get; set; }
+        public string ReconhecidoPor { get; set; }
+        public DateTime? ReconhecidoEm { get; set; }
+        public string Equip { get; set; }
+        public string Counter { get; set; }
+    }
+
+    public class AreaChartData
+    {
+        public string Dia { get; set; }
+        public int Num { get; set; }
+    }
+
+}

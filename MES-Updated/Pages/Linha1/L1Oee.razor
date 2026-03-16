@@ -1,0 +1,2409 @@
+﻿@page "/linha1/oee"
+@using System.Diagnostics
+
+@inject NavigationManager NavigationManager
+@inject Utils utils
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="() => { dbcheckedoff = false; GetDB(); }" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("OL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - OEE</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+                        <button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                    </div>
+                </div>
+
+                <div class="row uniform">
+                    <div class="4u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+                    </div>
+                    <div class="4u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+                    </div>
+                    <div class="4u 12u$(medium)">
+                        <SfButton @onclick="SearchData">Pesquisar</SfButton>
+                        <SfButton @onclick="OpenPopupConfigs" CssClass="pull-right" title="Configurações"><i class='icon style1 fa-cog'></i></SfButton>
+                    </div>
+                </div>
+
+
+
+                <div class="row uniform">
+                    <SfTab>
+                        <TabItems>
+                            <TabItem>
+                                <ChildContent>
+                                    <TabHeader Text="GERAL"></TabHeader>
+                                </ChildContent>
+                                <ContentTemplate>
+                                    @if (isupdating == false)
+                                    {
+                                        @if (RefsTrabalho != null && RefsTrabalho.Count > 0)
+                                        {
+                                            <div class="row uniform" style="margin-top:20px">
+                                                <div class="6u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                    <div class="row">
+                                                        <div class="table-wrapper" style="width:100%">
+                                                            <table>
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td>Turno (h)</td>
+                                                                        <td>@nTurno</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Tempo Operacional (m)</td>
+                                                                        <td>@nTOperacional (@HnTOperacional h)</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Tempo de Produção (m)</td>
+                                                                        <td>@nTProd (@HnTProd h)</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>
+                                                                            Tempo parado (m) <button class="button small special" @onclick="OpenPopupParagens" title="Gerir Paragens"><i class='icon style1 fa-cog'></i></button>
+                                                                        </td>
+                                                                        <td>@nTStop (@HnTStop h)</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Produção (cargas)</td>
+                                                                        <td>@nProd</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Perdas (cargas)</td>
+                                                                        <td>@nPerdas</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Unidades conformes</td>
+                                                                        <td>@nConf</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Unidades não conformes</td>
+                                                                        <td>@nNConf</td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="6u 12u$(medium) align-self-end" style="display: flex;justify-content:space-between;flex-direction:column">
+                                                    @if (oeepieChart != null && oeepieChart.Count > 0)
+                                                    {
+                                                        <div class="row">
+                                                            <div class="6u">
+                                                                <SfAccumulationChart Title="OEE" Width="100%" Height="450" Theme="@utils.ctheme">
+                                                                    <AccumulationChartLegendSettings Visible="true" Position="Syncfusion.Blazor.Charts.LegendPosition.Bottom">
+                                                                    </AccumulationChartLegendSettings>
+                                                                    <AccumulationChartTooltipSettings Enable="false"></AccumulationChartTooltipSettings>
+                                                                    <AccumulationChartSeriesCollection>
+                                                                        <AccumulationChartSeries DataSource="@oeepieChart.AsEnumerable()" XName="Key" YName="Value" Radius="90%" InnerRadius="40%" Explode="true" ExplodeOffset="10%" ExplodeIndex="3">
+                                                                            <AccumulationDataLabelSettings Visible="true" Name="text">
+                                                                                <AccumulationChartDataLabelFont FontWeight="600" Color="white"></AccumulationChartDataLabelFont>
+                                                                            </AccumulationDataLabelSettings>
+                                                                        </AccumulationChartSeries>
+                                                                    </AccumulationChartSeriesCollection>
+                                                                </SfAccumulationChart>
+                                                            </div>
+                                                            <div class="6u">
+                                                                <SfAccumulationChart Title="Disponibilidade" Width="100%" Height="150" Theme="@utils.ctheme">
+                                                                    <AccumulationChartTooltipSettings Enable="true"></AccumulationChartTooltipSettings>
+                                                                    <AccumulationChartLegendSettings Visible="false"></AccumulationChartLegendSettings>
+                                                                    <AccumulationChartSeriesCollection>
+                                                                        <AccumulationChartSeries DataSource="@disppieChart.AsEnumerable()" XName="Key" YName="Value" StartAngle="270" EndAngle="90" Radius="90%" InnerRadius="40%" Explode="true">
+                                                                            <AccumulationDataLabelSettings Visible="true" Name="text">
+                                                                                <AccumulationChartDataLabelFont FontWeight="600"></AccumulationChartDataLabelFont>
+                                                                            </AccumulationDataLabelSettings>
+                                                                        </AccumulationChartSeries>
+                                                                    </AccumulationChartSeriesCollection>
+                                                                </SfAccumulationChart>
+
+                                                                <SfAccumulationChart Title="Desempenho" Width="100%" Height="150" Theme="@utils.ctheme">
+                                                                    <AccumulationChartTooltipSettings Enable="true"></AccumulationChartTooltipSettings>
+                                                                    <AccumulationChartLegendSettings Visible="false"></AccumulationChartLegendSettings>
+                                                                    <AccumulationChartSeriesCollection>
+                                                                        <AccumulationChartSeries DataSource="@desemppieChart.AsEnumerable()" XName="Key" YName="Value" StartAngle="270" EndAngle="90" Radius="90%" InnerRadius="40%" Explode="true">
+                                                                            <AccumulationDataLabelSettings Visible="true" Name="text">
+                                                                                <AccumulationChartDataLabelFont FontWeight="600"></AccumulationChartDataLabelFont>
+                                                                            </AccumulationDataLabelSettings>
+                                                                        </AccumulationChartSeries>
+                                                                    </AccumulationChartSeriesCollection>
+                                                                </SfAccumulationChart>
+
+                                                                <SfAccumulationChart Title="Qualidade" Width="100%" Height="150" Theme="@utils.ctheme">
+                                                                    <AccumulationChartTooltipSettings Enable="true"></AccumulationChartTooltipSettings>
+                                                                    <AccumulationChartLegendSettings Visible="false"></AccumulationChartLegendSettings>
+                                                                    <AccumulationChartSeriesCollection>
+                                                                        <AccumulationChartSeries DataSource="@qpieChart" XName="Key" YName="Value" StartAngle="270" EndAngle="90" Radius="90%" InnerRadius="40%" Explode="true">
+                                                                            <AccumulationDataLabelSettings Visible="true" Name="text">
+                                                                                <AccumulationChartDataLabelFont FontWeight="600"></AccumulationChartDataLabelFont>
+                                                                            </AccumulationDataLabelSettings>
+                                                                        </AccumulationChartSeries>
+                                                                    </AccumulationChartSeriesCollection>
+                                                                </SfAccumulationChart>
+                                                            </div>
+                                                        </div>
+                                                        <div class="card text-dark bg-light">
+                                                            <div class="card-body">
+                                                                @if (oeepieChart != null && oeepieChart.Count > 0)
+                                                                {
+                                                                    @if (setaoee == true)
+                                                                    {
+                                                                        <p style="margin:0;">Índice OEE: @oeepieChart.First().Value% | <span style='color:#00bda4'><i class='icon style1 fa-arrow-up'></i>@setavalor%</span></p>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <p style="margin:0;">Índice OEE: @oeepieChart.First().Value% | <span style='color:#E23F3F'><i class='icon style1 fa-arrow-down'></i>@setavalor%</span></p>
+                                                                    }
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            @*GRÁFICO CARGAS POR HORA*@
+                                            <div class="row uniform">
+                                                <div class="12u 12u$(medium)">
+                                                    @if (ChartData != null && ChartData.Count > 0)
+                                                    {
+                                                        <SfChart Title="Número de Cargas por Hora" Width="100%" Height="400" Theme="@utils.ctheme">
+                                                            <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                            <ChartTooltipSettings Enable="true" Shared="true" Header="Nº de Cargas" Format="<b>${point.x}H : ${point.y} cargas</b>"></ChartTooltipSettings>
+                                                            <ChartPrimaryXAxis Title="Hora" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                                            </ChartPrimaryXAxis>
+                                                            <ChartPrimaryYAxis Title="Número de Cargas" LabelFormat="{value}" Interval="5">
+                                                            </ChartPrimaryYAxis>
+                                                            <ChartSeriesCollection>
+                                                                <ChartSeries DataSource="@ChartData" Name="Nº de Cargas" XName="Hora" YName="Num" Type="ChartSeriesType.Column"></ChartSeries>
+                                                            </ChartSeriesCollection>
+                                                        </SfChart>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="row uniform" style="margin-top:20px">
+                                                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                                                    <div class="card text-dark bg-light">
+                                                        <div class="card-body">
+                                                            <p style="margin:0;">Sem dados para apresentar relativamente ao período de tempo selecionado.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </ContentTemplate>
+                            </TabItem>
+                            <TabItem>
+                                <ChildContent>
+                                    <TabHeader Text="HISTÓRICO"></TabHeader>
+                                </ChildContent>
+                                <ContentTemplate>
+                                    @if (isupdating == false)
+                                    {
+                                        @if (histoee != null && histoee.Count() > 0)
+                                        {
+                                            <div class="row uniform" style="margin-top:20px;height:1000px">
+                                                <div class="12u 12u$(medium)">
+                                                    <SfChart Title="" Width="100%" Theme="@utils.ctheme">
+                                                        <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                        <ChartTooltipSettings Enable="true" Shared="true" Header="Índice de Desempenho" Format="<b>${point.x} : ${point.y}%</b>"></ChartTooltipSettings>
+                                                        <ChartPrimaryXAxis Title="Dia" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                                        </ChartPrimaryXAxis>
+                                                        <ChartPrimaryYAxis StripLines="@StripLines" Title="Índices" LabelFormat="{value}" Minimum="0" Maximum="100" Interval="5">
+                                                        </ChartPrimaryYAxis>
+                                                        <ChartSeriesCollection>
+                                                            <ChartSeries DataSource="@histoee" Name="OEE" XName="Key" YName="Value" Type="ChartSeriesType.Line" Width="3">
+                                                                <ChartTrendlines>
+                                                                    <ChartTrendline Type="TrendlineTypes.Linear" Width="1" Name="Tendência" Fill="#000000">
+                                                                    </ChartTrendline>
+                                                                </ChartTrendlines>
+                                                            </ChartSeries>
+                                                            <ChartSeries DataSource="@histdisp" Name="Disponibilidade" XName="Key" YName="Value" Type="ChartSeriesType.Line" Width="3"></ChartSeries>
+                                                            <ChartSeries DataSource="@histdesemp" Name="Desempenho" XName="Key" YName="Value" Type="ChartSeriesType.Line" Width="3"></ChartSeries>
+                                                            <ChartSeries DataSource="@histqual" Name="Qualidade" XName="Key" YName="Value" Type="ChartSeriesType.Line" Width="3"></ChartSeries>
+                                                        </ChartSeriesCollection>
+                                                    </SfChart>
+                                                </div>
+                                                <div class="12u 12u$(medium)">
+                                                    <div class="row">
+                                                        <div class="6u 12u$(medium)">
+                                                            <div class="row">
+                                                                <div class="6u">
+                                                                    <SfAccumulationChart Title="Média OEE" Width="100%" Height="400" Theme="@utils.ctheme">
+                                                                        <AccumulationChartLegendSettings Visible="true" Position="Syncfusion.Blazor.Charts.LegendPosition.Bottom">
+                                                                        </AccumulationChartLegendSettings>
+                                                                        <AccumulationChartTooltipSettings Enable="false"></AccumulationChartTooltipSettings>
+                                                                        <AccumulationChartSeriesCollection>
+                                                                            <AccumulationChartSeries DataSource="@calcoeeChart" XName="Key" YName="Value" Radius="90%" InnerRadius="40%" Explode="true" ExplodeOffset="10%" ExplodeIndex="3">
+                                                                                <AccumulationDataLabelSettings Visible="true" Name="text">
+                                                                                    <AccumulationChartDataLabelFont FontWeight="600" Color="white"></AccumulationChartDataLabelFont>
+                                                                                </AccumulationDataLabelSettings>
+                                                                            </AccumulationChartSeries>
+                                                                        </AccumulationChartSeriesCollection>
+                                                                    </SfAccumulationChart>
+                                                                </div>
+                                                                <div class="6u" style="display:flex;justify-content:center;flex-direction:column;height:400px">
+                                                                    @if (setaCalcoee == true)
+                                                                    {
+                                                                        <p style="margin:0;"><strong><i class='icon style1 fa-arrow-up'></i> @DifCalcOEE%</strong></p>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <p style="margin:0;"><strong><i class='icon style1 fa-arrow-down'></i> @DifCalcOEE%</strong></p>
+                                                                    }
+                                                                    <p>Comparativamente ao mesmo período anterior</p>
+                                                                    <p style="margin:0"><strong>+/- @DevCalcOEE%</strong></p>
+                                                                    <p>Variação durante o periodo selecionado</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="6u 12u$(medium)">
+                                                            <p style="text-align:center">Comparativamente ao mesmo período anterior</p>
+                                                            <div class="row">
+                                                                <div class="4u">
+                                                                    @if (setaCalcIDISP == true)
+                                                                    {
+                                                                        <p style="width: 100%; text-align: center;margin:0"><strong><i class='icon style1 fa-arrow-up'></i> @DifCalcIDISP%</strong></p>
+
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <p style="width: 100%; text-align: center;margin:0"><strong><i class='icon style1 fa-arrow-down'></i> @DifCalcIDISP%</strong></p>
+                                                                    }
+                                                                    <SfChart Title="" Width="100%" Height="200" Theme="@utils.ctheme">
+                                                                        <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                                        <ChartArea>
+                                                                            <ChartAreaBorder Color="#FF0000" Width="0"></ChartAreaBorder>
+                                                                        </ChartArea>
+                                                                        <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.Category" Visible="false">
+                                                                        </ChartPrimaryXAxis>
+                                                                        <ChartPrimaryYAxis Title="" Visible="false" Minimum="0" Maximum="100">
+                                                                        </ChartPrimaryYAxis>
+                                                                        <ChartSeriesCollection>
+                                                                            <ChartSeries DataSource="@oldDispChart" Name="" XName="Key" YName="Value" Type="ChartSeriesType.Column">
+                                                                                <ChartMarker>
+                                                                                    <ChartDataLabel Visible="true" Position="Syncfusion.Blazor.Charts.LabelPosition.Top"></ChartDataLabel>
+                                                                                </ChartMarker>
+                                                                            </ChartSeries>
+                                                                        </ChartSeriesCollection>
+                                                                    </SfChart>
+                                                                    <p style="width:100%;text-align:center">Disponibilidade</p>
+                                                                    <p style="width: 100%; text-align: center;margin:0"><strong>+/- @DevCalcIDISP%</strong></p>
+                                                                </div>
+                                                                <div class="4u">
+                                                                    @if (setaCalcIDESEMP == true)
+                                                                    {
+                                                                        <p style="width: 100%; text-align: center;margin:0"><strong><i class='icon style1 fa-arrow-up'></i> @DifCalcIDESEMP%</strong></p>
+
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <p style="width: 100%; text-align: center;margin:0"><strong><i class='icon style1 fa-arrow-down'></i> @DifCalcIDESEMP%</strong></p>
+                                                                    }
+                                                                    <SfChart Title="" Width="100%" Height="200" Theme="@utils.ctheme">
+                                                                        <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                                        <ChartArea>
+                                                                            <ChartAreaBorder Color="#FF0000" Width="0"></ChartAreaBorder>
+                                                                        </ChartArea>
+                                                                        <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.Category" Visible="false">
+                                                                        </ChartPrimaryXAxis>
+                                                                        <ChartPrimaryYAxis Title="" Visible="false" Minimum="0" Maximum="100">
+                                                                        </ChartPrimaryYAxis>
+                                                                        <ChartSeriesCollection>
+                                                                            <ChartSeries DataSource="@oldDesempChart" Name="" XName="Key" YName="Value" Type="ChartSeriesType.Column">
+                                                                                <ChartMarker>
+                                                                                    <ChartDataLabel Visible="true" Position="Syncfusion.Blazor.Charts.LabelPosition.Top"></ChartDataLabel>
+                                                                                </ChartMarker>
+                                                                            </ChartSeries>
+                                                                        </ChartSeriesCollection>
+                                                                    </SfChart>
+                                                                    <p style="width:100%;text-align:center">Desempenho</p>
+                                                                    <p style="width: 100%; text-align: center;margin:0"><strong>+/- @DevCalcIDESEMP%</strong></p>
+                                                                </div>
+                                                                <div class="4u">
+                                                                    @if (setaCalcIQUAL == true)
+                                                                    {
+                                                                        <p style="width: 100%; text-align: center;margin:0"><strong><i class='icon style1 fa-arrow-up'></i> @DifCalcIQUAL%</strong></p>
+
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <p style="width: 100%; text-align: center;margin:0"><strong><i class='icon style1 fa-arrow-down'></i> @DifCalcIQUAL%</strong></p>
+                                                                    }
+                                                                    <SfChart Title="" Width="100%" Height="200" Theme="@utils.ctheme">
+                                                                        <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                                        <ChartArea>
+                                                                            <ChartAreaBorder Color="#FF0000" Width="0"></ChartAreaBorder>
+                                                                        </ChartArea>
+                                                                        <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.Category" Visible="false">
+                                                                        </ChartPrimaryXAxis>
+                                                                        <ChartPrimaryYAxis Title="" Visible="false" Minimum="0" Maximum="100">
+                                                                        </ChartPrimaryYAxis>
+                                                                        <ChartSeriesCollection>
+                                                                            <ChartSeries DataSource="@oldQualChart" Name="" XName="Key" YName="Value" Type="ChartSeriesType.Column">
+                                                                                <ChartMarker>
+                                                                                    <ChartDataLabel Visible="true" Position="Syncfusion.Blazor.Charts.LabelPosition.Top"></ChartDataLabel>
+                                                                                </ChartMarker>
+                                                                            </ChartSeries>
+                                                                        </ChartSeriesCollection>
+                                                                    </SfChart>
+                                                                    <p style="width:100%;text-align:center">Qualidade</p>
+                                                                    <p style="width: 100%; text-align: center;margin:0"><strong>+/- @DevCalcIQUAL%</strong></p>
+                                                                </div>
+                                                            </div>
+                                                            <p style="text-align:center">Variação durante o período selecionado</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="row uniform" style="margin-top:20px">
+                                                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                                                    <div class="card text-dark bg-light">
+                                                        <div class="card-body">
+                                                            <p style="margin:0;">Sem dados para apresentar relativamente ao período de tempo selecionado.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </ContentTemplate>
+                            </TabItem>
+                            <TabItem>
+                                <ChildContent>
+                                    <TabHeader Text="TURNO"></TabHeader>
+                                </ChildContent>
+                                <ContentTemplate>
+
+                                    @if (isupdating == false)
+                                    {
+                                        @if (RefsTrabalho != null && RefsTrabalho.Count > 0)
+                                        {
+                                            <div class="row uniform" style="margin-top:20px">
+                                                <div class="6u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                    <div class="row">
+                                                        <div class="table-wrapper" style="width:100%">
+                                                            <table>
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Turno Selecionado</th>
+                                                                        <th style="overflow-x: auto;">
+                                                                            @if (SelTurno.Count > 0)
+                                                                            {
+                                                                                <SfDropDownList Value="@STurno" TValue="string" TItem="turnort" Placeholder="Turno" DataSource="@SelTurno" Width="100%" Style="height:100%;display: inline-block">
+                                                                                    <DropDownListEvents OnValueSelect="@SelTurno_SelectionChanged" TValue="string" TItem="turnort"></DropDownListEvents>
+                                                                                    <DropDownListFieldSettings Value="kturno" Text="vturno"></DropDownListFieldSettings>
+                                                                                </SfDropDownList>
+                                                                            }
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td>Turno (h)</td>
+                                                                        <td>@nTurnoTurno</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Tempo Operacional (m)</td>
+                                                                        <td>@nTOperacionalTurno (@HnTOperacionalTurno h)</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Tempo de Produção (m)</td>
+                                                                        <td>@nTProdTurno (@HnTProdTurno h)</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Tempo parado (m)</td>
+                                                                        <td>@nTStopTurno (@HnTStopTurno h)</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Produção (cargas)</td>
+                                                                        <td>@nProdTurno</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Perdas (cargas)</td>
+                                                                        <td>@nPerdasTurno</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Unidades conformes</td>
+                                                                        <td>@nConfTurno</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Unidades não conformes</td>
+                                                                        <td>@nNConfTurno</td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="6u 12u$(medium) align-self-end" style="display: flex;justify-content:space-between;flex-direction:column">
+                                                    <div class="row">
+                                                        <div class="6u">
+                                                            <SfAccumulationChart Title="OEE" Width="100%" Height="450" Theme="@utils.ctheme">
+                                                                <AccumulationChartLegendSettings Visible="true" Position="Syncfusion.Blazor.Charts.LegendPosition.Bottom">
+                                                                </AccumulationChartLegendSettings>
+                                                                <AccumulationChartTooltipSettings Enable="false"></AccumulationChartTooltipSettings>
+                                                                <AccumulationChartSeriesCollection>
+                                                                    <AccumulationChartSeries DataSource="@oeepieChartTurno.AsEnumerable()" XName="Key" YName="Value" Radius="90%" InnerRadius="40%" Explode="true" ExplodeOffset="10%" ExplodeIndex="3">
+                                                                        <AccumulationDataLabelSettings Visible="true" Name="text">
+                                                                            <AccumulationChartDataLabelFont FontWeight="600" Color="white"></AccumulationChartDataLabelFont>
+                                                                        </AccumulationDataLabelSettings>
+                                                                    </AccumulationChartSeries>
+                                                                </AccumulationChartSeriesCollection>
+                                                            </SfAccumulationChart>
+                                                        </div>
+                                                        <div class="6u">
+                                                            <SfAccumulationChart Title="Disponibilidade" Width="100%" Height="150" Theme="@utils.ctheme">
+                                                                <AccumulationChartTooltipSettings Enable="true"></AccumulationChartTooltipSettings>
+                                                                <AccumulationChartLegendSettings Visible="false"></AccumulationChartLegendSettings>
+                                                                <AccumulationChartSeriesCollection>
+                                                                    <AccumulationChartSeries DataSource="@disppieChartTurno.AsEnumerable()" XName="Key" YName="Value" StartAngle="270" EndAngle="90" Radius="90%" InnerRadius="40%" Explode="true">
+                                                                        <AccumulationDataLabelSettings Visible="true" Name="text">
+                                                                            <AccumulationChartDataLabelFont FontWeight="600"></AccumulationChartDataLabelFont>
+                                                                        </AccumulationDataLabelSettings>
+                                                                    </AccumulationChartSeries>
+                                                                </AccumulationChartSeriesCollection>
+                                                            </SfAccumulationChart>
+
+                                                            <SfAccumulationChart Title="Desempenho" Width="100%" Height="150" Theme="@utils.ctheme">
+                                                                <AccumulationChartTooltipSettings Enable="true"></AccumulationChartTooltipSettings>
+                                                                <AccumulationChartLegendSettings Visible="false"></AccumulationChartLegendSettings>
+                                                                <AccumulationChartSeriesCollection>
+                                                                    <AccumulationChartSeries DataSource="@desemppieChartTurno.AsEnumerable()" XName="Key" YName="Value" StartAngle="270" EndAngle="90" Radius="90%" InnerRadius="40%" Explode="true">
+                                                                        <AccumulationDataLabelSettings Visible="true" Name="text">
+                                                                            <AccumulationChartDataLabelFont FontWeight="600"></AccumulationChartDataLabelFont>
+                                                                        </AccumulationDataLabelSettings>
+                                                                    </AccumulationChartSeries>
+                                                                </AccumulationChartSeriesCollection>
+                                                            </SfAccumulationChart>
+
+                                                            <SfAccumulationChart Title="Qualidade" Width="100%" Height="150" Theme="@utils.ctheme">
+                                                                <AccumulationChartTooltipSettings Enable="true"></AccumulationChartTooltipSettings>
+                                                                <AccumulationChartLegendSettings Visible="false"></AccumulationChartLegendSettings>
+                                                                <AccumulationChartSeriesCollection>
+                                                                    <AccumulationChartSeries DataSource="@qpieChartTurno.AsEnumerable()" XName="Key" YName="Value" StartAngle="270" EndAngle="90" Radius="90%" InnerRadius="40%" Explode="true">
+                                                                        <AccumulationDataLabelSettings Visible="true" Name="text">
+                                                                            <AccumulationChartDataLabelFont FontWeight="600"></AccumulationChartDataLabelFont>
+                                                                        </AccumulationDataLabelSettings>
+                                                                    </AccumulationChartSeries>
+                                                                </AccumulationChartSeriesCollection>
+                                                            </SfAccumulationChart>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card text-dark bg-light" style="margin-top:20px">
+                                                        <div class="card-body">
+                                                            @if (oeepieChartTurno != null && oeepieChartTurno.Count > 0)
+                                                            {
+                                                                <p style="margin:0;">Índice OEE: @oeepieChartTurno.First().Value%</p>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            @*GRÁFICO CARGAS POR DIA*@
+                                            <div class="row uniform">
+                                                <div class="12u 12u$(medium)">
+                                                    <SfChart Title="Número de Cargas Diárias" Width="100%" Height="400" Theme="@utils.ctheme">
+                                                        <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                        <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                                                        <ChartPrimaryXAxis Title="Hora" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                                        </ChartPrimaryXAxis>
+                                                        <ChartPrimaryYAxis Title="Nº de Cargas Diárias" LabelFormat="{value}">
+                                                        </ChartPrimaryYAxis>
+                                                        <ChartSeriesCollection>
+                                                            <ChartSeries DataSource="@hsaTurnoDiaT1" Name="Turno 1" XName="Hora" YName="Num" Type="ChartSeriesType.StackingColumn"></ChartSeries>
+                                                            @* <ChartSeries DataSource="@hsaTurnoDiaT2" Name="Turno 2" XName="Hora" YName="Num" Type="ChartSeriesType.StackingColumn"></ChartSeries>
+															<ChartSeries DataSource="@hsaTurnoDiaT3" Name="Turno 3" XName="Hora" YName="Num" Type="ChartSeriesType.StackingColumn"></ChartSeries> *@
+                                                        </ChartSeriesCollection>
+                                                    </SfChart>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="row uniform" style="margin-top:20px">
+                                                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                                                    <div class="card text-dark bg-light">
+                                                        <div class="card-body">
+                                                            <p style="margin:0;">Sem dados para apresentar relativamente ao período de tempo selecionado.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </ContentTemplate>
+                            </TabItem>
+                            <TabItem>
+                                <ChildContent>
+                                    <TabHeader Text="UTILIZADOR"></TabHeader>
+                                </ChildContent>
+                                <ContentTemplate>
+                                    @if (isupdating == false)
+                                    {
+                                        @if (RefsTrabalho != null && RefsTrabalho.Count > 0)
+                                        {
+                                            <div class="row uniform" style="margin-top:20px">
+                                                <div class="6u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                    <div class="row">
+                                                        <div class="table-wrapper" style="width:100%">
+                                                            <table>
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Operador Selecionado</th>
+                                                                        <th>
+                                                                            @if (SelTurno.Count > 0)
+                                                                            {
+                                                                                <SfDropDownList Value="@SUser" TValue="string" TItem="userrt" Placeholder="Utilizador" DataSource="@SelUser" Width="100%" Style="height:100%">
+                                                                                    <DropDownListEvents OnValueSelect="@SelUser_SelectionChanged" TValue="string" TItem="userrt"></DropDownListEvents>
+                                                                                    <DropDownListFieldSettings Value="kuser" Text="vuser"></DropDownListFieldSettings>
+                                                                                </SfDropDownList>
+                                                                            }
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="12u">
+                                                            <SfChart Title="Número de Cargas Diárias" Width="100%" Height="400" Theme="@utils.ctheme">
+                                                                <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                                <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+                                                                <ChartPrimaryXAxis Title="@legenda" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                                                </ChartPrimaryXAxis>
+                                                                <ChartPrimaryYAxis Title="Nº de Cargas" LabelFormat="{value}">
+                                                                </ChartPrimaryYAxis>
+                                                                <ChartSeriesCollection>
+                                                                    <ChartSeries DataSource="@hsaUser" Name="" XName="Hora" YName="Num" Type="ChartSeriesType.Column"></ChartSeries>
+                                                                </ChartSeriesCollection>
+                                                            </SfChart>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="6u 12u$(medium) align-self-end" style="display: flex;justify-content:space-between;flex-direction:column">
+                                                    <div class="row">
+                                                        <div class="12u">
+                                                            <SfChart Title="Top de Produção" Width="100%" Height="400" Theme="@utils.ctheme">
+                                                                <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                                                <ChartArea>
+                                                                    <ChartAreaBorder Width="0"></ChartAreaBorder>
+                                                                </ChartArea>
+                                                                <ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                                                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                                                </ChartPrimaryXAxis>
+                                                                <ChartPrimaryYAxis Title="" LabelFormat="{value}" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                                                                    <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                                                    <ChartAxisLabelStyle Color="transparent"></ChartAxisLabelStyle>
+                                                                    <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                                                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                                                </ChartPrimaryYAxis>
+                                                                <ChartSeriesCollection>
+                                                                    <ChartSeries DataSource="@qTopChart" Name="" XName="Hora" YName="Num" Type="ChartSeriesType.Bar">
+                                                                        <ChartMarker>
+                                                                            <ChartDataLabel Visible="true" Position="Syncfusion.Blazor.Charts.LabelPosition.Top"></ChartDataLabel>
+                                                                        </ChartMarker>
+                                                                    </ChartSeries>
+                                                                </ChartSeriesCollection>
+                                                            </SfChart>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="row uniform" style="margin-top:20px">
+                                                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                                                    <div class="card text-dark bg-light">
+                                                        <div class="card-body">
+                                                            <p style="margin:0;">Sem dados para apresentar relativamente ao período de tempo selecionado.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </ContentTemplate>
+                            </TabItem>
+                        </TabItems>
+                    </SfTab>
+                </div>
+
+
+                @*PARAGENS*@
+                <SfDialog Target="#target" Width="1000px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupParagens">
+                    <DialogTemplates>
+                        <Header>Gerir Paragens</Header>
+                        <Content>
+                            <div class="row uniform">
+                                <div class="4u 12u$(medium)">
+                                    <SfDatePicker TValue="DateTime?" Placeholder='Data' @bind-Value="PausaDT"></SfDatePicker>
+                                </div>
+                                <div class="8u 12u$(medium)">
+                                    <SfButton @onclick="OpenPopupParagens">Pesquisar</SfButton>
+                                </div>
+                            </div>
+
+
+                            <div class="row">
+                                <SfGrid @ref="@Grid" DataSource="@PausasDia" AllowFiltering="false" AllowSorting="true" AllowGrouping="false">
+                                    <GridColumns>
+                                        <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+                                            <Template>
+                                                @{
+                                                    var whois = (context as paragensrt);
+                                                    <a @onclick="@(() => { Pausas_Edit(whois.Id); })" class="icon style1 fa-edit" style="margin-right:1em;cursor:pointer"><span class="label">Editar</span></a>
+                                                    <a @onclick="@(() => { Pausas_Delete(whois.Id); })" class="icon style1 fa-close" style="margin-right:1em;cursor:pointer"><span class="label">Eliminar</span></a>
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                        <GridColumn Field="Inicio" HeaderText="Inicio" Format="G" Type="ColumnType.Date" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                        <GridColumn Field="Fim" HeaderText="Fim" Format="G" Type="ColumnType.Date" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                        <GridColumn Field="Tempo" HeaderText="Tempo" Format="t"></GridColumn>
+                                        <GridColumn Field="Descrição" HeaderText="Descrição"></GridColumn>
+                                    </GridColumns>
+                                </SfGrid>
+                            </div>
+                            <SfButton class="button special pull-left" @onclick="Pausas_Add">Adicionar</SfButton>
+                            <SfButton class="button pull-right" @onclick="Pausas_Close">Fechar</SfButton>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupParagensEditor">
+                    <DialogTemplates>
+                        <Header>Paragem</Header>
+                        <Content>
+                            <div class="table-wrapper" style="margin:1em;">
+                                <table>
+                                    <tbody>
+                                        <tr style="border:0px;background-color:#fff">
+                                            <td>Hora Inicio</td>
+                                            <td><SfTimePicker TValue="DateTime" @bind-Value="@dHI" Width="100%" Style="height:100%"></SfTimePicker></td>
+                                        </tr>
+                                        <tr style="border:0px;background-color:#fff">
+                                            <td>Hora Fim</td>
+                                            <td><SfTimePicker TValue="DateTime" @bind-Value="@dHF" Width="100%" Style="height:100%"></SfTimePicker></td>
+                                        </tr>
+                                        <tr style="border:0px;background-color:#fff">
+                                            <td>Ocorrência</td>
+                                            <td><SfTextBox TValue="string" @bind-Value="@dOcorrencia"></SfTextBox></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <SfButton class="button special pull-right" @onclick="Pausas_Save" style="margin:10px">Guardar</SfButton>
+                            <SfButton class="button pull-right" @onclick="@(() => { PopupParagensEditor = false; })" style="margin:10px">Cancelar</SfButton>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+
+                @*CONFIG*@
+                <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupConfigs">
+                    <DialogTemplates>
+                        <Header>Configurações</Header>
+                        <Content>
+                            <SfTab>
+                                <TabItems>
+                                    <TabItem>
+                                        <ChildContent>
+                                            <TabHeader Text="GERAIS"></TabHeader>
+                                        </ChildContent>
+                                        <ContentTemplate>
+                                            <div class="table-wrapper" style="margin:1em;">
+                                                <table>
+                                                    <tbody>
+                                                        <tr style="border:0px;background-color:#fff">
+                                                            <td>Hora Inicio</td>
+                                                            <td><SfTimePicker TValue="DateTime" @bind-Value="@uHI" Width="100%" Style="height:100%"></SfTimePicker></td>
+                                                        </tr>
+                                                        <tr style="border:0px;background-color:#fff">
+                                                            <td>Hora Fim</td>
+                                                            <td><SfTimePicker TValue="DateTime" @bind-Value="@uHF" Width="100%" Style="height:100%"></SfTimePicker></td>
+                                                        </tr>
+                                                        <tr style="border:0px;background-color:#fff">
+                                                            <td>Horas Trabalho</td>
+                                                            <td><SfNumericTextBox TValue="int" @bind-Value="@uHT"></SfNumericTextBox></td>
+                                                        </tr>
+                                                        <tr style="border:0px;background-color:#fff">
+                                                            <td>Prod/hora objetivo</td>
+                                                            <td><SfNumericTextBox TValue="int" @bind-Value="@uProdObj"></SfNumericTextBox></td>
+                                                        </tr>
+                                                        <tr style="border:0px;background-color:#fff">
+                                                            <td>% Produção objetiva</td>
+                                                            <td><SfNumericTextBox TValue="int" @bind-Value="@uPercObj"></SfNumericTextBox></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </ContentTemplate>
+                                    </TabItem>
+                                    <TabItem>
+                                        <ChildContent>
+                                            <TabHeader Text="TURNO"></TabHeader>
+                                        </ChildContent>
+                                        <ContentTemplate>
+                                            <div class="table-wrapper" style="margin:1em;">
+                                                <table>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Turno</th>
+                                                            <th>Hora Inicio</th>
+                                                            <th>Nº de Horas</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr style="border:0px;background-color:#fff;">
+                                                            <td>1</td>
+                                                            <td><SfTimePicker TValue="DateTime" @bind-Value="@Turno1Hi" Width="100%" Style="height:40px"></SfTimePicker></td>
+                                                            <td><SfNumericTextBox TValue="int" @bind-Value="@Turno1NH"></SfNumericTextBox></td>
+                                                        </tr>
+                                                     @*    <tr style="border:0px;background-color:#fff;">
+                                                            <td>2</td>
+                                                            <td><SfTimePicker TValue="DateTime" @bind-Value="@Turno2Hi" Width="100%" Style="height:40px"></SfTimePicker></td>
+                                                            <td><SfNumericTextBox TValue="int" @bind-Value="@Turno2NH"></SfNumericTextBox></td>
+                                                        </tr> *@
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </ContentTemplate>
+                                    </TabItem>
+                                </TabItems>
+                            </SfTab>
+                            <SfButton class="button special pull-right" @onclick="@SavePopupConfigs" style="margin:10px">Guardar</SfButton>
+                            <SfButton class="button pull-right" @onclick="@(() => { PopupConfigs = false; })" style="margin:10px">Cancelar</SfButton>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+
+
+
+@code {
+    SfSpinner SpinnerObj = new SfSpinner();
+
+    bool dbchecked = false, dbcheckedoff = false;
+    public bool isupdating = false;
+    public DateTime? dti { get; set; } = DateTime.Today;
+    public DateTime? dtf { get; set; } = DateTime.Today;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            LoadComboTurno();
+            LoadComboUser();
+            SearchData();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+    private async void SearchData()
+    {
+        isupdating = true;
+        await SpinnerObj.ShowAsync();
+        OEE();
+
+        isupdating = false;
+    }
+
+    //OEE
+    public List<dadosrt> RefsTrabalho = new List<dadosrt>() { };
+    public List<AreaChartData> ChartData = new List<AreaChartData> { };
+    public string nTurno;
+    public string nTOperacional;
+    public string HnTOperacional;
+    public string nTProd;
+    public string HnTProd;
+    public string nTStop;
+    public string HnTStop;
+    public string nProd;
+    public string nProdTeo;
+    public string nPerdas;
+    public string nConf;
+    public string nNConf;
+    public List<KVPStringDecimal> disppieChart = new List<KVPStringDecimal> { };
+    public List<KVPStringDecimal> desemppieChart = new List<KVPStringDecimal> { };
+    public List<KVPStringDecimal> qpieChart = new List<KVPStringDecimal> { };
+    public List<KVPStringDecimal> oeepieChart = new List<KVPStringDecimal> { };
+    private async void OEE()
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            RefsTrabalho.Clear();
+            ChartData.Clear();
+
+            //CARREGA PRODUÇÃO
+            var phistory = from rt in dl.db.ReferenciaTrabalhos
+                           join reg in dl.db.Registos on rt.Lote equals reg.Lote
+                           group reg by new
+                           {
+                               rt.Lote,
+                               rt.Referencia,
+                               rt.Ordemfabrico,
+                               rt.Suspensao,
+                               rt.Operador,
+                               rt.Unidades,
+                               rt.UnidadesMas,
+                               rt.UnidadesTeoricas,
+                               rt.AreaTotal,
+                               rt.Descarga,
+                               rt.LoteData
+                           } into gr
+                           where gr.Key.LoteData >= dti && gr.Key.LoteData <= dtf.Value.AddDays(1)
+                           orderby gr.Max(t => t.TempoFinal) descending
+                           select new dadosrt
+                           {
+                               Id = gr.Key.Lote + "|" + gr.Key.Referencia,
+                               Lote = gr.Key.Lote,
+                               OF = gr.Key.Ordemfabrico,
+                               Suspensao = gr.Key.Suspensao,
+                               Referencia = gr.Key.Referencia,
+                               Operador = gr.Key.Operador,
+                               Inicio = gr.Min(t => t.TempoInicial),
+                               Fim = gr.Max(t => t.TempoFinal),
+                               Tempo = (gr.Max(t => t.TempoFinal).Value.Subtract(gr.Min(t => t.TempoInicial).Value)).ToString(@"dd\:hh\:mm\:ss"),
+                               Unidades = gr.Key.Unidades,
+                               Boas = gr.Key.Unidades - gr.Key.UnidadesMas,
+                               Mas = gr.Key.UnidadesMas,
+                               Teoricas = gr.Key.UnidadesTeoricas,
+                               Area = gr.Key.AreaTotal,
+                               LoteData = gr.Key.LoteData
+
+                           };
+            var dados = await phistory.ToListAsync();
+            RefsTrabalho = dados;
+
+            //GRÁFICO NUMERO DE BARRAS POR HORA
+            List<AreaChartData> ac = new List<AreaChartData>() { };
+            var dadosdia = dados.Where(ca => ca.Referencia != "").GroupBy(gr => gr.LoteData.Value.Hour).OrderBy(or => or.Key);
+            foreach (var item in dadosdia)
+            {
+                AreaChartData aci = new AreaChartData()
+                {
+                    Hora = item.Key.ToString(),
+                    Ordem = item.Key,
+                    Num = item.Count(),
+                };
+                ac.Add(aci);
+            }
+            ChartData = ac;
+
+            for (int i = 0; i < 23; i++)
+            {
+                if (ac.Where(z => z.Ordem == i).Count() == 0)
+                {
+                    ac.Add(new AreaChartData { Ordem = i, Hora = i.ToString("D2"), Num = 0 });
+                }
+            }
+            ChartData = ac.OrderBy(bitch => bitch.Ordem).ToList();
+
+
+            //CARGAS POR DIA
+            var pdiaT = from rt in dados
+                        where string.Compare(rt.Referencia.ToUpper(), "") != 0
+                        group rt by new { rt.LoteData } into gr
+                        orderby gr.Min(t => t.LoteData)
+                        select new { Dia = gr.Key.ToString(), Num = gr.Count() };
+            var CargasDia = pdiaT.ToList();
+
+
+            //CARREGA PAUSAS
+            var pPausasT = from rt in dl.db.OeeStops
+                           where rt.TempoInicial >= dti & rt.TempoInicial <= dtf.Value.AddDays(1)
+                           select new
+                           {
+                               ti = rt.TempoInicial,
+                               tf = rt.TempoFinal,
+                               tt = rt.TempoFinal.Value.Subtract(rt.TempoInicial.Value),
+                               Ocorrencia = rt.Ocorrencia
+                           };
+            var PausasDia = await pPausasT.ToListAsync();
+
+
+            //#################
+            //OEE
+            //#################
+            string hinicio;
+            string hfim;
+            decimal ndisp;
+            decimal ndesemp;
+            decimal nqual;
+
+            //DISPONIBILIDADE
+            decimal uturno;
+            //verifica se é ou não tempo real
+            if (dti == DateTime.Today && dtf == DateTime.Today)
+            {
+                hinicio = (await dl.db.Configs.Where(x => x.Name == "HorarioInicio").FirstAsync()).Value;
+                hfim = (await dl.db.Configs.Where(x => x.Name == "HorarioFim").FirstAsync()).Value;
+
+                if (DateTime.Now.Hour >= DateTime.Parse(hinicio).Hour && DateTime.Now.Hour <= DateTime.Parse(hfim).Hour)
+                {
+                    hfim = DateTime.Now.ToShortTimeString();
+                    uturno = (decimal)(TimeSpan.Parse(hfim) - TimeSpan.Parse(hinicio)).TotalHours;
+                }
+                else
+                {
+                    uturno = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEturno")).Value);
+                }
+            }
+            else
+            {
+                uturno = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEturno")).Value) * CargasDia.Count;
+            }
+
+            decimal upausa = (decimal)PausasDia.Sum(z => z.tt.TotalHours);
+            var tprod = uturno - upausa;
+            if (uturno > 0)
+            {
+                ndisp = Math.Round(tprod / uturno * 100, 1);
+            }
+            else
+            {
+                ndisp = 100;
+            }
+            List<KVPStringDecimal> iidisp = new List<KVPStringDecimal>();
+            //iidisp.Add("Disponibilidade", Math.Round(ndisp, 1));
+            iidisp.Add(new KVPStringDecimal("Disponibilidade", Math.Round(ndisp, 1)));
+
+            if (ndisp < 100)
+            {
+                //iidisp.Add("Perda", 100 - Math.Round(ndisp, 1));
+                iidisp.Add(new KVPStringDecimal("Perda", 100 - Math.Round(ndisp, 1)));
+            }
+            else
+            {
+                //iidisp.Add("Perda", 0);
+                iidisp.Add(new KVPStringDecimal("Perda", 0));
+            }
+            disppieChart = iidisp;
+
+
+            //DESEMPENHO
+            decimal ureal = CargasDia.Sum(x => x.Num);
+            decimal uteorica = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEcargas")).Value);
+            if (ureal > 0 && uteorica > 0 && uturno > 0)
+            {
+                ndesemp = Math.Round((ureal / (uturno * uteorica)) * 100, 1);
+            }
+            else
+            {
+                ndesemp = 100;
+            }
+            List<KVPStringDecimal> iidesemp = new List<KVPStringDecimal>();
+            //iidesemp.Add("Desempenho", Math.Round(ndesemp, 1));
+            iidesemp.Add(new KVPStringDecimal("Desempenho", Math.Round(ndesemp, 1)));
+            if (ndesemp < 100)
+            {
+                //iidesemp.Add("Perda", 100 - Math.Round(ndesemp, 1));
+                iidesemp.Add(new KVPStringDecimal("Perda", 100 - Math.Round(ndesemp, 1)));
+            }
+            else
+            {
+                //iidesemp.Add("Perda", 0);
+                iidesemp.Add(new KVPStringDecimal("Perda", 0));
+            }
+            desemppieChart = iidesemp;
+
+
+            //QUALIDADE
+            decimal uboas = (decimal)dados.Sum(x => x.Boas);
+            decimal utodas = (decimal)dados.Sum(x => x.Unidades);
+            if (uboas > 0 && utodas > 0)
+            {
+                nqual = Math.Round(uboas / utodas * 100, 1);
+            }
+            else
+            {
+                nqual = 100;
+            }
+            List<KVPStringDecimal> iiqual = new List<KVPStringDecimal>();
+            //iiqual.Add("Qualidade", Math.Round(nqual, 1));
+            iiqual.Add(new KVPStringDecimal("Qualidade", Math.Round(nqual, 1)));
+            if (nqual < 100)
+            {
+                //iiqual.Add("Perda", 100 - Math.Round(nqual, 1));
+                iiqual.Add(new KVPStringDecimal("Perda", 100 - Math.Round(nqual, 1)));
+            }
+            else
+            {
+                //iiqual.Add("Perda", 0);
+                iiqual.Add(new KVPStringDecimal("Perda", 0));
+            }
+            qpieChart = iiqual;
+
+
+            //OEE
+            decimal uoee = ((ndisp / 100) * (ndesemp / 100) * (nqual / 100)) * 100;
+            List<KVPStringDecimal> iioee = new List<KVPStringDecimal> { };
+            //iioee.Add("OEE", Math.Round(uoee, 1));
+            iioee.Add(new KVPStringDecimal("OEE", Math.Round(uoee, 1)));
+            if (uoee < 100)
+            {
+                //iioee.Add("Perda", 100 - Math.Round(uoee, 1));
+                iioee.Add(new KVPStringDecimal("Perda", 100 - Math.Round(uoee, 1)));
+            }
+            else
+            {
+                //iioee.Add("Perda", 0);
+                iioee.Add(new KVPStringDecimal("Perda", 0));
+            }
+            oeepieChart = iioee;
+
+
+            //DADOS
+            nTurno = Math.Round(uturno, 2).ToString();
+            nTOperacional = Math.Round((uturno * 60), 1).ToString();
+            HnTOperacional = TimeSpan.FromMinutes((double)uturno * 60).ToString("dd\\.hh\\:mm\\:ss");
+            nTProd = Math.Round((tprod * 60), 1).ToString();
+            HnTProd = TimeSpan.FromMinutes((double)tprod * 60).ToString("dd\\.hh\\:mm\\:ss");
+            nTStop = Math.Round((upausa * 60), 1).ToString();
+            HnTStop = TimeSpan.FromMinutes((double)upausa * 60).ToString("dd\\.hh\\:mm\\:ss");
+            nProd = ureal.ToString();
+            nProdTeo = Math.Round((uturno * uteorica), 1).ToString();
+            nPerdas = Math.Round(((uturno * uteorica) - ureal), 1).ToString();
+            nConf = uboas.ToString();
+            nNConf = (utodas - uboas).ToString();
+
+
+            get_stats((dtf.Value - dti.Value).Days > 0 ? (dtf.Value - dti.Value).Days + 1 : 1, Math.Round(uoee, 1));
+
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Erro ao carregar OEE: {ex.Message}\n {ex.StackTrace}");
+        }
+        finally
+        {
+            dl.Dispose();
+
+        }
+
+    }
+
+    //STATS
+    public decimal oldoee;
+    public decimal olddisp;
+    public decimal oldesemp;
+    public decimal oldqual;
+    public decimal setavalor;
+    public bool setaoee = true;
+    private async void get_stats(int dias, decimal todayoee)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            //CARREGA PRODUÇÃO
+            var phistory = from rt in dl.db.ReferenciaTrabalhos
+                           join reg in dl.db.Registos on rt.Lote equals reg.Lote
+                           group reg by new
+                           {
+                               rt.Lote,
+                               rt.Referencia,
+                               rt.Ordemfabrico,
+                               rt.Suspensao,
+                               rt.Operador,
+                               rt.Unidades,
+                               rt.UnidadesMas,
+                               rt.UnidadesTeoricas,
+                               rt.AreaTotal,
+                               rt.Descarga,
+                               rt.LoteData
+                           } into gr
+                           where gr.Key.LoteData >= dti && gr.Key.LoteData <= dtf.Value.AddDays(1)
+                           orderby gr.Max(t => t.TempoFinal) descending
+                           select new dadosrt
+                           {
+                               Id = gr.Key.Lote + "|" + gr.Key.Referencia,
+                               Lote = gr.Key.Lote,
+                               OF = gr.Key.Ordemfabrico,
+                               Suspensao = gr.Key.Suspensao,
+                               Referencia = gr.Key.Referencia,
+                               Operador = gr.Key.Operador,
+                               Inicio = gr.Min(t => t.TempoInicial),
+                               Fim = gr.Max(t => t.TempoFinal),
+                               Tempo = (gr.Max(t => t.TempoFinal).Value.Subtract(gr.Min(t => t.TempoInicial).Value)).ToString(@"dd\:hh\:mm\:ss"),
+                               Unidades = gr.Key.Unidades,
+                               Boas = gr.Key.Unidades - gr.Key.UnidadesMas,
+                               Mas = gr.Key.UnidadesMas,
+                               Teoricas = gr.Key.UnidadesTeoricas,
+                               Area = gr.Key.AreaTotal,
+                               LoteData = gr.Key.LoteData
+                           };
+            var dados = await phistory.ToListAsync();
+
+            //CARGAS POR DIA
+            var pdiaT = from rt in dl.db.ReferenciaTrabalhos
+                        where rt.LoteData >= dti & rt.LoteData <= dtf.Value.AddDays(1) && string.Compare(rt.Referencia.ToUpper(), "") != 0
+                        group rt by new { rt.LoteData} into gr
+                        orderby gr.Min(t => t.LoteData)
+                        select new
+                        {
+                            Dia = gr.Key.ToString(),
+                            Num = gr.Count()
+                        };
+            var CargasDia = pdiaT.ToList();
+
+
+            //CARREGA PAUSAS
+            var pPausasT = from rt in dl.db.OeeStops
+                           where rt.TempoInicial >= dti & rt.TempoFinal <= dtf.Value.AddDays(1)
+                           select new
+                           {
+                               ti = rt.TempoInicial,
+                               tf = rt.TempoFinal,
+                               tt = rt.TempoFinal.Value.Subtract(rt.TempoInicial.Value),
+                               Ocorrencia = rt.Ocorrencia
+                           };
+            var PausasDia = await pPausasT.ToListAsync();
+
+
+            //#################
+            //OEE
+            //#################
+            string hinicio;
+            string hfim;
+            decimal ndisp;
+            decimal ndesemp;
+            decimal nqual;
+
+            //DISPONIBILIDADE
+            decimal uturno;
+            hinicio = (await dl.db.Configs.Where(x => x.Name == "HorarioInicio").FirstAsync()).Value;
+            hfim = (await dl.db.Configs.Where(x => x.Name == "HorarioFim").FirstAsync()).Value;
+            uturno = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEturno")).Value);
+
+            decimal upausa = (decimal)PausasDia.Sum(z => z.tt.TotalHours);
+            var tprod = uturno - upausa;
+            if (uturno > 0)
+            {
+                ndisp = Math.Round(tprod / uturno * 100, 1);
+            }
+            else
+            {
+                ndisp = 100;
+            }
+
+
+            //DESEMPENHO
+            decimal ureal = CargasDia.Sum(x => x.Num);
+            decimal uteorica = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEcargas")).Value);
+            if (ureal > 0 && uteorica > 0 && uturno > 0)
+            {
+                ndesemp = Math.Round((ureal / (uturno * uteorica)) * 100, 1);
+            }
+            else
+            {
+                ndesemp = 100;
+            }
+
+            //QUALIDADE
+            decimal uboas = (decimal)dados.Sum(x => x.Boas);
+            decimal utodas = (decimal)dados.Sum(x => x.Unidades);
+            if (uboas > 0 && utodas > 0)
+            {
+                nqual = Math.Round(uboas / utodas * 100, 1);
+            }
+            else
+            {
+                nqual = 100;
+            }
+
+
+            //OEE
+            decimal uoee = ((ndisp / 100) * (ndesemp / 100) * (nqual / 100)) * 100;
+            setavalor = Math.Abs(todayoee - Math.Round(uoee, 1));
+            if (todayoee - Math.Round(uoee, 1) < 0)
+            {
+                setaoee = false;
+            }
+            else
+            {
+                setaoee = true;
+            }
+
+            //DADOS
+            oldoee = uoee;
+            olddisp = ndisp;
+            oldesemp = ndesemp;
+            oldqual = nqual;
+
+            Historico();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Erro ao carregar get_stats: {ex.Message}\n {ex.StackTrace}");
+        }
+        finally
+        {
+            dl.Dispose();
+        }
+
+    }
+
+    //HISTÓRICO
+    public List<KVPStringDecimal> histdisp = new List<KVPStringDecimal>() { };
+    public List<KVPStringDecimal> histdesemp = new List<KVPStringDecimal>() { };
+    public List<KVPStringDecimal> histqual = new List<KVPStringDecimal>() { };
+    public List<KVPStringDecimal> histoee = new List<KVPStringDecimal>();
+    public List<ChartStripline> StripLines = new List<ChartStripline>
+{
+        new ChartStripline { Visible = true, StartFromAxis = false, Start="75", Size = 1, ZIndex = ZIndex.Behind,
+            Opacity = 0.5, Color = "black", Text= "Objetivo", Rotation = 0, VerticalAlignment = Anchor.End, HorizontalAlignment = Anchor.Middle}
+    };
+    public List<KVPStringDecimal> oldDispChart = new List<KVPStringDecimal>() { };
+    public List<KVPStringDecimal> oldDesempChart = new List<KVPStringDecimal>() { };
+    public List<KVPStringDecimal> oldQualChart = new List<KVPStringDecimal>() { };
+    public List<KVPStringDecimal> calcoeeChart = new List<KVPStringDecimal>() { };
+    public decimal DifCalcOEE;
+    public decimal DifCalcIDISP;
+    public decimal DifCalcIDESEMP;
+    public decimal DifCalcIQUAL;
+    public bool setaCalcoee = true;
+    public bool setaCalcIDISP = true;
+    public bool setaCalcIDESEMP = true;
+    public bool setaCalcIQUAL = true;
+    public decimal DevCalcOEE;
+    public decimal DevCalcIDISP;
+    public decimal DevCalcIDESEMP;
+    public decimal DevCalcIQUAL;
+    private async void Historico()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            histdisp.Clear();
+            histdesemp.Clear();
+            histqual.Clear();
+            histoee.Clear();
+
+            //CARREGA PRODUÇÃO
+            var phistory = from rt in dl.db.ReferenciaTrabalhos
+                           join reg in dl.db.Registos on rt.Lote equals reg.Lote
+                           group reg by new
+                           {
+                               rt.Lote,
+                               rt.Referencia,
+                               rt.Ordemfabrico,
+                               rt.Suspensao,
+                               rt.Operador,
+                               rt.Unidades,
+                               rt.UnidadesMas,
+                               rt.UnidadesTeoricas,
+                               rt.AreaTotal,
+                               rt.Descarga,
+                               rt.LoteData
+                           } into gr
+                           where gr.Key.LoteData >= dti && gr.Key.LoteData <= dtf.Value.AddDays(1)
+                           orderby gr.Max(t => t.TempoFinal) descending
+                           select new dadosrt
+                           {
+                               Id = gr.Key.Lote + "|" + gr.Key.Referencia,
+                               Lote = gr.Key.Lote,
+                               OF = gr.Key.Ordemfabrico,
+                               Suspensao = gr.Key.Suspensao,
+                               Referencia = gr.Key.Referencia,
+                               Operador = gr.Key.Operador,
+                               Inicio = gr.Min(t => t.TempoInicial),
+                               Fim = gr.Max(t => t.TempoFinal),
+                               Tempo = (gr.Max(t => t.TempoFinal).Value.Subtract(gr.Min(t => t.TempoInicial).Value)).ToString(@"dd\:hh\:mm\:ss"),
+                               Unidades = gr.Key.Unidades,
+                               Boas = gr.Key.Unidades - gr.Key.UnidadesMas,
+                               Mas = gr.Key.UnidadesMas,
+                               Teoricas = gr.Key.UnidadesTeoricas,
+                               Area = gr.Key.AreaTotal,
+                               LoteData = gr.Key.LoteData
+                           };
+            var dados = await phistory.ToListAsync();
+
+
+            //CARGAS POR DIA
+            var pdiaT = from rt in dados
+                        where string.Compare(rt.Referencia.ToUpper(), "") != 0
+                        group rt by new { rt.Fim.Value.Date } into gr
+                        orderby gr.Min(t => t.Fim.Value.Date)
+                        select new
+                        {
+                            Dia = gr.Key.Date.ToShortDateString(),
+                            Num = gr.Count()
+                        };
+            var CargasDia = pdiaT.ToList();
+
+
+            //CARREGA PAUSAS
+            var pPausasT = from rt in dl.db.OeeStops
+                           where rt.TempoInicial >= dti & rt.TempoFinal <= dtf.Value.AddDays(1)
+                           select new
+                           {
+                               ti = rt.TempoInicial,
+                               tf = rt.TempoFinal,
+                               tt = rt.TempoFinal.Value.Subtract(rt.TempoInicial.Value),
+                               Ocorrencia = rt.Ocorrencia
+                           };
+            var PausasDia = await pPausasT.ToListAsync();
+
+
+            string hinicio;
+            string hfim;
+            decimal uturno;
+            decimal uteorica = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEcargas")).Value);
+            hinicio = (await dl.db.Configs.Where(x => x.Name == "HorarioInicio").FirstAsync()).Value;
+            hfim = (await dl.db.Configs.Where(x => x.Name == "HorarioFim").FirstAsync()).Value;
+            uturno = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEturno")).Value);
+
+            foreach (var row in CargasDia)
+            {
+                //disponibilidade
+                decimal ndisp;
+                decimal ndesemp;
+                decimal nqual;
+                decimal upausa = (decimal)PausasDia.Where(y => y.ti >= DateTime.Parse(row.Dia) && y.tf < DateTime.Parse(row.Dia).AddDays(1)).Sum(z => z.tt.TotalHours);
+                decimal tprod = uturno - upausa;
+
+                if (uturno > 0)
+                {
+                    ndisp = Math.Round(tprod / uturno * 100, 1);
+                }
+                else
+                {
+                    ndisp = 100;
+                }
+                histdisp.Add(new KVPStringDecimal(DateTime.Parse(row.Dia).ToShortDateString(), ndisp));
+
+                //desempenho
+                decimal ureal = row.Num;
+                if (ureal > 0 && uteorica > 0 && uturno > 0)
+                {
+                    ndesemp = Math.Round((ureal / (uturno * uteorica) * 100), 1);
+                }
+                else
+                {
+                    ndesemp = 100;
+                }
+                histdesemp.Add(new KVPStringDecimal(DateTime.Parse(row.Dia).ToShortDateString(), ndesemp));
+
+                //qualidade
+                decimal uboas = (decimal)dados.Where(y => y.Fim >= DateTime.Parse(row.Dia) && y.Fim < DateTime.Parse(row.Dia).AddDays(1)).Sum(x => x.Boas);
+                decimal utodas = (decimal)dados.Where(y => y.Fim >= DateTime.Parse(row.Dia) && y.Fim < DateTime.Parse(row.Dia).AddDays(1)).Sum(x => x.Unidades);
+                if (uboas > 0 && utodas > 0)
+                {
+                    nqual = Math.Round(uboas / utodas * 100, 1);
+                }
+                else
+                {
+                    nqual = 100;
+                }
+                histqual.Add(new KVPStringDecimal(DateTime.Parse(row.Dia).ToShortDateString(), nqual));
+
+                //oee
+                decimal uoee = Math.Round(((ndisp / 100) * (ndesemp / 100) * (nqual / 100)) * 100, 1);
+                histoee.Add(new KVPStringDecimal(DateTime.Parse(row.Dia).ToShortDateString(), uoee));
+            }
+
+            //estatísticas
+            oldDispChart.Clear();
+            oldDesempChart.Clear();
+            oldQualChart.Clear();
+            calcoeeChart.Clear();
+            if (histoee.Count > 0)
+            {
+                //oee
+                calcoeeChart.Add(new KVPStringDecimal("OEE", Math.Round(histoee.Average(h => h.Value), 1)));
+                if (histoee.Average(h => h.Value) < 100)
+                {
+                    calcoeeChart.Add(new KVPStringDecimal("Perda", 100 - Math.Round(histoee.Average(h => h.Value), 1)));
+                }
+                else
+                {
+                    calcoeeChart.Add(new KVPStringDecimal("Perda", 0));
+                }
+                DifCalcOEE = Math.Round(Math.Abs(Math.Round(histoee.Average(h => h.Value), 1) - oldoee), 1);
+                if (Math.Round(histoee.Average(h => h.Value), 1) - oldoee < 0)
+                {
+                    setaCalcoee = false;
+                }
+                else
+                {
+                    setaCalcoee = true;
+                }
+                DevCalcOEE = Math.Round((decimal)calcVariance(histoee.Select(x => x.Value).ToArray(), Math.Round(histoee.Average(h => h.Value), 1), histoee.Count), 1);
+
+                //disponibilidade
+                DifCalcIDISP = Math.Round(Math.Abs(Math.Round(histdisp.Average(h => h.Value), 1) - olddisp), 1);
+                if (Math.Round(histdisp.Average(h => h.Value), 1) - olddisp < 0)
+                {
+                    setaCalcIDISP = false;
+                }
+                else
+                {
+                    setaCalcIDISP = true;
+                }
+                DevCalcIDISP = Math.Round((decimal)calcVariance(histdisp.Select(x => x.Value).ToArray(), Math.Round(histdisp.Average(h => h.Value), 1), histdisp.Count), 1);
+                oldDispChart.Add(new KVPStringDecimal("Disponibilidade", Math.Round(histdisp.Average(h => h.Value), 1)));
+
+                //desempenho
+                DifCalcIDESEMP = Math.Round(Math.Abs(Math.Round(histdesemp.Average(h => h.Value), 1) - oldesemp), 1);
+                if (Math.Round(histdesemp.Average(h => h.Value), 1) - oldesemp < 0)
+                {
+                    setaCalcIDESEMP = false;
+                }
+                else
+                {
+                    setaCalcIDESEMP = true;
+                }
+                DevCalcIDESEMP = Math.Round((decimal)calcVariance(histdesemp.Select(x => x.Value).ToArray(), Math.Round(histdesemp.Average(h => h.Value), 1), histdesemp.Count), 1);
+                oldDesempChart.Add(new KVPStringDecimal("Desempenho", Math.Round(histdesemp.Average(h => h.Value), 1)));
+
+                //qualidade
+                DifCalcIQUAL = Math.Round(Math.Abs(Math.Round(histqual.Average(h => h.Value), 1) - oldqual), 1);
+                if (Math.Round(histqual.Average(h => h.Value), 1) - oldqual < 0)
+                {
+                    setaCalcIQUAL = false;
+                }
+                else
+                {
+                    setaCalcIQUAL = true;
+                }
+
+                DevCalcIQUAL = Math.Round((decimal)calcVariance(histqual.Select(x => x.Value).ToArray(), Math.Round(histqual.Average(h => h.Value), 1), histqual.Count), 1);
+                oldQualChart.Add(new KVPStringDecimal("Qualidade", Math.Round(histqual.Average(h => h.Value), 1)));
+            }
+            else
+            {
+                calcoeeChart.Add(new KVPStringDecimal("OEE", 100));
+                calcoeeChart.Add(new KVPStringDecimal("Perda", 0));
+                DifCalcOEE = 0;
+                setaCalcoee = true;
+                DevCalcOEE = 0;
+                DifCalcIDISP = 0;
+                setaCalcIDISP = true;
+                DevCalcIDISP = 0;
+                oldDispChart.Add(new KVPStringDecimal("Disponibilidade", 100));
+                DifCalcIDESEMP = 0;
+                setaCalcIDESEMP = true;
+                DevCalcIDESEMP = 0;
+                oldDesempChart.Add(new KVPStringDecimal("Desempenho", 100));
+                DifCalcIQUAL = 0;
+                setaCalcIQUAL = true;
+                DevCalcIQUAL = 0;
+                oldQualChart.Add(new KVPStringDecimal("Qualidade", 100));
+            }
+
+            LoadDataTurno();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Erro ao carregar Historico: {ex.Message}\n {ex.StackTrace}");
+        }
+        finally
+        {
+            dl.Dispose();
+            await SpinnerObj.HideAsync();
+            StateHasChanged();
+        }
+
+    }
+    public double calcVariance(decimal[] Values, decimal Mean, int Days)
+    {
+        decimal Variance = 0;
+        decimal TVariance = 0;
+        foreach (decimal i in Values)
+        {
+            Variance += (decimal)(Math.Pow(((double)i - (double)Mean), 2));
+        }
+        TVariance = Variance / (decimal)Days;
+        return (Math.Abs(Math.Sqrt((double)TVariance)));
+    }
+
+
+    //TURNO
+    public List<turnort> SelTurno = new List<turnort>() { };
+    public string? STurno;
+    public List<AreaChartData> hsaTurnoDiaT1 = new List<AreaChartData> { };
+    public List<AreaChartData> hsaTurnoDiaT2 = new List<AreaChartData> { };
+    public List<AreaChartData> hsaTurnoDiaT3 = new List<AreaChartData> { };
+    public string? nTurnoTurno;
+    public string? nTOperacionalTurno;
+    public string? HnTOperacionalTurno;
+    public string? nTProdTurno;
+    public string? HnTProdTurno;
+    public string? nTStopTurno;
+    public string? HnTStopTurno;
+    public string? nProdTurno;
+    public string? nProdTeoTurno;
+    public string? nPerdasTurno;
+    public string? nConfTurno;
+    public string? nNConfTurno;
+    public List<KVPStringDecimal> disppieChartTurno = new List<KVPStringDecimal> { };
+    public List<KVPStringDecimal> desemppieChartTurno = new List<KVPStringDecimal> { };
+    public List<KVPStringDecimal> qpieChartTurno = new List<KVPStringDecimal> { };
+    public List<KVPStringDecimal> oeepieChartTurno = new List<KVPStringDecimal> { };
+    private async void LoadComboTurno()
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            var setTurnos = dl.db.Configs.Where(w => EF.Functions.Like(w.Name, "OEETurnoH%"));
+            var SettingsTurno = await setTurnos.ToListAsync();
+
+            DateTime dt1Turno;
+            DateTime dt2Turno;
+            decimal horasturno;
+            SelTurno.Clear();
+
+            foreach (var dturno in SettingsTurno)
+            {
+                turnort turnoitem = new turnort();
+                turnoitem.kturno = dturno.Value.ToString();
+                turnoitem.vturno = dturno.Name.Split("#")[1] + " das " + dturno.Value.Split("#")[0] + " às " + DateTime.Parse(dturno.Value.Split("#")[0]).AddHours(Double.Parse(dturno.Value.Split("#")[1])).ToString("HH:mm");
+                SelTurno.Add(turnoitem);
+
+                if (DateTime.Now >= DateTime.Parse(DateTime.Now.ToShortDateString() + " " + dturno.Value.Split("#")[0]) && DateTime.Now <= DateTime.Parse(DateTime.Now.ToShortDateString() + " " + dturno.Value.Split("#")[0]).AddHours(Double.Parse(dturno.Value.Split("#")[1])))
+                {
+                    STurno = dturno.Value.ToString();
+                }else
+                {
+                    STurno = dturno.Value.ToString();//como só tem um turno quando saía fora da hora do turno não assumia nenhum turno
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Erro ao carregar LoadComboTurno: {ex.Message} \n {ex.StackTrace}");
+        }
+        finally
+        {
+            dl.Dispose();
+        }
+
+
+    }
+    public void SelTurno_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<turnort> args)
+    {
+        STurno = args.ItemData.kturno;
+        OEE();
+    }
+    private async void LoadDataTurno()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            //TURNO
+            var setTurnos = dl.db.Configs.Where(w => EF.Functions.Like(w.Name, "OEETurnoH%"));
+            var SettingsTurno = await setTurnos.ToListAsync();
+
+            var turnoselected = STurno;
+            DateTime dt1Turno;
+            DateTime dt2Turno;
+            decimal horasturno = Decimal.Parse(turnoselected.Split("#")[1]);
+            if (dti == DateTime.Today)
+            {
+                dt1Turno = DateTime.Parse(DateTime.Now.ToShortDateString() + " " + turnoselected.Split("#")[0]);
+                dt2Turno = DateTime.Parse(DateTime.Now.ToShortDateString() + " " + turnoselected.Split("#")[0]).AddHours(double.Parse(turnoselected.Split("#")[1]));
+
+            }
+            else
+            {
+                dt1Turno = DateTime.Parse(dti.Value.Date.ToShortDateString() + " " + turnoselected.Split("#")[0]);
+                dt2Turno = DateTime.Parse(dtf.Value.Date.ToShortDateString() + " " + turnoselected.Split("#")[0]).AddHours(double.Parse(turnoselected.Split("#")[1]));
+            }
+
+            //CARREGA PRODUÇÃO TOTAL
+            var phistory = from rt in dl.db.ReferenciaTrabalhos
+                           join reg in dl.db.Registos on rt.Lote equals reg.Lote
+                           group reg by new
+                           {
+                               rt.Lote,
+                               rt.Referencia,
+                               rt.Ordemfabrico,
+                               rt.Suspensao,
+                               rt.Operador,
+                               rt.Unidades,
+                               rt.UnidadesMas,
+                               rt.UnidadesTeoricas,
+                               rt.AreaTotal,
+                               rt.Descarga,
+                               rt.LoteData
+                           } into gr
+                           where gr.Key.LoteData >= dt1Turno && gr.Key.LoteData <= dt2Turno
+                           orderby gr.Max(t => t.TempoFinal) descending
+                           select new dadosrt
+                           {
+                               Id = gr.Key.Lote + "|" + gr.Key.Referencia,
+                               Lote = gr.Key.Lote,
+                               OF = gr.Key.Ordemfabrico,
+                               Suspensao = gr.Key.Suspensao,
+                               Referencia = gr.Key.Referencia,
+                               Operador = gr.Key.Operador,
+                               Inicio = gr.Min(t => t.TempoInicial),
+                               Fim = gr.Max(t => t.TempoFinal),
+                               Tempo = (gr.Max(t => t.TempoFinal).Value.Subtract(gr.Min(t => t.TempoInicial).Value)).ToString(@"dd\:hh\:mm\:ss"),
+                               Unidades = gr.Key.Unidades,
+                               Boas = gr.Key.Unidades - gr.Key.UnidadesMas,
+                               Mas = gr.Key.UnidadesMas,
+                               Teoricas = gr.Key.UnidadesTeoricas,
+                               Area = gr.Key.AreaTotal,
+                               LoteData = gr.Key.LoteData
+                           };
+            var dados = await phistory.ToListAsync();
+
+            //CARREGA PRODUÇÃO TURNO
+            var pQualTurno = from rt in dl.db.ReferenciaTrabalhos
+                             join reg in dl.db.Registos on rt.Lote equals reg.Lote
+                             group reg by new
+                             {
+                                 rt.Lote,
+                                 rt.Referencia,
+                                 rt.Ordemfabrico,
+                                 rt.Suspensao,
+                                 rt.Operador,
+                                 rt.Unidades,
+                                 rt.UnidadesMas,
+                                 rt.UnidadesTeoricas,
+                                 rt.AreaTotal,
+                                 rt.Descarga,
+                                 rt.LoteData
+                             } into gr
+                             where gr.Key.LoteData >= dt1Turno
+                             & gr.Key.LoteData <= dt2Turno
+                             && string.Compare(gr.Key.Referencia.ToUpper(), "") != 0
+                             select new dadosrt
+                             {
+                                 Id = gr.Key.Lote + "|" + gr.Key.Referencia,
+                                 Lote = gr.Key.Lote,
+                                 OF = gr.Key.Ordemfabrico,
+                                 Suspensao = gr.Key.Suspensao,
+                                 Referencia = gr.Key.Referencia,
+                                 Operador = gr.Key.Operador,
+                                 Inicio = gr.Min(t => t.TempoInicial),
+                                 Fim = gr.Max(t => t.TempoFinal),
+                                 Tempo = (gr.Max(t => t.TempoFinal).Value.Subtract(gr.Min(t => t.TempoInicial).Value)).ToString(@"dd\:hh\:mm\:ss"),
+                                 Unidades = gr.Key.Unidades,
+                                 Boas = gr.Key.Unidades - gr.Key.UnidadesMas,
+                                 Mas = gr.Key.UnidadesMas,
+                                 Teoricas = gr.Key.UnidadesTeoricas,
+                                 Area = gr.Key.AreaTotal,
+                                 LoteData = gr.Key.LoteData
+                             };
+            var dadosTurno = await pQualTurno.ToListAsync();
+
+            //CARGAS POR DIA
+            var pdiaT = from rt in dados
+                        where string.Compare(rt.Referencia.ToUpper(), "") != 0
+                        group rt by new { rt.Fim.Value.Date } into gr
+                        orderby gr.Min(t => t.Fim.Value.Date)
+                        select new { Dia = gr.Key.Date.ToShortDateString(), Num = gr.Count() };
+            var CargasDia = pdiaT.ToList();
+
+            //GRÁFICO DE CARGAS POR DIA/HORA
+            int contaturno = 0;
+            decimal horastotais = 0;
+            foreach (var turno in SettingsTurno)
+            {
+                DateTime tit = DateTime.Parse(dti.Value.Date.ToShortDateString() + " " + turno.Value.Split("#")[0]);
+                DateTime tft = DateTime.Parse(dtf.Value.Date.ToShortDateString() + " " + turno.Value.Split("#")[0]).AddHours(double.Parse(turno.Value.Split("#")[1]));
+
+                int horah = int.Parse(turno.Value.Split("#")[0].Split(":")[0]);
+                int horam = int.Parse(turno.Value.Split("#")[0].Split(":")[1]);
+                double ht = double.Parse(turno.Value.Split("#")[1]);
+
+                var pdiaTurnoDia = from rt in dados
+                                   where rt.Fim >= tit & rt.Fim < tft & rt.Fim.Value >= DateTime.Parse(rt.Fim.Value.ToShortDateString() + " " + horah + ":" + horam) & rt.Fim.Value <= DateTime.Parse(rt.Fim.Value.ToShortDateString() + " " + horah + ":" + horam).AddHours(ht) & rt.Referencia.ToUpper() != ""
+                                   group rt by new { rt.Fim.Value.Date } into gr
+                                   orderby gr.Min(t => t.Fim.Value.Date)
+                                   select new AreaChartData { Hora = gr.Key.Date.ToShortDateString(), Num = gr.Count() };
+                var dadosdiaTurno = pdiaTurnoDia.ToList();
+                horastotais += decimal.Parse(turno.Value.Split("#")[1]);
+                contaturno += 1;
+                switch (contaturno)
+                {
+                    case 1:
+                        hsaTurnoDiaT1 = dadosdiaTurno;
+                        break;
+                    case 2:
+                        hsaTurnoDiaT2 = dadosdiaTurno;
+                        break;
+                    case 3:
+                        hsaTurnoDiaT3 = dadosdiaTurno;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            //CARGAS
+            var pdiaTurno = from rt in dadosTurno
+                            where rt.LoteData >= dt1Turno & rt.LoteData < dt2Turno & rt.LoteData.Value >= DateTime.Parse(rt.LoteData.Value.ToShortDateString() + " " + dt1Turno.Hour + ":" + dt1Turno.Minute) & rt.LoteData.Value <= DateTime.Parse(rt.LoteData.Value.ToShortDateString() + " " + dt1Turno.Hour + ":" + dt1Turno.Minute).AddHours(double.Parse(horasturno.ToString())) && string.Compare(rt.Referencia.ToUpper(), "") != 0
+                            group rt by new { rt.LoteData.Value.Day } into gr
+                            select new { Num = gr.Count() };
+            var CargasDiaTurno = pdiaTurno.ToList();
+
+
+            //CARREGA PAUSAS
+            var pPausasTurno = from rt in dl.db.OeeStops
+                               where rt.TempoInicial >= dt1Turno & rt.TempoFinal <= dt2Turno
+                               & rt.TempoFinal.Value.Hour >= dt1Turno.Hour & dt1Turno.Minute >= dt1Turno.Minute
+                               & rt.TempoFinal.Value.Hour <= dt2Turno.Hour & dt2Turno.Minute <= dt2Turno.Minute
+                               select new
+                               {
+                                   ti = rt.TempoInicial,
+                                   tf = rt.TempoFinal,
+                                   tt = rt.TempoFinal.Value.Subtract(rt.TempoInicial.Value),
+                                   Ocorrencia = rt.Ocorrencia
+                               };
+            var PausasTurno = await pPausasTurno.ToListAsync();
+
+
+            //#################
+            //OEE
+            //#################
+            DateTime hinicioTurno;
+            DateTime hfimTurno;
+            decimal ndispTurno;
+            decimal ndesempTurno;
+            decimal nqualTurno;
+
+            //DISPONIBILIDADE
+            decimal uturnoTurno;
+            hinicioTurno = dt1Turno;
+            hfimTurno = dt2Turno;
+            //verifica se é ou não tempo real
+            if (dti.Value.Date == DateTime.Today.Date)
+            {
+                if (DateTime.Now >= hinicioTurno && DateTime.Now <= hfimTurno)
+                {
+                    hfimTurno = DateTime.Now;
+                }
+                uturnoTurno = (decimal)((hfimTurno - hinicioTurno).TotalHours);
+            }
+            else
+            {
+                if (dtf.Value.Date == DateTime.Today.Date)
+                {
+                    if (DateTime.Now >= DateTime.Parse(DateTime.Now.ToShortDateString() + " " + dt1Turno.ToShortTimeString()) && DateTime.Now <= DateTime.Parse(DateTime.Now.ToShortDateString() + " " + dt2Turno.ToShortTimeString()))
+                    {
+                        uturnoTurno = (CargasDia.Count * horasturno) - (DateTime.Parse(DateTime.Now.ToShortDateString() + " " + dt1Turno.ToShortTimeString()).AddHours(dt2Turno.Hour - DateTime.Now.Hour).Hour);
+                    }
+                    else
+                    {
+                        uturnoTurno = CargasDia.Count * horasturno;
+                    }
+                }
+                else
+                {
+                    uturnoTurno = CargasDia.Count * horasturno;
+                }
+            }
+
+            decimal upausaTurno = (decimal)PausasTurno.Sum(z => z.tt.TotalHours);
+            var tprodTurno = uturnoTurno - upausaTurno;
+            if (uturnoTurno > 0)
+            {
+                ndispTurno = Math.Round(tprodTurno / uturnoTurno * 100, 1);
+            }
+            else
+            {
+                ndispTurno = 100;
+            }
+            disppieChartTurno.Clear();
+            //disppieChartTurno.Add("Disponibilidade", Math.Round(ndispTurno, 1));
+            disppieChartTurno.Add(new KVPStringDecimal("Disponibilidade", Math.Round(ndispTurno, 1)));
+
+            if (ndispTurno < 100)
+            {
+                //disppieChartTurno.Add("Perda", 100 - Math.Round(ndispTurno, 1));
+                disppieChartTurno.Add(new KVPStringDecimal("Perda", 100 - Math.Round(ndispTurno, 1)));
+            }
+            else
+            {
+                //disppieChartTurno.Add("Perda", 0);
+                disppieChartTurno.Add(new KVPStringDecimal("Perda", 0));
+            }
+
+
+            //DESEMPENHO
+            decimal urealTurno = CargasDiaTurno.Sum(x => x.Num);
+            decimal uteoricaTurno = decimal.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEcargas")).Value);
+            if (urealTurno > 0 && uteoricaTurno > 0 && uturnoTurno > 0)
+            {
+                ndesempTurno = Math.Round((urealTurno / (uturnoTurno * uteoricaTurno)) * 100, 1);
+            }
+            else
+            {
+                ndesempTurno = 100;
+            }
+            desemppieChartTurno.Clear();
+            //desemppieChartTurno.Add("Desempenho", Math.Round(ndesempTurno, 1));
+            desemppieChartTurno.Add(new KVPStringDecimal("Desempenho", Math.Round(ndesempTurno, 1)));
+            if (ndesempTurno < 100)
+            {
+                //desemppieChartTurno.Add("Perda", 100 - Math.Round(ndesempTurno, 1));
+                desemppieChartTurno.Add(new KVPStringDecimal("Perda", 100 - Math.Round(ndesempTurno, 1)));
+            }
+            else
+            {
+                //desemppieChartTurno.Add("Perda", 0);
+                desemppieChartTurno.Add(new KVPStringDecimal("Perda", 0));
+            }
+
+
+            //QUALIDADE
+            decimal uboasTurno = (decimal)dadosTurno.Sum(x => x.Boas);
+            decimal utodasTurno = (decimal)dadosTurno.Sum(x => x.Unidades);
+            if (uboasTurno > 0 && utodasTurno > 0)
+            {
+                nqualTurno = Math.Round(uboasTurno / utodasTurno * 100, 1);
+            }
+            else
+            {
+                nqualTurno = 100;
+            }
+            qpieChartTurno.Clear();
+            //qpieChartTurno.Add("Qualidade", Math.Round(nqualTurno, 1));
+            qpieChartTurno.Add(new KVPStringDecimal("Qualidade", Math.Round(nqualTurno, 1)));
+            if (nqualTurno < 100)
+            {
+                //qpieChartTurno.Add("Perda", 100 - Math.Round(nqualTurno, 1));
+                qpieChartTurno.Add(new KVPStringDecimal("Perda", 100 - Math.Round(nqualTurno, 1)));
+            }
+            else
+            {
+                //qpieChartTurno.Add("Perda", 0);
+                qpieChartTurno.Add(new KVPStringDecimal("Perda", 0));
+            }
+
+
+            //OEE
+            decimal uoeeTurno = ((ndispTurno / 100) * (ndesempTurno / 100) * (nqualTurno / 100)) * 100;
+            oeepieChartTurno.Clear();
+            //oeepieChartTurno.Add("OEE", Math.Round(uoeeTurno, 1));
+            oeepieChartTurno.Add(new KVPStringDecimal("OEE", Math.Round(uoeeTurno, 1)));
+            if (uoeeTurno < 100)
+            {
+                //oeepieChartTurno.Add("Perda", 100 - Math.Round(uoeeTurno, 1));
+                oeepieChartTurno.Add(new KVPStringDecimal("Perda", 100 - Math.Round(uoeeTurno, 1)));
+            }
+            else
+            {
+                //oeepieChartTurno.Add("Perda", 0);
+                oeepieChartTurno.Add(new KVPStringDecimal("Perda", 0));
+            }
+
+
+            //DADOS
+            nTurnoTurno = Math.Round(uturnoTurno, 2).ToString();
+            nTOperacionalTurno = Math.Round((uturnoTurno * 60), 1).ToString();
+            HnTOperacionalTurno = TimeSpan.FromMinutes((double)uturnoTurno * 60).ToString("dd\\.hh\\:mm\\:ss");
+            nTProdTurno = Math.Round((tprodTurno * 60), 1).ToString();
+            HnTProdTurno = TimeSpan.FromMinutes((double)tprodTurno * 60).ToString("dd\\.hh\\:mm\\:ss");
+            nTStopTurno = Math.Round((upausaTurno * 60), 1).ToString();
+            HnTStopTurno = TimeSpan.FromMinutes((double)upausaTurno * 60).ToString("dd\\.hh\\:mm\\:ss");
+            nProdTurno = urealTurno.ToString();
+            nProdTeoTurno = Math.Round((uturnoTurno * uteoricaTurno), 1).ToString();
+            nPerdasTurno = Math.Round(((uturnoTurno * uteoricaTurno) - urealTurno), 1).ToString();
+            nConfTurno = uboasTurno.ToString();
+            nNConfTurno = (utodasTurno - uboasTurno).ToString();
+
+            LoadDataUser();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Erro ao carregar LoadDataTurno: {ex.Message} \n {ex.StackTrace}");
+        }
+        finally
+        {
+            dl.Dispose();
+        }
+
+    }
+
+
+    //UTILIZADOR
+    public List<userrt> SelUser = new List<userrt>() { };
+    public string SUser;
+    public List<AreaChartData> hsaUser = new List<AreaChartData> { };
+    public List<AreaChartData> qTopChart = new List<AreaChartData> { };
+    public string legenda = "Hora";
+    public string nTurnoUser;
+    public string nTOperacionalUser;
+    public string HnTOperacionalUser;
+    public string nTProdUser;
+    public string HnTProdUser;
+    public string nTStopUser;
+    public string HnTStopUser;
+    public string nProdUser;
+    public string nProdTeoUser;
+    public string nPerdasUser;
+    public string nConfUser;
+    public string nNConfUser;
+    public Dictionary<string, decimal> disppieChartUser = new Dictionary<string, decimal> { };
+    public Dictionary<string, decimal> desemppieChartUser = new Dictionary<string, decimal> { };
+    public Dictionary<string, decimal> qpieChartUser = new Dictionary<string, decimal> { };
+    public Dictionary<string, decimal> oeepieChartUser = new Dictionary<string, decimal> { };
+    private async void LoadComboUser()
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var setUsers = dl.db.Users.Where(u=> u.Username.ToUpper() != "F10" && u.Username.ToUpper() != "FORMULA DECIMAL").Select(u => new { username = u.Username.ToUpper() }).Distinct().OrderBy(ord => ord.username);
+        var SettingsUsers = await setUsers.ToListAsync();
+
+        //user logado
+        var puser = dl.db.Users.Where(u => u.Comportamento.ToUpper() == "LOGIN").OrderByDescending(l => l.Tempo).Take(1);
+        var dadosuser = await puser.ToListAsync();
+        if (dadosuser.Count > 0)
+        {
+            foreach (var duser in SettingsUsers)
+            {
+                userrt useritem = new userrt();
+                useritem.kuser = duser.username;
+                useritem.vuser = duser.username;
+                SelUser.Add(useritem);
+
+                if (dadosuser.First().Username.ToUpper() == duser.username.ToUpper())
+                {
+                    SUser = duser.username.ToUpper();
+                }
+            }
+        }
+
+        dl.Dispose();
+    }
+    public void SelUser_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<userrt> args)
+    {
+        SUser = args.ItemData.kuser;
+        OEE();
+    }
+    private async void LoadDataUser()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            //CARGAS
+            var phistory = from rt in dl.db.ReferenciaTrabalhos
+                           join reg in dl.db.Registos on rt.Lote equals reg.Lote
+                           group reg by new
+                           {
+                               rt.Lote,
+                               rt.Referencia,
+                               rt.Ordemfabrico,
+                               rt.Suspensao,
+                               rt.Operador,
+                               rt.Unidades,
+                               rt.UnidadesMas,
+                               rt.UnidadesTeoricas,
+                               rt.AreaTotal,
+                               rt.Descarga,
+                               rt.Opcao1,
+                               rt.Opcao2,
+                               rt.Opcao4,
+                               rt.LoteData
+                           } into gr
+                           where gr.Key.LoteData >= dti & gr.Key.LoteData <= dtf.Value.AddDays(1) & string.Compare(gr.Key.Referencia.ToUpper(), "") != 0
+                           orderby gr.Max(t => t.TempoFinal) descending
+                           select new dadosrt
+                           {
+                               Id = gr.Key.Lote + "|" + gr.Key.Referencia,
+                               Lote = gr.Key.Lote,
+                               OF = gr.Key.Ordemfabrico,
+                               Suspensao = gr.Key.Suspensao,
+                               Referencia = gr.Key.Referencia,
+                               Operador = gr.Key.Operador,
+                               Inicio = gr.Min(t => t.TempoInicial),
+                               Fim = gr.Max(t => t.TempoFinal),
+                               Tempo = (gr.Max(t => t.TempoFinal).Value.Subtract(gr.Min(t => t.TempoInicial).Value)).ToString(@"dd\:hh\:mm\:ss"),
+                               Unidades = gr.Key.Unidades,
+                               Boas = gr.Key.Unidades - gr.Key.UnidadesMas,
+                               Mas = gr.Key.UnidadesMas,
+                               Teoricas = gr.Key.UnidadesTeoricas,
+                               Area = gr.Key.AreaTotal,
+                               LoteData = gr.Key.LoteData
+                           };
+            var dados = await phistory.ToListAsync();
+
+            //GRÁFICO DE CARGAS POR DIA/HORA
+            if (dti.Value.Date == dtf.Value.Date)
+            {
+                var pdiaUserb = from rt in dados
+                                where rt.Operador == SUser
+                                group rt by new { rt.LoteData.Value.Hour } into gr
+                                orderby gr.Min(t => t.LoteData.Value.Hour)
+                                select new AreaChartData { Hora = gr.Key.Hour.ToString(), Num = gr.Count() };
+                hsaUser = pdiaUserb.ToList();
+                legenda = "Hora";
+            }
+            else
+            {
+                var pdiaUserb = from rt in dados
+                                where rt.Operador == SUser
+                                group rt by new { rt.LoteData.Value.Day } into gr
+                                orderby gr.Min(t => t.LoteData.Value.Day)
+                                select new AreaChartData { Hora = gr.Key.Day.ToString(), Num = gr.Count() };
+                hsaUser = pdiaUserb.ToList();
+                legenda = "Dia";
+            }
+
+
+            //GRÁFICO TOP USERS
+            var pdiaTopUser = from rt in dados
+                              group rt by new { rt.Operador } into gr
+                              orderby gr.Count()
+                              select new AreaChartData { Hora = gr.Key.Operador.ToString(), Num = gr.Count() };
+            qTopChart = pdiaTopUser.ToList();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Erro ao carregar LoadDataUser: {ex.Message} \n {ex.StackTrace}");
+        }
+        finally
+        {
+            isupdating = false;
+            await SpinnerObj.HideAsync();
+            StateHasChanged();
+            dl.Dispose();
+        }
+
+    }
+
+
+    //PARAGENS
+    SfGrid<paragensrt> Grid;
+    private bool PopupParagens = false;
+    private bool PopupParagensEditor = false;
+    public DateTime? PausaDT { get; set; } = DateTime.Today;
+    public List<paragensrt> PausasDia = new List<paragensrt>() { };
+    private DateTime dHI;
+    private DateTime dHF;
+    private string dOcorrencia;
+    private string selid = "";
+    private async void OpenPopupParagens()
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var pausasQ = dl.db.OeeStops.Where(x => x.TempoInicial >= PausaDT.Value && x.TempoInicial < PausaDT.Value.AddDays(1)).
+                            Select(q => new paragensrt { Id = q.Id.ToString(), Inicio = q.TempoInicial, Fim = q.TempoFinal, Tempo = (q.TempoFinal - q.TempoInicial).ToString(), Descrição = q.Ocorrencia });
+        PausasDia = await pausasQ.ToListAsync();
+
+        PopupParagens = true;
+        StateHasChanged();
+        dl.Dispose();
+    }
+    private void Pausas_Add()
+    {
+        selid = "";
+        dHI = DateTime.Now;
+        dHF = DateTime.Now;
+        dOcorrencia = "";
+
+        PopupParagensEditor = true;
+        StateHasChanged();
+    }
+    private void Pausas_Edit(string id)
+    {
+        selid = id;
+
+        dHI = PausasDia.First(x => x.Id == id).Inicio.Value;
+        dHF = PausasDia.First(x => x.Id == id).Fim.Value;
+        dOcorrencia = PausasDia.First(x => x.Id == id).Descrição;
+
+        PopupParagensEditor = true;
+        StateHasChanged();
+    }
+    private async void Pausas_Save()
+    {
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (selid == "")
+        {
+            dl.db.OeeStops.Add(new sv.data.OeeStop { TempoInicial = DateTime.Parse(PausaDT.Value.ToShortDateString() + " " + dHI.ToShortTimeString()), TempoFinal = DateTime.Parse(PausaDT.Value.ToShortDateString() + " " + dHF.ToShortTimeString()), Ocorrencia = dOcorrencia });
+        }
+        else
+        {
+            dl.db.OeeStops.First(x => x.Id == int.Parse(selid)).TempoInicial = DateTime.Parse(PausaDT.Value.ToShortDateString() + " " + dHI.ToShortTimeString());
+            dl.db.OeeStops.First(x => x.Id == int.Parse(selid)).TempoFinal = DateTime.Parse(PausaDT.Value.ToShortDateString() + " " + dHF.ToShortTimeString());
+            dl.db.OeeStops.First(x => x.Id == int.Parse(selid)).Ocorrencia = dOcorrencia;
+        }
+
+        await dl.db.SaveChangesAsync();
+        PopupParagensEditor = false;
+        utils.UserLog($"Inseriu uma paragem no OEE", "DataLink_L1");
+
+        OpenPopupParagens();
+        dl.Dispose();
+    }
+    private async void Pausas_Delete(string id)
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.OeeStops.Remove(dl.db.OeeStops.First(x => x.Id == int.Parse(id)));
+
+        await dl.db.SaveChangesAsync();
+        PopupParagensEditor = false;
+        utils.UserLog($"Eliminou uma paragem no OEE", "DataLink_L1");
+
+        OpenPopupParagens();
+        dl.Dispose();
+    }
+    private void Pausas_Close()
+    {
+        PopupParagens = false;
+        SearchData();
+    }
+
+
+    //CONFIGURAÇÕES
+    private bool PopupConfigs = false;
+    private DateTime uHI;
+    private DateTime uHF;
+    private int uHT;
+    private int uProdObj;
+    private int uPercObj;
+    private DateTime Turno1Hi;
+    private DateTime Turno2Hi;
+    private int Turno1NH;
+    private int Turno2NH;
+    private async void OpenPopupConfigs()
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        //geral
+        uHI = DateTime.Parse(dl.db.Configs.First(x => x.Name == "HorarioInicio").Value);
+        uHF = DateTime.Parse(dl.db.Configs.First(x => x.Name == "HorarioFim").Value);
+        uHT = int.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEturno")).Value);
+        uProdObj = int.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEcargas")).Value);
+        uPercObj = int.Parse((await dl.db.Configs.FirstAsync(x => x.Name == "OEEobjetivo")).Value);
+
+        //turno
+        var setTurnos = dl.db.Configs.
+                        Where(w => EF.Functions.Like(w.Name, "OEETurnoH%"));
+        var SettingsTurno = await setTurnos.ToListAsync();
+
+            Turno1Hi = DateTime.Parse(SettingsTurno[0].Value.Split("#")[0]);
+            //Turno2Hi = DateTime.Parse(SettingsTurno[1].Value.Split("#")[0]);
+
+            Turno1NH = int.Parse(SettingsTurno[0].Value.Split("#")[1]);
+            // Turno2NH = int.Parse(SettingsTurno[1].Value.Split("#")[1]);
+        
+
+        PopupConfigs = true;
+        StateHasChanged();
+        dl.Dispose();
+    }
+    private async void SavePopupConfigs()
+    {
+        DataLink_L1 dl = new DataLink_L1();
+
+        //geral
+        dl.db.Configs.First(x => x.Name == "HorarioInicio").Value = uHI.ToShortTimeString();
+        dl.db.Configs.First(x => x.Name == "HorarioFim").Value = uHF.ToShortTimeString();
+        dl.db.Configs.First(x => x.Name == "OEEturno").Value = uHT.ToString();
+        dl.db.Configs.First(x => x.Name == "OEEcargas").Value = uProdObj.ToString();
+        dl.db.Configs.First(x => x.Name == "OEEobjetivo").Value = uPercObj.ToString();
+
+        //turno
+        var setTurnos = dl.db.Configs.
+                        Where(w => EF.Functions.Like(w.Name, "OEETurnoH%"));
+        var SettingsTurno = await setTurnos.ToListAsync();
+        SettingsTurno[0].Value = Turno1Hi.ToShortTimeString() + "#" + Turno1NH.ToString();
+       // SettingsTurno[1].Value = Turno2Hi.ToShortTimeString() + "#" + Turno2NH.ToString();
+
+        await dl.db.SaveChangesAsync();
+        PopupConfigs = false;
+        utils.UserLog($"Alterou as configurações OEE/Turno na Base de Dados", "DataLink_L1");
+
+        SearchData();
+
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+
+    public class dadosrt
+    {
+        public string Id { get; set; }
+        public string Lote { get; set; }
+        public string OF { get; set; }
+        public string Suspensao { get; set; }
+        public string Referencia { get; set; }
+        public string Operador { get; set; }
+        public DateTime? Inicio { get; set; }
+        public DateTime? Fim { get; set; }
+        public string Tempo { get; set; }
+        public int? Unidades { get; set; }
+        public int? Boas { get; set; }
+        public int? Mas { get; set; }
+        public int? Teoricas { get; set; }
+        public decimal? Area { get; set; }
+        public bool? Descarga { get; set; }
+        public DateTime? LoteData { get; set; }
+    }
+
+    public class AreaChartData
+    {
+        public int Ordem { get; set; }
+        public string Hora { get; set; }
+        public int Num { get; set; }
+    }
+
+    public class turnort
+    {
+        public string kturno { get; set; }
+        public string vturno { get; set; }
+    }
+
+    public class userrt
+    {
+        public string kuser { get; set; }
+        public string vuser { get; set; }
+    }
+
+    public class userdt
+    {
+        public DateTime dti { get; set; }
+        public DateTime dtf { get; set; }
+    }
+
+    public class paragensrt
+    {
+        public string? Id { get; set; }
+        public DateTime? Inicio { get; set; }
+        public DateTime? Fim { get; set; }
+        public string? Tempo { get; set; }
+        public string? Descrição { get; set; }
+    }
+
+    public class KVPStringDecimal
+    {
+        public string Key { get; set; }
+        public decimal Value { get; set; }
+
+        public KVPStringDecimal(string k, decimal v)
+        {
+            Key = k;
+            Value = v;
+        }
+    }
+
+}
+
+
+

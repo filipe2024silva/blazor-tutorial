@@ -1,0 +1,295 @@
+﻿@page "/equipamentos"
+@using MySqlConnector
+@using f10.pulsar.mes.Components
+@using f10.pulsar.mes.Enums
+
+@inject NavigationManager NavigationManager
+@inject Utils Utils
+@inject EquipamentosService EquipamentosService
+
+<BasePage State="State" LoadingText="A carregar equipamentos..." OnReload="LoadAsync">
+
+    <div class="row">
+        <div class="8u 12u$(medium)">
+            <h1>Gestão de Equipamentos Gerais</h1>
+            @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+        </div>
+        <div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+            <button class="noprint" @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+            <button class="noprint" onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+            <button @onclick="@(() => { PopupNewEquip = true; })" title="Inserir Equipamento"><i class="icon style1 fa-plus"></i></button>
+        </div>
+    </div>
+
+    <div class="row uniform">
+        <SfTab>
+            <TabItems>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="ATIVOS"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+
+                        @*TABELA*@
+                        <SfGrid @ref="@Grid" DataSource="@EquipamentosON" AllowFiltering="true" AllowSorting="true" AllowGrouping="true">
+                            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                            <GridColumns>
+                                <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+                                    <Template>
+                                        @{
+                                            var whois = (context as pulsar.mes.data.Equipamento);
+                                            <div style="display: flex; justify-content: space-between;">
+                                                <p @onclick="@(() => { EditEquipAsync(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label">Editar</span></p>
+                                            </div>
+                                        }
+                                    </Template>
+                                </GridColumn>
+                                <GridColumn Field="Nome" HeaderText="Nome"></GridColumn>
+                                <GridColumn Field="Designacao" HeaderText="Designação" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                <GridColumn Field="Localizacao" HeaderText="Localização" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                <GridColumn Field="Serial" HeaderText="Nº Série" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                <GridColumn Field="IP" HeaderText="IP" HideAtMedia="(min-width: 700px)" Width="150"></GridColumn>
+                                <GridColumn Field="Porta" HeaderText="Porta" Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="100"></GridColumn>
+                            </GridColumns>
+                            <GridTemplates>
+                                <EmptyRecordTemplate>
+                                    <div class="row uniform" style="margin-top:20px">
+                                        <div class="12u 12u$(medium)">
+                                            <div class="card text-dark bg-light">
+                                                <div class="card-body">
+                                                    <p style="margin:0;">Sem equipamentos registados.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </EmptyRecordTemplate>
+                            </GridTemplates>
+
+                        </SfGrid>
+
+
+                    </ContentTemplate>
+                </TabItem>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="INATIVOS"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+
+                        @*TABELA*@
+                        <SfGrid @ref="@Grid" DataSource="@EquipamentosOFF" AllowFiltering="true" AllowSorting="true" AllowGrouping="true">
+                            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                            <GridColumns>
+                                <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+                                    <Template>
+                                        @{
+                                            var whois = (context as pulsar.mes.data.Equipamento);
+                                            <div style="display: flex; justify-content: space-between;">
+                                                <p @onclick="@(() => { EditEquipAsync(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label">Editar</span></p>
+                                            </div>
+                                        }
+                                    </Template>
+                                </GridColumn>
+                                <GridColumn Field="Nome" HeaderText="Nome"></GridColumn>
+                                <GridColumn Field="Designacao" HeaderText="Designação" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                <GridColumn Field="Localizacao" HeaderText="Localização" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                <GridColumn Field="Serial" HeaderText="Nº Série" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                <GridColumn Field="IP" HeaderText="IP" HideAtMedia="(min-width: 700px)" Width="150"></GridColumn>
+                                <GridColumn Field="Porta" HeaderText="Porta" Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="100"></GridColumn>
+                            </GridColumns>
+
+                            <GridTemplates>
+                                <EmptyRecordTemplate>
+                                    <div class="row uniform" style="margin-top:20px">
+                                        <div class="12u 12u$(medium)">
+                                            <div class="card text-dark bg-light">
+                                                <div class="card-body">
+                                                    <p style="margin:0;">Sem equipamentos registados.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </EmptyRecordTemplate>
+                            </GridTemplates>
+                        </SfGrid>
+
+                    </ContentTemplate>
+                </TabItem>
+            </TabItems>
+        </SfTab>
+    </div>
+
+
+    @*ADICIONAR*@
+    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupNewEquip">
+        <DialogTemplates>
+            <Header>Gerir Equipamento</Header>
+            <Content>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Nome</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selequip.Nome" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Designação</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selequip.Designacao" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Localização</p>
+                    <SfTextBox Multiline="true" Placeholder="" @bind-Value="@selequip.Localizacao" style="height:100px;margin-left:10px;margin-top:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Nº Série</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selequip.Serial" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">IP</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selequip.IP" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Porta</p>
+                    <SfNumericTextBox Placeholder="" @bind-Value="@selequip.Porta" style="margin-left: 10px;padding:0"></SfNumericTextBox>
+                </div>
+                <SfButton class="button special pull-right" @onclick="@(() => { SaveEquipAsync(0); })" style="margin:10px">Guardar</SfButton>
+                <SfButton class="button pull-right" @onclick="@(() => { PopupNewEquip = false; idEquip = 0; selequip = new pulsar.mes.data.Equipamento() { }; })" style="margin:10px">Cancelar</SfButton>
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
+
+    @*EDITAR*@
+    <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupEditEquip">
+        <DialogTemplates>
+            <Header>Gerir Equipamento</Header>
+            <Content>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Nome</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selequip.Nome" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Designação</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selequip.Designacao" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Localização</p>
+                    <SfTextBox Multiline="true" Placeholder="" @bind-Value="@selequip.Localizacao" style="height:100px;margin-left:10px;margin-top:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Nº Série</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selequip.Serial" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">IP</p>
+                    <SfTextBox Multiline="false" Placeholder="" @bind-Value="@selequip.IP" style="margin-left:10px;padding:0"></SfTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:8em;margin:0;margin-top:10px;">Porta</p>
+                    <SfNumericTextBox Placeholder="" @bind-Value="@selequip.Porta" style="margin-left: 10px;padding:0"></SfNumericTextBox>
+                </div>
+                <div style="display: flex; justify-content: left; margin:0.5em">
+                    <p style="width:6.5em;margin:0;margin-top:10px;">Ativo</p>
+                    <div style="margin-left:10px;margin-top:10px;padding:0">
+                        <SfSwitch @bind-Checked="@selequip.Active"></SfSwitch>
+                    </div>
+                </div>
+                <SfButton class="button special pull-right" @onclick="@(() => { SaveEquipAsync(idEquip); })" style="margin:10px">Guardar</SfButton>
+                <SfButton class="button pull-right" @onclick="@(() => { PopupEditEquip = false; idEquip = 0; selequip = new pulsar.mes.data.Equipamento() { }; })" style="margin:10px">Cancelar</SfButton>
+            </Content>
+        </DialogTemplates>
+
+    </SfDialog>
+</BasePage>
+
+@code {
+    SfGrid<pulsar.mes.data.Equipamento> Grid;
+    List<Equipamento> EquipamentosON = new();
+    List<Equipamento> EquipamentosOFF = new();
+
+    Equipamento selequip = new();
+    int idEquip;
+
+    bool PopupNewEquip;
+    bool PopupEditEquip;
+
+    PageState State = PageState.Loading;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Utils.CanAccess("E"))
+        {
+            State = PageState.NoAccess;
+            StateHasChanged();
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        State = PageState.Loading;
+        StateHasChanged();
+
+        try
+        {
+            (EquipamentosON, EquipamentosOFF) =
+                await EquipamentosService.GetAllAsync();
+
+            State = PageState.Ready;
+        }
+        catch (Exception ex) when (ex.InnerException is MySqlException)
+        {
+            State = PageState.NoDatabase;
+        }
+        catch (MySqlException)
+        {
+            State = PageState.NoDatabase;
+        }
+        catch
+        {
+            State = PageState.Error;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task EditEquipAsync(int id)
+    {
+        selequip = await EquipamentosService.GetByIdAsync(id) ?? new();
+        idEquip = id;
+        PopupEditEquip = true;
+    }
+
+    private async Task SaveEquipAsync(int id)
+    {
+        if (string.IsNullOrWhiteSpace(selequip.Nome))
+            return;
+
+        State = PageState.Loading;
+        StateHasChanged();
+
+        try
+        {
+            await EquipamentosService.SaveAsync(selequip, id);
+
+            PopupNewEquip = false;
+            PopupEditEquip = false;
+            selequip = new();
+            idEquip = 0;
+
+            await LoadAsync();
+        }
+        catch
+        {
+            State = PageState.Error;
+        }
+
+        StateHasChanged();
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}
+

@@ -1,0 +1,424 @@
+﻿@page "/linha1/equipamentos"
+
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@inject Utils utils
+
+<div id="main">
+	<div class="inner">
+
+		@if (dbchecked == false)
+		{
+			<div class="row uniform" style="margin-top:20px">
+				<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+					<div class="card text-dark bg-light">
+						<div class="card-body">
+							@if (dbcheckedoff == false)
+							{
+								<div>
+									<div class="bounceball"></div>
+									<div class="bounceballtext">A verificar ligação à base de dados</div>
+								</div>
+							}
+							else
+							{
+								<h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+								<p style="margin:0;">Operações recomendadas:</p>
+								<ul>
+									<li>Verifique se a linha se encontra em funcionamento</li>
+									<li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+									<li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+								</ul>
+								<div class="row" style="margin-top:1em">
+									<div class="12u$" style="display: flex;justify-content:flex-start;">
+										<button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+										<a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+									</div>
+								</div>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+		}
+		else
+		{
+			@if (utils.CanAccess("EQL1") == true)
+			{
+				<div class="row">
+					<div class="8u 12u$(medium)">
+						<h1>LINHA 1 - Gestão de Equipamentos</h1>
+						@*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+					</div>
+					<div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+						<button class="noprint" @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+						<button class="noprint" onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+						<button @onclick="@(() => { PopupNewEquip = true; })" title="Inserir Equipamento"><i class="icon style1 fa-plus"></i></button>
+					</div>
+				</div>
+
+				<div class="row uniform">
+					<SfTab>
+						<TabItems>
+							<TabItem>
+								<ChildContent>
+									<TabHeader Text="ATIVOS"></TabHeader>
+								</ChildContent>
+								<ContentTemplate>
+									@if (Equipamentos != null && Equipamentos.Count > 0)
+									{
+										@*TABELA*@
+										<div>
+											<SfGrid @ref="@Grid" DataSource="@Equipamentos" AllowFiltering="true" AllowSorting="true" AllowGrouping="true" AllowPaging="true">
+												<GridPageSettings PageSize="20" />
+												<GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+												<GridColumns>
+													<GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+														<Template>
+															@{
+																var whois = (context as pulsar.sv.data.Equipamento);
+																<div style="display: flex; justify-content: space-between;">
+																	<p @onclick="@(() => { editequip(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label">Editar</span></p>
+																</div>
+															}
+														</Template>
+													</GridColumn>
+													<GridColumn Field="Nome" HeaderText="Nome"></GridColumn>
+													<GridColumn Field="Designacao" HeaderText="Designação" HideAtMedia="(min-width: 700px)"></GridColumn>
+													<GridColumn Field="Localizacao" HeaderText="Localização" HideAtMedia="(min-width: 700px)"></GridColumn>
+													<GridColumn Field="Serial" HeaderText="Nº Série" HideAtMedia="(min-width: 700px)"></GridColumn>
+													<GridColumn Field="Ip" HeaderText="IP" HideAtMedia="(min-width: 700px)" Width="150"></GridColumn>
+													<GridColumn Field="Porta" HeaderText="Porta" Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="100"></GridColumn>
+												</GridColumns>
+											</SfGrid>
+										</div>
+									}
+									else
+									{
+										<div class="row uniform" style="margin-top:20px">
+											<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+												<div class="card text-dark bg-light">
+													<div class="card-body">
+														<p style="margin:0;">Sem equipamentos registados.</p>
+													</div>
+												</div>
+											</div>
+										</div>
+									}
+								</ContentTemplate>
+							</TabItem>
+							<TabItem>
+								<ChildContent>
+									<TabHeader Text="INATIVOS"></TabHeader>
+								</ChildContent>
+								<ContentTemplate>
+									@if (EquipamentosOFF != null && EquipamentosOFF.Count > 0)
+									{
+										@*TABELA*@
+										<div>
+											<SfGrid @ref="@Grid" DataSource="@EquipamentosOFF" AllowFiltering="true" AllowSorting="true" AllowGrouping="true">
+												<GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+												<GridColumns>
+													<GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+														<Template>
+															@{
+																var whois = (context as pulsar.sv.data.Equipamento);
+																<div style="display: flex; justify-content: space-between;">
+																	<p @onclick="@(() => { editequip(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label">Editar</span></p>
+																</div>
+															}
+														</Template>
+													</GridColumn>
+													<GridColumn Field="Nome" HeaderText="Nome"></GridColumn>
+													<GridColumn Field="Designacao" HeaderText="Designação" HideAtMedia="(min-width: 700px)"></GridColumn>
+													<GridColumn Field="Localizacao" HeaderText="Localização" HideAtMedia="(min-width: 700px)"></GridColumn>
+													<GridColumn Field="Serial" HeaderText="Nº Série" HideAtMedia="(min-width: 700px)"></GridColumn>
+													<GridColumn Field="Ip" HeaderText="IP" HideAtMedia="(min-width: 700px)" Width="150"></GridColumn>
+													<GridColumn Field="Porta" HeaderText="Porta" Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="100"></GridColumn>
+												</GridColumns>
+											</SfGrid>
+										</div>
+									}
+									else
+									{
+										<div class="row uniform" style="margin-top:20px">
+											<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+												<div class="card text-dark bg-light">
+													<div class="card-body">
+														<p style="margin:0;">Sem equipamentos inativos</p>
+													</div>
+												</div>
+											</div>
+										</div>
+									}
+								</ContentTemplate>
+							</TabItem>
+						</TabItems>
+					</SfTab>
+				</div>
+
+
+				@*ADICIONAR EQUIPAMENTO*@
+				<SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupNewEquip">
+					<DialogTemplates>
+						<Header>Gerir Equipamento</Header>
+						<Content>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:8em;margin:0;margin-top:10px;">Nome</p>
+								<SfTextBox Multiline="false" @bind-Value="@selequip.Nome" style="margin-left:10px;padding:0"></SfTextBox>
+							</div>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:8em;margin:0;margin-top:10px;">Designação</p>
+								<SfTextBox Multiline="false" @bind-Value="@selequip.Designacao" style="margin-left:10px;padding:0"></SfTextBox>
+							</div>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:8em;margin:0;margin-top:10px;">Localização</p>
+								<SfTextBox Multiline="true" @bind-Value="@selequip.Localizacao" style="height:100px;margin-left:10px;margin-top:10px;padding:0"></SfTextBox>
+							</div>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:8em;margin:0;margin-top:10px;">Nº Série</p>
+								<SfTextBox Multiline="false" @bind-Value="@selequip.Serial" style="margin-left:10px;padding:0"></SfTextBox>
+							</div>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:8em;margin:0;margin-top:10px;">IP</p>
+								<SfTextBox Multiline="false" @bind-Value="@selequip.Ip" style="margin-left:10px;padding:0"></SfTextBox>
+							</div>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:8em;margin:0;margin-top:10px;">Porta</p>
+								<SfNumericTextBox @bind-Value="@selequip.Porta" style="margin-left: 10px;padding:0"></SfNumericTextBox>
+							</div>
+							<SfButton class="button special pull-right" @onclick="@(()=> { Add_Equip(0); })" style="margin:10px">Guardar</SfButton>
+							<SfButton class="button pull-right" @onclick="@(()=> { PopupNewEquip = false; idEquip = 0; selequip = new pulsar.sv.data.Equipamento() { }; })" style="margin:10px">Cancelar</SfButton>
+						</Content>
+					</DialogTemplates>
+				</SfDialog>
+
+				@*EDITAR EQUIPAMENTO*@
+				<SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupEditEquip">
+					<DialogTemplates>
+						<Header>Gerir Equipamento</Header>
+						<Content>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:8em;margin:0;margin-top:10px;">Nome</p>
+								<SfTextBox Multiline="false" @bind-Value="@selequip.Nome" style="margin-left:10px;padding:0"></SfTextBox>
+							</div>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:8em;margin:0;margin-top:10px;">Designação</p>
+								<SfTextBox Multiline="false" @bind-Value="@selequip.Designacao" style="margin-left:10px;padding:0"></SfTextBox>
+							</div>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:8em;margin:0;margin-top:10px;">Localização</p>
+								<SfTextBox Multiline="true" @bind-Value="@selequip.Localizacao" style="height:100px;margin-left:10px;margin-top:10px;padding:0"></SfTextBox>
+							</div>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:8em;margin:0;margin-top:10px;">Nº Série</p>
+								<SfTextBox Multiline="false" @bind-Value="@selequip.Serial" style="margin-left:10px;padding:0"></SfTextBox>
+							</div>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:8em;margin:0;margin-top:10px;">IP</p>
+								<SfTextBox Multiline="false" @bind-Value="@selequip.Ip" style="margin-left:10px;padding:0"></SfTextBox>
+							</div>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:8em;margin:0;margin-top:10px;">Porta</p>
+								<SfNumericTextBox @bind-Value="@selequip.Porta" style="margin-left: 10px;padding:0"></SfNumericTextBox>
+							</div>
+							<div style="display: flex; justify-content: left; margin:0.5em">
+								<p style="width:6.5em;margin:0;margin-top:10px;">Ativo</p>
+								<div style="margin-left:10px;margin-top:10px;padding:0">
+									<SfSwitch @bind-Checked="@selequip.Active"></SfSwitch>
+								</div>
+							</div>
+							<SfButton class="button special pull-left" @onclick="@(() => { PopupDelEquipamento = true; })" style="margin:10px">Eliminar</SfButton>
+							<SfButton class="button special pull-right" @onclick="@(()=> { Add_Equip(idEquip); })" style="margin:10px">Guardar</SfButton>
+							<SfButton class="button pull-right" @onclick="@(()=> { PopupEditEquip = false; idEquip = 0; selequip = new pulsar.sv.data.Equipamento() { }; })" style="margin:10px">Cancelar</SfButton>
+						</Content>
+					</DialogTemplates>
+				</SfDialog>
+
+				@*ELIMINAR EQUIPAMENTO*@
+				<SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelEquipamento">
+					<DialogTemplates>
+						<Header>Eliminar Equipamento</Header>
+						<Content>
+							<p>
+								A eliminação do equipamento é permanente.<br />
+								Pretende realmente eliminar o equipamento?
+							</p>
+							<button class="button special pull-right" @onclick="@(() => { Del_Equipamento(selequip.Id); })" style="margin:10px">Sim</button>
+							<button class="button pull-right" @onclick="@(() => { PopupDelEquipamento = false; })" style="margin:10px">Não</button>
+						</Content>
+					</DialogTemplates>
+				</SfDialog>
+
+			}
+			else
+			{
+				<div class="row uniform" style="margin-top:20px">
+					<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+						<div class="card text-dark bg-light">
+							<div class="card-body">
+								<p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+								<a href="/">Voltar</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+		}
+
+		@*LOADING*@
+		<SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+	</div>
+</div>
+
+
+@code {
+	SfGrid<pulsar.sv.data.Equipamento> Grid;
+	SfSpinner SpinnerObj = new SfSpinner();
+
+	bool dbchecked = false, dbcheckedoff = false;
+	public List<pulsar.sv.data.Equipamento> Equipamentos = new List<pulsar.sv.data.Equipamento>() { };
+	public List<pulsar.sv.data.Equipamento> EquipamentosOFF = new List<pulsar.sv.data.Equipamento>() { };
+
+	protected override void OnAfterRender(bool firstRender)
+	{
+		if (firstRender == true)
+		{
+			GetDB();
+		}
+		base.OnAfterRender(firstRender);
+	}
+	private async void GetDB()
+	{
+		DataLink_L1 DL1 = new DataLink_L1();
+
+		if (await DL1.db.Database.CanConnectAsync())
+		{
+			utils.L1ON = true;
+			dbchecked = true;
+			dbcheckedoff = false;
+			DL1.Dispose();
+			StateHasChanged();
+			SearchEquips();
+		}
+		else
+		{
+			utils.L1ON = false;
+			dbchecked = false;
+			dbcheckedoff = true;
+			DL1.Dispose();
+			StateHasChanged();
+		}
+	}
+	private async void SearchEquips()
+	{
+		await SpinnerObj.ShowAsync();
+		DataLink_L1 dl = new DataLink_L1();
+		dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+		//TABELA
+		Equipamentos = dl.db.Equipamentos.Where(x => x.Active == true).ToList();
+		EquipamentosOFF = dl.db.Equipamentos.Where(x => x.Active == false).ToList();
+
+		StateHasChanged();
+		await SpinnerObj.HideAsync();
+		dl.Dispose();
+	}
+
+	private bool PopupNewEquip = false;
+	private bool PopupEditEquip = false;
+	private bool PopupDelEquipamento = false;
+	private int idEquip = 0;
+	public pulsar.sv.data.Equipamento selequip = new pulsar.sv.data.Equipamento() { };
+
+	private async void editequip(int id)
+	{
+		await SpinnerObj.ShowAsync();
+		DataLink_L1 dl = new DataLink_L1();
+		dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+		var doc = dl.db.Equipamentos.First(x => x.Id == id);
+		selequip = doc;
+		idEquip = selequip.Id;
+
+		PopupEditEquip = true;
+
+		await SpinnerObj.HideAsync();
+		StateHasChanged();
+		dl.Dispose();
+	}
+
+	private async void Add_Equip(int id)
+	{
+		await SpinnerObj.ShowAsync();
+		DataLink_L1 dl = new DataLink_L1();
+
+		if (selequip.Nome != null && selequip.Nome != "")
+		{
+			if (id == 0)
+			{
+				dl.db.Equipamentos.Add(new pulsar.sv.data.Equipamento { Nome = selequip.Nome, Designacao = selequip.Designacao, Active = true, Localizacao = selequip.Localizacao, Ip = selequip.Ip, Porta = selequip.Porta, Serial = selequip.Serial });
+				await dl.db.SaveChangesAsync();
+				utils.UserLog($"Adicionou o equipamento '{selequip.Nome}'", "DataLink_L1");
+			}
+			else
+			{
+				dl.db.Equipamentos.First(x => x.Id == id).Nome = selequip.Nome;
+				dl.db.Equipamentos.First(x => x.Id == id).Designacao = selequip.Designacao;
+				dl.db.Equipamentos.First(x => x.Id == id).Localizacao = selequip.Localizacao;
+				dl.db.Equipamentos.First(x => x.Id == id).Serial = selequip.Serial;
+				dl.db.Equipamentos.First(x => x.Id == id).Ip = selequip.Ip;
+				dl.db.Equipamentos.First(x => x.Id == id).Porta = selequip.Porta;
+				dl.db.Equipamentos.First(x => x.Id == id).Active = selequip.Active;
+				//dl.db.Equipamentos.First(x => x.Id == id).Bool1 = selequip.Bool1;
+				//dl.db.Equipamentos.First(x => x.Id == id).Bool2 = selequip.Bool2;
+				//dl.db.Equipamentos.First(x => x.Id == id).String1 = selequip.String1;
+				//dl.db.Equipamentos.First(x => x.Id == id).String2 = selequip.String2;
+				//dl.db.Equipamentos.First(x => x.Id == id).Int1 = selequip.Int1;
+				//dl.db.Equipamentos.First(x => x.Id == id).Int2 = selequip.Int2;
+				//dl.db.Equipamentos.First(x => x.Id == id).Double1 = selequip.Double1;
+				//dl.db.Equipamentos.First(x => x.Id == id).Double2 = selequip.Double2;
+
+				await dl.db.SaveChangesAsync();
+				utils.UserLog($"Alterou o equipamento '{selequip.Nome}'", "DataLink_L1");
+			}
+
+			PopupNewEquip = false;
+			PopupEditEquip = false;
+			selequip = new pulsar.sv.data.Equipamento() { };
+			idEquip = 0;
+
+			SearchEquips();
+		}
+
+		await SpinnerObj.HideAsync();
+		StateHasChanged();
+		dl.Dispose();
+	}
+
+	private async void Del_Equipamento(int id)
+	{
+		await SpinnerObj.ShowAsync();
+		DataLink_L1 dl = new DataLink_L1();
+
+		dl.db.Equipamentos.Remove(dl.db.Equipamentos.First(x => x.Id == id));
+		await dl.db.SaveChangesAsync();
+		utils.UserLog($"Eliminou o equipamento '{selequip.Id}'", "DataLink_L1");
+
+		PopupEditEquip = false;
+		PopupDelEquipamento = false;
+		selequip = new pulsar.sv.data.Equipamento() { };
+
+		await SpinnerObj.HideAsync();
+		SearchEquips();
+		StateHasChanged();
+		dl.Dispose();
+	}
+
+	private void BackStreetButton()
+	{
+		NavigationManager.NavigateTo("/linha1/");
+	}
+
+}

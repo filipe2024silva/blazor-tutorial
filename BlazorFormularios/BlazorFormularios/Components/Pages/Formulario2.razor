@@ -1,0 +1,50 @@
+﻿@page "/formulario-comvalidacao"
+@rendermode InteractiveServer
+
+<h3>Registo de Alunos(Validação)</h3>
+
+<EditForm Model="@aluno" OnValidSubmit="EnviarFormularioValido">
+
+	<DataAnnotationsValidator />
+
+	<div class="form-group">
+		<label for="nome">Nome:</label>
+		<InputText id="nome" @bind-Value="aluno.Nome" class="form-control"/>
+		<ValidationMessage For="@(() => aluno.Nome)" />
+	</div>
+	<div class="form-group">
+		<label for="email">Email:</label>
+		<InputText id="email" @bind-Value="aluno.Email" class="form-control" />
+		<ValidationMessage For="@(() => aluno.Email)" />
+	</div>
+	<div class="form-group">
+		<label for="idade">Idade:</label>
+		<InputNumber id="idade" @bind-Value="aluno.Idade" class="form-control" />
+		<ValidationMessage For="@(() => aluno.Idade)" />
+	</div>
+	<div class="mt-2">
+		<input type="submit" value="Enviar" class="btn btn-primary" />
+	</div>
+	
+</EditForm>
+
+@code {
+	Aluno aluno = new();
+
+	private void Enviar(EditContext context)
+	{
+		if (context.Validate())
+		{
+			Console.WriteLine($"Nome: {aluno.Nome} - Email: {aluno.Email} - Idade: {aluno.Idade}");
+		}
+		else
+		{
+			Console.WriteLine("Formulário inválido!");
+		}
+	}
+	private void EnviarFormularioValido()
+	{
+		Console.WriteLine("Formulário válido!");
+	}
+	
+}

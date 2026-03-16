@@ -1,0 +1,364 @@
+﻿@page "/linha1"
+@inject Utils Utils
+@inject NavigationManager NavigationManager
+@inject Linha1Service Linha1Service
+
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="CheckDatabaseAsync" title="Voltar a testar a ligação">
+                                            <i class="icon style1 fa-refresh"></i>
+                                        </button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (Utils.CanAccess("L1") == true)
+            {
+                <header>
+                    <h1>
+                        LINHA 1 <br />
+                    </h1>
+                </header>
+                <section class="tiles">
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_geral_new.jpg" alt="" />
+                        </span>
+                        <a href="linha1/geral">
+                            <h2>GERAL</h2>
+                            <div class="content">
+                                <p>Visão geral do estado da linha e produção.</p>
+                            </div>
+                        </a>
+                    </article>
+
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_tratamento.jpg" alt="" />
+                        </span>
+                        <a href="linha1/tratamentos">
+                            <h2>Tratamentos</h2>
+                            <div class="content">
+                                <p>Gestão de Tratamentos</p>
+                            </div>
+                        </a>
+                    </article>
+
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_artigos_new.jpg" alt="" />
+                        </span>
+                        <a href="linha1/artigos">
+                            <h2>Artigos</h2>
+                            <div class="content">
+                                <p>Gestão de Artigos</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_alarmes.jpg" alt="" />
+                        </span>
+                        <a href="linha1/alarmes">
+                            <h2>ALARMES</h2>
+                            <div class="content">
+                                <p>Visualização dos Alarmes da Linha</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_disponiblidade.jpg"alt="" />
+                        </span>
+                        <a href="linha1/disponibilidade">
+                            <h2>DISPONIBILIDADE</h2>
+                            <div class="content">
+                                <p>Paragens da Linha</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_qualidade.jpg" alt="" />
+                        </span>
+                        <a href="linha1/qualidade">
+                            <h2>QUALIDADE</h2>
+                            <div class="content">
+                                <p>Estatísticas de Qualidade</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_desempenho.jpg" alt="" />
+                        </span>
+                        <a href="linha1/desempenho">
+                            <h2>DESEMPENHO</h2>
+                            <div class="content">
+                                <p>Estatíticas de Desempenho</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_oee.jpg" alt="" />
+                        </span>
+                        <a href="linha1/oee">
+                            <h2>OEE</h2>
+                            <div class="content">
+                                <p>Visualização do O.E.E. da Linha</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_relatorios.jpg" alt="" />
+                        </span>
+                        <a href="linha1/relatorios">
+                            <h2>RELATÓRIOS</h2>
+                            <div class="content">
+                                <p>Visualização e exportação de relatórios de produção</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_producaonew.jpg" alt="" />
+                        </span>
+                        <a href="linha1/producao">
+                            <h2>PRODUÇÃO</h2>
+                            <div class="content">
+                                <p>Estatísticas de Produção</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_energia.png" alt="" />
+                        </span>
+                        <a href="linha1/energia">
+                            <h2>ENERGIA</h2>
+                            <div class="content">
+                                <p>Gestão de Energia da Linha</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_equipamentos.jpg" alt="" />
+                        </span>
+                        <a href="linha1/equipamentos">
+                            <h2>EQUIPAMENTOS</h2>
+                            <div class="content">
+                                <p>Gestão de Equipamentos da Linha</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_manutencao.jpg" alt="" />
+                        </span>
+                        <a href="linha1/manutencao">
+                            <h2>MANUTENÇÃO</h2>
+                            <div class="content">
+                                <p>Gestão das Operações de Manutenção dos equipamentos da linha</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_manutencao.jpg" alt="" />
+                        </span>
+                        <a href="linha1/banhos">
+                            <h2>BANHOS</h2>
+                            <div class="content">
+                                <p>Gestão de Banhos</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_dosagens.jpg" alt="" />
+                        </span>
+                        <a href="linha1/dosagens">
+                            <h2>DOSAGENS</h2>
+                            <div class="content">
+                                <p>Gestão das Dosagens de produtos nas tinas</p>
+                            </div>
+                        </a>
+                    </article>
+                    @* <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_registos.jpg" alt="" />
+                        </span>
+                        <a href="linha1/registoValores">
+                            <h2>REGISTOS VALORES</h2>
+                            <div class="content">
+                                <p>Registos de valores</p>
+                            </div>
+                        </a>
+                    </article> *@
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_temperaturas.jpg" alt="" />
+                        </span>
+                        <a href="linha1/temperaturas">
+                            <h2>TEMPERATURAS</h2>
+                            <div class="content">
+                                <p>Histórico de Registo de Temperaturas da Linha</p>
+                            </div>
+                        </a>
+                    </article>
+                   @*  <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_temperaturas.jpg" alt="" />
+                        </span>
+                        <a href="linha1/ph">
+                            <h2>PH's</h2>
+                            <div class="content">
+                                <p>Histórico de Registo de Ph's da Linha</p>
+                            </div>
+                        </a>
+                    </article> *@
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_rectificadores.jpg" alt="" />
+                        </span>
+                        <a href="linha1/rectificadores">
+                            <h2>RECTIFICADORES</h2>
+                            <div class="content">
+                                <p>Histórico dos Rectificadores da Linha</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_eventos.jpg" alt="" />
+                        </span>
+                        <a href="linha1/eventos">
+                            <h2>EVENTOS</h2>
+                            <div class="content">
+                                <p>Registo de eventos da Linha</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_documentos.jpg" alt="" />
+                        </span>
+                        <a href="linha1/documentos">
+                            <h2>DOCUMENTOS</h2>
+                            <div class="content">
+                                <p>Gestão de Documentos da Linha</p>
+                            </div>
+                        </a>
+                    </article>
+                     <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_utilizador.jpg" alt="" />
+                        </span>
+                        <a href="/linha1/utilizadores">
+                            <h2>Utilizadores</h2>
+                            <div class="content">
+                                <p>Gestão de Utilizadores</p>
+                            </div>
+                        </a>
+                    </article>
+                    <article class="style3">
+                        <span class="image">
+                            <img src="images/menu_basedados.jpg" alt="" />
+                        </span>
+                        <a href="linha1/404">
+                            <h2>Base de Dados</h2>
+                            <div class="content">
+                                <p>Gestão da Base de Dados</p>
+                            </div>
+                        </a>
+                    </article>
+                   
+
+                </section>
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    bool dbchecked = false, dbcheckedoff = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckDatabaseAsync();
+    }
+
+    private async Task CheckDatabaseAsync()
+    {
+        try
+        {
+            var canConnect = await Linha1Service.CanConnectAsync();
+
+            Utils.L1ON = canConnect;
+            dbchecked = canConnect;
+            dbcheckedoff = !canConnect;
+        }
+        catch
+        {
+            Utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+        }
+    }
+
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+}

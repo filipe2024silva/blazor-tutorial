@@ -1,0 +1,338 @@
+﻿@page "/linha1/rectificadores"
+@using System.Diagnostics
+
+@inject NavigationManager NavigationManager
+@inject Utils utils
+
+<div id="main">
+	<div class="inner">
+
+		@if (dbchecked == false)
+		{
+			<div class="row uniform" style="margin-top:20px">
+				<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+					<div class="card text-dark bg-light">
+						<div class="card-body">
+							@if (dbcheckedoff == false)
+							{
+								<div>
+									<div class="bounceball"></div>
+									<div class="bounceballtext">A verificar ligação à base de dados</div>
+								</div>
+							}
+							else
+							{
+								<h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+								<p style="margin:0;">Operações recomendadas:</p>
+								<ul>
+									<li>Verifique se a linha se encontra em funcionamento</li>
+									<li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+									<li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+								</ul>
+								<div class="row" style="margin-top:1em">
+									<div class="12u$" style="display: flex;justify-content:flex-start;">
+										<button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+										<a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+									</div>
+								</div>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+		}
+		else
+		{
+			@if (utils.CanAccess("RL1") == true)
+			{
+				<div class="row">
+					<div class="8u 12u$(medium)">
+						<h1>LINHA 1 - RECTIFICADORES</h1>
+						@*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+					</div>
+					<div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+						<button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+						<button @onclick="@(() => { DataFromDB(); })" title="Atualizar"><i class="icon style1 fa-refresh"></i></button>
+						<button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+					</div>
+				</div>
+
+				@if (tinas != null)
+				{
+					if (showchart == false && showchart2 == false)
+					{
+						//TABELA
+						<div>
+							<SfGrid @ref="@Grid" DataSource="@tinas" AllowFiltering="false" AllowSorting="false" AllowGrouping="false" AllowPaging="true">
+								<GridPageSettings PageSize="20" />
+								<GridColumns>
+									<GridColumn HeaderText="Gráfico" TextAlign="TextAlign.Left" Width="50">
+										<Template>
+											@{
+												var whois = (context as Dadosrt);
+												if (whois.Num != "")
+												{
+													<button class="button small special" @onclick="@(() => { OpenChart(whois.Num.ToString()); })" title="Ver Gráfico"><i class='icon style1 fa-line-chart'></i></button>
+												}
+											}
+										</Template>
+									</GridColumn>
+									<GridColumn Field="Tina" HeaderText="Tina"></GridColumn>
+									<GridColumn Field="Designacao" HeaderText="Designação"></GridColumn>
+									<GridColumn Field="TotalAH" HeaderText="Total Ah"></GridColumn>
+									<GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="50">
+										<Template>
+											@{
+												var whois = (context as Dadosrt);
+												if (whois.Num != "")
+												{
+													<button class="button small special" @onclick="@(() => { OpenChart2(whois.Num.ToString()); })" title="Ver Gráfico"><i class='icon style1 fa-line-chart'></i></button>
+												}
+											}
+										</Template>
+									</GridColumn>
+									<GridColumn Field="DiarioAH" HeaderText="Diario Ah"></GridColumn>
+									<GridColumn Field="ParcialAH" HeaderText="Parcial Ah"></GridColumn>
+								</GridColumns>
+							</SfGrid>
+						</div>
+					}
+					else
+					{
+						//GRÁFICOS
+						<div class="row uniform">
+							<div class="4u 12u$(medium)">
+								<SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+							</div>
+							<div class="4u 12u$(medium)">
+								<SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+							</div>
+							<div class="4u 12u$(medium)">
+								@if (showchart == true)
+								{
+									<SfButton @onclick="SearchData">Pesquisar</SfButton>
+								}
+								@if (showchart2 == true)
+								{
+									<SfButton @onclick="SearchData2">Pesquisar</SfButton>
+								}
+								<SfButton @onclick="@(() => { showchart = false; showchart2 = false; })" CssClass="pull-right" title="Voltar"><i class='icon style1 fa-arrow-left'></i></SfButton>
+							</div>
+						</div>
+						if (showchart == true)
+						{
+							@if (Rectificador != null && Rectificador.Count() > 0 && isupdationg == false)
+							{
+								<SfChart Title="Histórico de Rectificador" Width="100%" Height="600" Theme="@utils.ctheme">
+									<ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+									<ChartTooltipSettings Enable="true" Shared="true" Header="<b>${point.x}H</b>" Format="<b>${point.y} </b>"></ChartTooltipSettings>
+									<ChartZoomSettings EnableMouseWheelZooming="true" EnablePinchZooming="true" EnableSelectionZooming="true"></ChartZoomSettings>
+									<ChartPrimaryXAxis Title="" ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime" IntervalType="Syncfusion.Blazor.Charts.IntervalType.Minutes" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+									</ChartPrimaryXAxis>
+									<ChartPrimaryYAxis Title="Volts" LabelFormat="{value}" Minimum="0" Maximum="15" Interval="3">
+									</ChartPrimaryYAxis>
+									<ChartAxes>
+										<ChartAxis Name="b" Title="Amps" LabelFormat="{value}" Minimum="0" Maximum="2000" Interval="400" OpposedPosition="true">
+											<ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+											<ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+										</ChartAxis>
+									</ChartAxes>
+									<ChartSeriesCollection>
+										<ChartSeries DataSource="@Rectificador" Name="Volts" XName="Data" YName="Tensao" Type="ChartSeriesType.Line" Width="3"></ChartSeries>
+										<ChartSeries DataSource="@Rectificador" Name="Amps" XName="Data" YName="Corrente" Type="ChartSeriesType.Line" Width="3" YAxisName="b"></ChartSeries>
+									</ChartSeriesCollection>
+								</SfChart>
+							}
+						}
+						if (showchart2 == true)
+						{
+							@if (ChartData != null && ChartData.Count() > 0 && isupdationg == false)
+							{
+								<SfChart Title="Histórico de Ah" Width="100%" Height="600" Theme="@utils.ctheme">
+									<ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+									<ChartTooltipSettings Enable="true" Shared="true" Header="Ah" Format="<b>${point.x} : ${point.y} Ah</b>"></ChartTooltipSettings>
+									<ChartPrimaryXAxis Title="Dia" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+									</ChartPrimaryXAxis>
+									<ChartPrimaryYAxis Title="Ah" LabelFormat="{value}">
+									</ChartPrimaryYAxis>
+									<ChartSeriesCollection>
+										<ChartSeries DataSource="@ChartData" Name="Consumo Ah" XName="Dia" YName="Num" Type="ChartSeriesType.Column"></ChartSeries>
+									</ChartSeriesCollection>
+								</SfChart>
+							}
+						}
+					}
+				}
+
+			}
+			else
+			{
+				<div class="row uniform" style="margin-top:20px">
+					<div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+						<div class="card text-dark bg-light">
+							<div class="card-body">
+								<p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+								<a href="/">Voltar</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+		}
+
+		@*LOADING*@
+		<SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+	</div>
+</div>
+
+@code {
+	SfGrid<Dadosrt> Grid;
+	SfSpinner SpinnerObj = new SfSpinner();
+
+	bool dbchecked = false, dbcheckedoff = false;
+	private bool showchart = false;
+	private bool showchart2 = false;
+	private bool isupdationg = false;
+	public DateTime? dti { get; set; } = DateTime.Today;
+	public DateTime? dtf { get; set; } = DateTime.Today;
+	public List<Dadosrt> tinas;
+	public ObservableCollection<f10.pulsar.sv.data.Rectificador> Rectificador = new ObservableCollection<f10.pulsar.sv.data.Rectificador>() { };
+	public List<AreaChartData> ChartData = new List<AreaChartData> { };
+
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+		GetDB();
+	}
+	private async void GetDB()
+	{
+		DataLink_L1 DL1 = new DataLink_L1();
+
+		if (await DL1.db.Database.CanConnectAsync())
+		{
+			utils.L1ON = true;
+			dbchecked = true;
+			dbcheckedoff = false;
+			DL1.Dispose();
+			StateHasChanged();
+			await DataFromDB();
+		}
+		else
+		{
+			utils.L1ON = false;
+			dbchecked = false;
+			dbcheckedoff = true;
+			DL1.Dispose();
+			StateHasChanged();
+		}
+	}
+	private async Task DataFromDB()
+	{
+		await SpinnerObj.ShowAsync();
+		DataLink_L1 dlink = new DataLink_L1(true);
+		var pTT = from tt in dlink.db.Tinas
+						where tt.Rectificador.Value == true
+						select new Dadosrt { Num = tt.Num.ToString(), Tina = tt.Tina1, Designacao = tt.Designacao };
+		tinas = await pTT.ToListAsync();
+
+		foreach (var item in tinas)
+		{
+			var tt = await dlink.db.Rectificadors.Where(b => b.Tina == item.Num).GroupBy(g => g.Data.Value.ToString().Substring(0, 13)).Select(s => new { Key = s.Key, AH = s.Average(c => c.Corrente) }).SumAsync(c => c.AH);
+			var md = await dlink.db.Rectificadors.Where(b => b.Tina == item.Num).GroupBy(g => g.Data.Value.ToString().Substring(0, 13)).Select(s => new { Key = s.Key, AH = s.Average(c => c.Corrente) }).AverageAsync(c => c.AH);
+			var td = await dlink.db.Rectificadors.Where(b => b.Tina == item.Num && b.Data >= DateTime.Today).GroupBy(g => g.Data.Value.ToString().Substring(0, 13)).Select(s => new { Key = s.Key, AH = s.Average(c => c.Corrente) }).SumAsync(c => c.AH);
+
+			item.TotalAH = Math.Round(tt.HasValue ? tt.Value : 0, 3) + " Ah";
+			item.DiarioAH = Math.Round(md.HasValue ? md.Value : 0, 3) + " Ah";
+			item.ParcialAH = Math.Round(td.HasValue ? td.Value : 0, 3) + " Ah";
+
+		}
+
+		StateHasChanged();
+		await SpinnerObj.HideAsync();
+
+	}
+
+	private string tina = "";
+	private async void OpenChart(string numtina)
+	{
+		tina = numtina;
+		showchart = true;
+		showchart2 = false;
+		SearchData();
+	}
+	private async void OpenChart2(string numtina)
+	{
+		tina = numtina;
+		showchart = false;
+		showchart2 = true;
+		SearchData2();
+	}
+	private async void SearchData()
+	{
+		await SpinnerObj.ShowAsync();
+		isupdationg = true;
+
+		DataLink_L1 dlrect = new DataLink_L1();
+		dlrect.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+		var pRect = from rec in dlrect.db.Rectificadors
+					where rec.Data >= dti && rec.Data <= dtf && rec.Tina == tina
+					select new f10.pulsar.sv.data.Rectificador { Tina = rec.Tina, Data = rec.Data, Tensao = rec.Tensao, Corrente = rec.Corrente };
+		var dadosRectificador = await pRect.ToListAsync();
+		Rectificador = new ObservableCollection<f10.pulsar.sv.data.Rectificador>(dadosRectificador);
+
+		await Task.Delay(100);
+
+		await SpinnerObj.HideAsync();
+		isupdationg = false;
+		StateHasChanged();
+		dlrect.Dispose();
+	}
+	private async void SearchData2()
+	{
+		await SpinnerObj.ShowAsync();
+		isupdationg = true;
+
+		DataLink_L1 dlrect = new DataLink_L1();
+		dlrect.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+		var pRect2 = from rec in dlrect.db.Rectificadors
+						group rec by new { rec.Data.Value.Date, rec.Tina } into gr
+					 where gr.Key.Date >= dti && gr.Key.Date <= dtf.Value.AddDays(1) && gr.Key.Tina == tina
+						select new AreaChartData { Dia = gr.Key.Date.ToString(), Num = (gr.Sum(r => r.Corrente) / 710).Value };
+		var dadosRectificadorAh = await pRect2.ToListAsync();
+		ChartData = new List<AreaChartData>(dadosRectificadorAh);
+
+		await Task.Delay(100);
+
+		await SpinnerObj.HideAsync();
+		isupdationg = false;
+		StateHasChanged();
+		dlrect.Dispose();
+	}
+
+	private void BackStreetButton()
+	{
+		NavigationManager.NavigateTo("/linha1/");
+	}
+
+
+	public class Dadosrt
+	{
+		public string Num { get; set; }
+		public string Tina { get; set; }
+		public string Designacao { get; set; }
+		public string TotalAH { get; set; }
+		public string DiarioAH { get; set; }
+		public string ParcialAH { get; set; }
+	}
+
+	public class AreaChartData
+	{
+		public string Dia { get; set; }
+		public decimal Num { get; set; }
+	}
+
+}

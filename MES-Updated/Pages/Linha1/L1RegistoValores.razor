@@ -1,0 +1,494 @@
+﻿@* @page "/linha1/registovalores"
+@using System.Globalization
+@using pulsar.sv.data
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject Utils utils
+<!-- Main -->
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 3100.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="()=> { dbcheckedoff = false; GetDB(); }" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("RV2") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 3100 - REGISTO DE VALORES</h1>
+                    </div>
+                    <div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+                        <button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                    </div>
+                </div>
+
+
+                <div class="row uniform">
+                    <div class="2u 12u$(medium)">
+                        <SfDropDownList Value="@selTipo.Nome" TValue="string" TItem="pulsar.sv.data.DC_Tipo" DataSource="@Tipos.AsEnumerable()">
+                            <DropDownListEvents OnValueSelect="@SelTipo_SelectionChanged" TValue="string" TItem="pulsar.sv.data.DC_Tipo"></DropDownListEvents>
+                            <DropDownListFieldSettings Value="Nome" Text="Nome"></DropDownListFieldSettings>
+                        </SfDropDownList>
+                    </div>
+                    <div class="2.2u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+                    </div>
+                    <div class="2.3u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+                    </div>
+                    <div class="5.5u 12u$(medium)">
+                        <SfButton @onclick="SearchData" Title="Pesquisar"><i class='icon style1 fa-search'></i></SfButton>
+                        <SfButton @onclick="@(() => { NavigationManager.NavigateTo("linha2/tipos"); })" Title="Gestão Tipos"><i class='icon style1 fa-list'></i></SfButton>
+                        <SfButton @onclick="@(() => { PopupValores = true; selTipo = new pulsar.sv.data.DC_Tipo(); selValor = new pulsar.sv.data.DC_Valor(); @selValor.Data = DateTime.Now;})" Title="Registar Valor">VALOR <i class='icon style1 fa-plus'></i></SfButton>
+                        <SfButton @onclick="@(() => {  PopupTipos = true;  selTipo = new pulsar.sv.data.DC_Tipo(); selValor = new pulsar.sv.data.DC_Valor(); })" Title="Registar Tipo">TIPO <i class='icon style1 fa-plus'></i></SfButton>
+                    </div>
+                </div>
+@*                <div class="row uniform">
+                        <div class="3u 12u$(medium)" style="height:450px;">
+                        <div style="display: flex; flex-direction:column; justify-content:center; height:450px;">
+                        <ul class="alt">
+                            <li><i class="icon style1 fa-list"></i> <strong> @Valores.Count().ToString() </strong> Nº Registos</li>
+                            </ul>
+        </div>
+        </div>
+        </div>
+        
+
+                //TABELA
+                <div class="row uniform">
+                    @if (Valores.Count > 0)
+                    {
+                        <div>
+                            <SfGrid DataSource="@Valores" AllowFiltering="true" AllowSorting="true" AllowGrouping="true">
+                                <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                                <GridColumns>
+                                    <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+                                        <Template>
+                                            @{
+                                                var whois = (context as pulsar.sv.data.DC_Valor);
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <p @onclick="@(() => { Edit_Valor(whois.Id); })" class="icon style1 fa-remove" style="margin:0.3em;cursor:pointer"><span class="label">Editar</span></p>
+                                                </div>
+                                            }
+                                        </Template>
+                                    </GridColumn>
+                                    <GridColumn HeaderText="Tipo">
+                                        <Template>
+                                            @{
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <p style="margin:0.3em;cursor:pointer"><span>@nomeTipo</span></p>
+                                                </div>
+                                            }
+                                        </Template>
+                                    </GridColumn>
+                                    <GridColumn Field="Data" HeaderText="Data"></GridColumn>
+                                    <GridColumn Field="Opcao" HeaderText="Opção"></GridColumn>
+                                    <GridColumn Field="Texto" HeaderText="Texto"></GridColumn>
+                                    <GridColumn Field="Numero" HeaderText="Valor"></GridColumn>
+                                    <GridColumn Field="Obs" HeaderText="Observações"></GridColumn>
+                                </GridColumns>
+                            </SfGrid>
+                        </div>
+
+                    }
+                    else
+                    {
+                        <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                            <div class="card text-dark bg-light">
+                                <div class="card-body">
+                                    <p style="margin:0;">Sem valores registados nas datas / formato selecionadas.</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+
+                @*ADICIONAR TIPO
+                <SfDialog Target="#target" Width="500px" Height=auto ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupTipos">
+                    <DialogTemplates>
+                        <Header>Registar Tipo</Header>
+                        <Content>
+                            <div style="margin-top:1em;margin-bottom:1em;overflow:auto">
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Nome</p>
+                                    <SfTextBox Multiline="false" @bind-Value="@selTipo.Nome" style="margin-left:10px;padding:0"></SfTextBox>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Descrição</p>
+                                    <SfTextBox Multiline="true" @bind-Value="@selTipo.Descricao" style="margin-left:10px;padding:0;height:80px"></SfTextBox>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Formato</p>
+                                    <SfRadioButton Label="Texto" Name="options" Value="T" @bind-Checked="@selTipo.Formato"></SfRadioButton>
+                                    <SfRadioButton Label="Número" Name="options" Value="D" @bind-Checked="@selTipo.Formato"></SfRadioButton>
+                                    <SfRadioButton Label="Opcão" Name="options" Value="O" @bind-Checked="@selTipo.Formato"></SfRadioButton>
+                                </div>
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Unidade</p>
+                                    <SfTextBox @bind-Value="@selTipo.Unidade" style="margin-left:10px;padding:0"></SfTextBox>
+                                </div>
+                                <div style="display: flex; justify-content: center; margin:0.5em">
+                                    <p style="margin-top:10px;color:red">@Erromsg</p>
+                                </div>
+                            </div>
+                            <button class="button special pull-right" @onclick="@(() => { Add_Tipo(0); })" style="margin:10px">Guardar</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupTipos = false; selTipo = new pulsar.sv.data.DC_Tipo() { }; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ADICIONAR VALOR
+                <SfDialog Target="#target" Width="500px" Height=auto ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupValores">
+                    <DialogTemplates>
+                        <Header>Registar Valor</Header>
+                        <Content>
+                            <div style="margin-top:1em;margin-bottom:1em;overflow:auto">
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Tipo</p>
+                                    <SfDropDownList Value="@selTipo.Nome" TValue="string" TItem="pulsar.sv.data.DC_Tipo" DataSource="@Tipos.AsEnumerable()">
+                                        <DropDownListEvents OnValueSelect="@SelTipo1_SelectionChanged" TValue="string" TItem="pulsar.sv.data.DC_Tipo"></DropDownListEvents>
+                                        <DropDownListFieldSettings Value="Nome" Text="Nome"></DropDownListFieldSettings>
+                                    </SfDropDownList>
+                                </div>
+
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Unidade</p>
+                                    <SfTextBox @bind-Value="@selTipo.Unidade" style="margin-left:10px;padding:0;" Enabled="false"></SfTextBox>
+                                </div>
+
+                                @if (selTipo.Formato == "O")
+                                {
+                                    <div style="display: flex; justify-content: left; margin:0.5em">
+                                        <p style="width:6.5em;margin:0;margin-top:10px;">Opcao</p>
+                                        <div style="margin-left:10px;margin-top:10px;padding:0">
+                                            <SfSwitch @bind-Checked="@selValor.Opcao"></SfSwitch>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (selTipo.Formato == "T")
+                                {
+                                    <div style="display: flex; justify-content: left; margin:0.5em">
+                                        <p style="width:8em;margin:0;margin-top:10px;">Texto</p>
+                                        <SfTextBox Multiline="true" @bind-Value="@selValor.Texto" style="margin-left:10px;padding:0;height:80px"></SfTextBox>
+                                    </div>
+                                }
+
+                                @if (selTipo.Formato == "D")
+                                {
+                                    <div style="display: flex; justify-content: left; margin:0.5em">
+                                        <p style="width:8em;margin:0;margin-top:10px;">Valor</p>
+                                        <SfNumericTextBox @bind-Value="@selValor.Numero" style="margin-left:10px;padding:0"></SfNumericTextBox>
+                                    </div>
+                                }
+
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Observações</p>
+                                    <SfTextBox Multiline="true" @bind-Value="@selValor.Obs" style="margin-left:10px;padding:0;height:80px"></SfTextBox>
+                                </div>
+
+                                <div style="display: flex; justify-content: left; margin:0.5em">
+                                    <p style="width:8em;margin:0;margin-top:10px;">Data</p>
+                                    <SfDateTimePicker @bind-Value="@selValor.Data" style="margin-left:10px;padding:0"></SfDateTimePicker>
+                                </div>
+
+                                <div style="display: flex; justify-content: center; margin:0.5em">
+                                    <p style="margin-top:10px;color:red">@Erromsg</p>
+                                </div>
+                            </div>
+
+                            <button class="button special pull-right" @onclick="@(() => { Add_Valor(0); })" style="margin:10px">Guardar</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupValores = false; selValor = new pulsar.sv.data.DC_Valor() { }; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ELIMINAR VALOR
+                <SfDialog Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelValores">
+                    <DialogTemplates>
+                        <Header>Eliminar Registo</Header>
+                        <Content>
+                            <p>
+                                A eliminação do Registo é permanente.<br />
+                                Pretende realmente eliminar?
+                            </p>
+                            <button class="button special pull-right" @onclick="@(() => { Del_Valor(); })" style="margin:10px">Sim</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupDelValores = false; })" style="margin:10px">Não</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>*@
+
+@code {
+//     SfSpinner SpinnerObj = new SfSpinner();
+//     SfUploader upiroca = new SfUploader();
+//     f10.pulsar.mes.data.User who = new f10.pulsar.mes.data.User();
+
+//     bool dbchecked = false, dbcheckedoff = false;
+//     string Erromsg = "", nomeTipo = "";
+
+//     public DateTime? dti { get; set; } = DateTime.Today;
+//     public DateTime? dtf { get; set; } = DateTime.Today;
+
+//     protected override void OnInitialized()
+//     {
+//         who = (f10.pulsar.mes.data.User)utils.f10session["user"];
+//         base.OnInitialized();
+//     }
+
+//     protected override void OnAfterRender(bool firstRender)
+//     {
+//         if (firstRender == true)
+//         {
+//             GetDB();
+//         }
+//         base.OnAfterRender(firstRender);
+//     }
+
+//     private async void GetDB()
+//     {
+//         DataLink_L1 dl2 = new DataLink_L1();
+
+//         if (await dl2.db.Database.CanConnectAsync())
+//         {
+//             utils.L1ON = true;
+//             dbchecked = true;
+//             dbcheckedoff = false;
+//             dl2.Dispose();
+//             SearchData();
+//             StateHasChanged();
+//         }
+//         else
+//         {
+//             utils.L1ON = false;
+//             dbchecked = false;
+//             dbcheckedoff = true;
+//             dl2.Dispose();
+//             StateHasChanged();
+//         }
+//     }
+
+//     public List<pulsar.sv.data.DC_Valor> Valores = new List<pulsar.sv.data.DC_Valor> { };
+//     public List<pulsar.sv.data.DC_Tipo> Tipos = new List<pulsar.sv.data.DC_Tipo> { };
+//     public pulsar.sv.data.DC_Valor selValor = new pulsar.sv.data.DC_Valor() { };
+//     public pulsar.sv.data.DC_Tipo selTipo = new pulsar.sv.data.DC_Tipo() { };
+
+//     private async void SearchData()
+//     {
+//         await SpinnerObj.ShowAsync();
+//         DataLink_L1 dl = new DataLink_L1();
+//         dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+//         //TABELA
+    //         Valores = dl.db.DC_Valores.Where(x => x.Data >= dti && x.Data <= dtf.Value.AddDays(1) && x.Tipo == selTipo.Id).ToList();
+//         Tipos = dl.db.DC_Tipos.ToList();
+
+//         dl.Dispose();
+
+//         nomeTipo = selTipo.Nome;
+//         //StateHasChanged();
+//         await SpinnerObj.HideAsync();
+//     }
+
+//     //TIPOS
+//     private bool PopupTipos = false;
+//     private bool PopupDelTipos = false;
+
+//     private async void Add_Tipo(int id)
+//     {
+//         await SpinnerObj.ShowAsync();
+//         DataLink_L1 dl = new DataLink_L1();
+
+//         if (id == 0)
+//         {
+//             if (!string.IsNullOrEmpty(selTipo.Nome) && !string.IsNullOrEmpty(selTipo.Descricao))
+//             {
+//                 dl.db.DC_Tipos.Add(new pulsar.sv.data.DC_Tipo { Nome = selTipo.Nome, Descricao = selTipo.Descricao, Formato = selTipo.Formato, Unidade = selTipo.Unidade });
+//             }
+//             else
+//             {
+//                 Erromsg = "Deve preencher corretamente os campos!";
+//                 await SpinnerObj.HideAsync();
+//                 return;
+//             }
+
+//             await dl.db.SaveChangesAsync();
+//             //utils.UserLog($"Inseriu o Tipo '{selTipo.Nome}', com a descrição '{selTipo.Descricao}'", "DataLink_L1");
+//         }
+
+//         PopupTipos = false;
+//         selTipo = new pulsar.sv.data.DC_Tipo() { };
+
+//         await SpinnerObj.HideAsync();
+//         SearchData();
+//         StateHasChanged();
+//         dl.Dispose();
+//     }
+
+//     private async void Del_Tipo(int id)
+//     {
+//         await SpinnerObj.ShowAsync();
+//         DataLink_L1 dl = new DataLink_L1();
+
+//         dl.db.DC_Tipos.Remove(dl.db.DC_Tipos.First(x => x.Id == id));
+//         await dl.db.SaveChangesAsync();
+//         utils.UserLog($"Eliminou o Tipo '{selTipo.Id}'", "DataLink_L1");
+
+//         PopupTipos = false;
+//         PopupDelTipos = false;
+//         selTipo = new pulsar.sv.data.DC_Tipo() { };
+
+//         await SpinnerObj.HideAsync();
+//         SearchData();
+//         StateHasChanged();
+//         dl.Dispose();
+//     }
+
+//     //REGISTO VALORES
+//     private bool PopupValores = false;
+//     private bool PopupDelValores = false;
+//     private int idValor = 0;
+
+//     private async void Add_Valor(int id)
+//     {
+//         await SpinnerObj.ShowAsync();
+//         DataLink_L1 dl = new DataLink_L1();
+
+//         if (id == 0)
+//         {
+//             if (!string.IsNullOrEmpty(selTipo.Nome))
+//             {
+//                 dl.db.DC_Valores.Add(new pulsar.sv.data.DC_Valor { Tipo = selTipo.Id, Opcao = selValor.Opcao, Texto = selValor.Texto, Numero = selValor.Numero, Obs = selValor.Obs, Whocreated = Convert.ToInt16(who.id), Data = selValor.Data });
+//             }
+//             else
+//             {
+//                 Erromsg = "Deve preencher corretamente os campos!";
+//                 await SpinnerObj.HideAsync();
+//                 return;
+//             }
+
+//             await dl.db.SaveChangesAsync();
+//             utils.UserLog($"Inseriu o Valor '{selValor.Id}'", "DataLink_L1");
+//         }
+
+//         PopupValores = false;
+//         selValor = new pulsar.sv.data.DC_Valor() { };
+
+//         await SpinnerObj.HideAsync();
+//         SearchData();
+//         StateHasChanged();
+//         dl.Dispose();
+//     }
+
+//     private async void Edit_Valor(int id)
+//     {
+//         await SpinnerObj.ShowAsync();
+//         DataLink_L1 dl = new DataLink_L1();
+//         dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+//         var dctp = dl.db.DC_Valores.First(x => x.Id == id).Id;
+//         idValor = dctp;
+
+//         PopupDelValores = true;
+
+//         await SpinnerObj.HideAsync();
+//         StateHasChanged();
+//         dl.Dispose();
+//     }
+
+//     private async void Del_Valor()
+//     {
+//         await SpinnerObj.ShowAsync();
+//         DataLink_L1 dl = new DataLink_L1();
+
+//         dl.db.DC_Valores.Remove(dl.db.DC_Valores.First(x => x.Id == idValor));
+//         await dl.db.SaveChangesAsync();
+//         utils.UserLog($"Eliminou o Valor '{idValor}'", "DataLink_L1");
+
+//         PopupValores = false;
+//         PopupDelValores = false;
+//         selValor = new pulsar.sv.data.DC_Valor() { };
+
+//         await SpinnerObj.HideAsync();
+//         SearchData();
+//         StateHasChanged();
+//         dl.Dispose();
+//     }
+
+//     public void SelTipo_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<pulsar.sv.data.DC_Tipo> args)
+//     {
+//         selTipo.Id = args.ItemData.Id;
+//         selTipo.Nome = args.ItemData.Nome;
+//         //nomeTipo = args.ItemData.Nome;
+//     }
+
+//     public void SelTipo1_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<pulsar.sv.data.DC_Tipo> args)
+//     {
+//         selTipo.Id = args.ItemData.Id;
+//         selTipo.Nome = args.ItemData.Nome;
+//         selTipo.Formato = args.ItemData.Formato;
+//         selTipo.Unidade = args.ItemData.Unidade;
+//     }
+
+//     private void BackStreetButton()
+//     {
+//         NavigationManager.NavigateTo("/linha1/");
+//     }
+
+}

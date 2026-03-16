@@ -1,0 +1,173 @@
+﻿@using pulsar.sv.data
+@using f10.pulsar.mes.Enums
+
+@inject IBanhoReceitaService BanhoReceitaService
+
+<div class="row">
+    <div class="12u" style="text-align:right">
+        <SfButton class="button special" @onclick="New">
+            <i class="icon fa-plus"></i>
+        </SfButton>
+    </div>
+</div>
+
+<SfGrid DataSource="@Parametros"
+        AllowPaging="true"
+        AllowSorting="true">
+
+    <GridPageSettings PageSize="10" />
+
+    <GridColumns>
+        <GridColumn Width="5%">
+            <Template>
+                @{
+                    var p = context as BanhoReceitaParametro;
+                    <SfButton CssClass="sf-btn-xs">
+                        <i class="icon fa-edit fa-2x"
+                           title="Editar"
+                           style="cursor:pointer"
+                           @onclick="() => Edit(p)" />
+                    </SfButton>
+                    
+                }
+            </Template>
+        </GridColumn>
+
+        <GridColumn Field="ParameterName" HeaderText="Parâmetro" />
+        <GridColumn Field="ParameterUnit" HeaderText="Unidade" Width="10%" />
+
+        <GridColumn HeaderText="Operação">
+            <GridColumns>
+                <GridColumn Field="Min" Format="0.00" HeaderText="Min" Width="10%" />
+                <GridColumn Field="Max" Format="0.00" HeaderText="Max" Width="10%" />
+            </GridColumns>
+        </GridColumn>
+
+        <GridColumn HeaderText="Avisos">
+            <GridColumns>
+                <GridColumn Field="WarningMin" Format="0.00" HeaderText="Min" Width="10%" />
+                <GridColumn Field="WarningMax" Format="0.00" HeaderText="Max" Width="10%" />
+            </GridColumns>
+        </GridColumn>
+
+    </GridColumns>
+
+    <GridTemplates>
+        <EmptyRecordTemplate>
+            <p style="margin:1em">Sem parâmetros definidos.</p>
+        </EmptyRecordTemplate>
+    </GridTemplates>
+
+</SfGrid>
+
+<!-- POPUP ADD / EDIT -->
+<SfDialog Width="480px"
+          IsModal="true"
+          ShowCloseIcon="false"
+          Visible="@PopupVisible">
+
+    <DialogTemplates>
+        <Header>@PopupTitle</Header>
+
+        <Content>
+            <SfTextBox @bind-Value="EditModel.ParameterName" Placeholder="Parâmetro" style="margin:0.5em" FloatLabelType="FloatLabelType.Always"/>
+            <SfTextBox @bind-Value="EditModel.ParameterUnit" Placeholder="Unidade" style="margin:0.5em" FloatLabelType="FloatLabelType.Always" />
+            <SfNumericTextBox @bind-Value="EditModel.Min" Placeholder="Min" Decimals="2" style="margin:0.5em" FloatLabelType="FloatLabelType.Always" />
+            <SfNumericTextBox @bind-Value="EditModel.Max" Placeholder="Max" Decimals="2" style="margin:0.5em" FloatLabelType="FloatLabelType.Always" />
+            <SfNumericTextBox @bind-Value="EditModel.WarningMin" Placeholder="Aviso Min" Decimals="2" style="margin:0.5em" FloatLabelType="FloatLabelType.Always" />
+            <SfNumericTextBox @bind-Value="EditModel.WarningMax" Placeholder="Aviso Max" Decimals="2" style="margin:0.5em" FloatLabelType="FloatLabelType.Always" />
+
+            <div style="margin-top:1em;text-align:right">
+                <SfButton class="button special" style="margin-right:10px"
+                          @onclick="Save">
+                    Guardar
+                </SfButton>
+
+                <SfButton class="button" @onclick="ClosePopup">
+                    Cancelar
+                </SfButton>
+            </div>
+
+        </Content>
+    </DialogTemplates>
+</SfDialog>
+
+@code {
+
+    [Parameter, EditorRequired]
+    public int ReceitaId { get; set; }
+
+    List<BanhoReceitaParametro> Parametros = new();
+
+    enum EditMode { None, New, Edit }
+    EditMode Mode = EditMode.None;
+
+    bool PopupVisible => Mode != EditMode.None;
+
+    string PopupTitle =>
+        Mode == EditMode.New
+            ? "Adicionar Parâmetro"
+            : "Editar Parâmetro";
+
+    BanhoReceitaParametro EditModel = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+    }
+
+    async Task LoadAsync()
+    {
+        Parametros = await BanhoReceitaService.GetByReceitaIdAsync(ReceitaId);
+    }
+
+    void New()
+    {
+        EditModel = new()
+        {
+            BanhoReceitaId = ReceitaId
+        };
+        Mode = EditMode.New;
+    }
+
+    void Edit(BanhoReceitaParametro p)
+    {
+        EditModel = new()
+        {
+            Id = p.Id,
+            BanhoReceitaId = p.BanhoReceitaId,
+            ParameterName = p.ParameterName,
+            ParameterUnit = p.ParameterUnit,
+            Min = p.Min,
+            Max = p.Max,
+            WarningMin = p.WarningMin,
+            WarningMax = p.WarningMax
+        };
+
+        Mode = EditMode.Edit;
+    }
+
+    async Task Save()
+    {
+        try
+        {
+            if (Mode == EditMode.New)
+                await BanhoReceitaService.CreateAsync(EditModel);
+            else
+                await BanhoReceitaService.UpdateAsync(EditModel);
+
+            Mode = EditMode.None;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+        }
+    }
+
+    void ClosePopup()
+    {
+        Mode = EditMode.None;
+        EditModel = new();
+    }
+}

@@ -1,0 +1,2088 @@
+﻿@page "/linha1/artigos/detalhes/{id}"
+@using Microsoft.Data.SqlClient
+
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject Utils utils
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("ATL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>Detalhes do Artigo - @seleArtigo.Referencia </h1>
+                    </div>
+                    <div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+                        <button class="noprint" @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button class="noprint" onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                        <button @onclick="@(() =>{ GetDB();  })" title="Atualizar"><i class="icon style1 fa-refresh"></i></button>
+                        <button @onclick="@(() =>{ PopDelArtigo = true; })" title="Eliminar"><i class="icon style1 fa-trash"></i></button>
+                    </div>
+                </div>
+
+
+                <div class="row uniform">
+                    <div class="12u">
+                        <SfTab>
+                            <TabItems>
+
+                                <TabItem>
+                                    <ChildContent>
+                                        <TabHeader Text="Identificação do Artigo"></TabHeader>
+                                    </ChildContent>
+                                    <ContentTemplate>
+                                        <div class="row uniform" style="margin-top:20px">
+                                            <div class="7u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                <div class="row">
+                                                    <div class="table-wrapper" style="width:100%">
+                                                        <table>
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td>Código</td>
+                                                                    <td>@seleArtigo.Referencia</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Nome do Artigo</td>
+                                                                    <td><SfTextBox Multiline="false" @bind-Value="@seleArtigo.Designacao" Width="100%" Style="height:30px"></SfTextBox></td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Cliente</td>
+                                                                    <td>
+                                                                        <SfComboBox TValue="string" @bind-Value="@seleArtigo.Opcao5" Placeholder="Selecionar Cliente" Width="100%" TItem="TItem" DataSource="@CustomDataClients" AllowCustom="true" AllowFiltering="true" style="background-color:#F7F7F7;">
+                                                                            <ComboBoxFieldSettings Text="Name" Value="Name"></ComboBoxFieldSettings>
+                                                                            <ComboBoxEvents TValue="string" TItem="TItem"></ComboBoxEvents>
+                                                                            <ComboBoxTemplates TItem="TItem">
+                                                                                <NoRecordsTemplate>
+                                                                                    <div>
+                                                                                        <div id="nodata">Cliente não encontrado na lista.</div>
+                                                                                    </div>
+                                                                                </NoRecordsTemplate>
+                                                                            </ComboBoxTemplates>
+                                                                        </SfComboBox>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Ativo</td>
+                                                                    <td><SfSwitch @bind-Checked="@seleArtigo.Opcao7"></SfSwitch></td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Bloquear</td>
+                                                                    <td><SfSwitch @bind-Checked="@seleArtigo.Opcao8"></SfSwitch></td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="5u 12u$(medium) align-self-end" style="text-align: center;">
+                                                <img src="@picture(seleArtigo.Imagem)" style="width:100%; height:250px;object-fit:contain;" />
+                                                <i @onclick="@(() => { seleArtigo.Imagem = null; })" class="icon style1 fa-remove smallbot" style="flex-direction: unset;"></i>
+
+                                                <SfUploader @ref="img" Multiple="false" AllowedExtensions=".png, .gif, .jpeg, .jpg">
+                                                    <UploaderEvents ValueChange="OnChange" OnRemove="onRemove"></UploaderEvents>
+                                                </SfUploader>
+                                            </div>
+                                        </div>
+
+                                    </ContentTemplate>
+                                </TabItem>
+
+                                <TabItem>
+                                    <ChildContent>
+                                        <TabHeader Text="Características"></TabHeader>
+                                    </ChildContent>
+                                    <ContentTemplate>
+                                        <SfGrid @ref="@Grid_" DataSource="@Caracteristica" Width="100%" AllowFiltering="false" AllowSorting="true" AllowGrouping="false">
+                                            <GridColumns>
+                                                <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+                                                    <Template>
+                                                        @{
+                                                            var whois = (context as pulsar.sv.data.MaterialCaracteristica);
+                                                            <a @onclick="@(()=> { loadCaracteristica(whois.IdCaracteristica); })" class="icon style1 fa-edit" style="margin-right:1em;cursor:pointer"><span class="label">Editar</span></a>
+                                                            <a @onclick="@(()=> { Remove_Caracteristica(whois.IdCaracteristica, whois.IdMaterial); })" class="icon style1 fa-close" style="margin-right:1em;cursor:pointer"><span class="label">Eliminar</span></a>
+                                                        }
+                                                    </Template>
+                                                </GridColumn>
+                                                <GridColumn Field="Caracteristica" HeaderText="Caracteristica" Width="200"></GridColumn>
+                                                <GridColumn Field="Valor" HeaderText="Valor" Width="200"></GridColumn>
+                                                <GridColumn Field="Unidade" HeaderText="Unidade" Width="200"></GridColumn>
+                                                <GridColumn Field="Obs" HeaderText="Observações" Width="200"></GridColumn>
+                                            </GridColumns>
+                                        </SfGrid>
+                                        <button @onclick="@(()=> { PopupNewCaracteristica = true; })" title="Adicionar Característica"><i class="icon style1 fa-plus"></i></button>
+                                    </ContentTemplate>
+                                </TabItem>
+
+                                <TabItem>
+                                    <ChildContent>
+                                        <TabHeader Text="Operação / Gama Operatória"></TabHeader>
+                                    </ChildContent>
+                                    <ContentTemplate>
+                                        <div class="row uniform" style="margin-top:20px">
+
+                                            <div class="12u 12u$(medium)" style="height:auto; width:100%; display: flex;justify-content:space-between;flex-direction:column">
+
+                                                <div class="table-wrapper" style="margin:1em;">
+                                                    <table>
+                                                        <tbody>
+                                                            <tr style="border:0px;background-color:#fff">
+                                                                <td>Tratamento</td>
+                                                                <td>
+                                                                    <SfDropDownList Value="@seleArtigo.IdTratamento" TValue="int" TItem="pulsar.sv.data.Receita" DataSource="@Tratamentos" Width="100%">
+                                                                        <DropDownListEvents OnValueSelect="@SeleTratamentos_SelectionChanged" TValue="int" TItem="pulsar.sv.data.Receita"></DropDownListEvents>
+                                                                        <DropDownListFieldSettings Value="Id" Text="Nome"></DropDownListFieldSettings>
+                                                                    </SfDropDownList>
+                                                                </td>
+                                                            </tr>
+
+                                                            <tr style="border:0px;background-color:#fff;">
+                                                                <td>Observações</td>
+                                                                <td><SfTextBox Multiline="false" @bind-Value="@seleArtigo.Obs"></SfTextBox> </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                <div class="table-wrapper" style="margin:1em;">
+                                                    <table>
+                                                        <thead>
+                                                            <tr>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+
+                                                            <tr style="border:0px;background-color:#fff">
+                                                                <td>Peças por Barramento</td>
+                                                                <td>
+                                                                    <SfNumericTextBox TValue="int" @bind-Value="@seleArtigo.PecasCarga" Min="0" Max="130"></SfNumericTextBox>
+                                                                </td>
+                                                            </tr>
+                                                            <tr style="border:0px;background-color:#fff">
+                                                                <td>Área da Peça (dm<sup>2</sup>)</td>
+                                                                <td>
+                                                                    <SfTextBox TValue="int" @bind-Value="@seleArtigo.Area"  ></SfTextBox>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                @if (utils.CanAccess("ATLA1") == false)
+                                                {
+                                                    @if (RenderComponent)
+                                                    {
+                                                        <div class="table-wrapper" style="margin:1em;">
+                                                            <table>
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>ZINCO</th>
+                                                                        <div style="margin-bottom:1em">
+                                                                            <SfRadioButton Label="Níquel" Name="custom" Value="op1" @bind-Checked="stringChecked" LabelPosition="Syncfusion.Blazor.Buttons.LabelPosition.After" @onchange="onChangeRadio"></SfRadioButton>
+                                                                            <SfRadioButton Label="Alcalino" Name="custom" Value="op2" @bind-Checked="stringChecked" LabelPosition="Syncfusion.Blazor.Buttons.LabelPosition.After" @onchange="onChangeRadio"></SfRadioButton>
+                                                                            <SfRadioButton Label="Nenhum" Name="custom" Value="op3" @bind-Checked="stringChecked" LabelPosition="Syncfusion.Blazor.Buttons.LabelPosition.After" @onchange="onChangeRadio"></SfRadioButton>
+                                                                        </div>
+                                                                    </tr>
+                                                                </thead>
+
+                                                                <tbody>
+                                                                    @{
+                                                                        var x = 34;
+                                                                        var t = listaTempos.First(t => t.Num == x);
+
+                                                                        if (stringChecked == "op1")
+                                                                        {
+                                                                            t = listaTempos.First(t => t.Num == 34);
+                                                                        }
+                                                                        if (stringChecked == "op2")
+                                                                        {
+                                                                            t = listaTempos.First(t => t.Num == 36);
+                                                                        }
+                                                                        if (stringChecked != "op3")
+                                                                        {
+                                                                            <tr style="border:0px;background-color:#fff;">
+                                                                                <td>Tempo de Banho (min)</td>
+                                                                                <td><SfMaskedTextBox Mask='000:00' @bind-Value="@t.T1" Width="42%"></SfMaskedTextBox></td>
+                                                                                <td>Tempo Escorrimento</td>
+                                                                                <td><SfMaskedTextBox Mask='000:00' @bind-Value="@t.T2" Width="42%"></SfMaskedTextBox></td>
+                                                                            </tr>
+
+                                                                            <tr style="border:0px;background-color:#fff;">
+                                                                                <td>Tempo Aceleração</td>
+                                                                                <td><SfMaskedTextBox Mask='000:00' @bind-Value="@t.T1min" Width="42%"></SfMaskedTextBox></td>
+                                                                                <td>Tempo Desaceleração</td>
+                                                                                <td><SfMaskedTextBox Mask='000:00' @bind-Value="@t.T1max" Width="42%"></SfMaskedTextBox></td>
+                                                                            </tr>
+
+                                                                            <tr style="border:0px;background-color:#fff;">
+                                                                                @*<td>Corrente / Peso (Amp/kg)</td>
+                                                        <td><SfTextBox @bind-Value="@t.Opcao2" Width="42%" style="Height: 30px;" Blur="@BlurHandler"></SfTextBox></td>*@
+                                                                                <td>Corrente (Amp dm2)</td>
+                                                                                <td><SfNumericTextBox @bind-Value="@t.Opcao5" Width="42%" Min="0"></SfNumericTextBox></td>
+                                                                                <td>% final</td>
+                                                                                <td><SfNumericTextBox @bind-Value="@t.Opcao3" Width="42%" Min="0" Max="100"></SfNumericTextBox></td>
+                                                                            </tr>
+
+                                                                            <tr style="border:0px;background-color:#fff;">
+                                                                                <td>Tempo Espera</td>
+                                                                                <td><SfMaskedTextBox Mask='000:00' @bind-Value="@t.T2min" Width="42%"></SfMaskedTextBox></td>
+                                                                                <td>Tensão Máxima</td>
+                                                                                <td><SfNumericTextBox @bind-Value="@t.D1" Width="42%" Min="0" Max="25"></SfNumericTextBox></td>
+                                                                            </tr>
+
+                                                                        }
+                                                                    }
+                                                                </tbody>
+
+                                                            </table>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+
+                                        </div>
+                                    </ContentTemplate>
+                                </TabItem>
+
+                                <TabItem>
+                                    <ChildContent>
+                                        <TabHeader Text="Documentos"></TabHeader>
+                                    </ChildContent>
+                                    <ContentTemplate>
+                                        <div>
+                                            <SfGrid @ref="@GridDocumentos" DataSource="@Documentos" AllowFiltering="false" AllowSorting="false" AllowGrouping="false">
+                                                <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                                                <GridColumns>
+                                                    <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+                                                        <Template>
+                                                            @{
+                                                                var whois = (context as Dcs);
+                                                                <div style="display: flex; justify-content: space-between;">
+                                                                    <p @onclick="@(() => { Download_Document(whois.Id); })" class="icon style1 fa-download" style="margin:0.3em;cursor:pointer"><span class="label">Download Documento</span></p>
+                                                                    <p @onclick="@(() => { Edit_Document(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label">Editar</span></p>
+                                                                </div>
+                                                            }
+                                                        </Template>
+                                                    </GridColumn>
+                                                    <GridColumn Field="Tipo" HeaderText="Tipo" Width="70" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                                    <GridColumn Field="Nome" HeaderText="Nome"></GridColumn>
+                                                    <GridColumn Field="Data" HeaderText="Data" Format="G" Type="ColumnType.Date" HideAtMedia="(min-width: 700px)" Width="200"></GridColumn>
+                                                    <GridColumn Field="Descricao" HeaderText="Descrição" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                                    <GridColumn Field="Tamanho" HeaderText="Mb" Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="100"></GridColumn>
+                                                </GridColumns>
+                                            </SfGrid>
+                                            <button @onclick="@(()=> { PopupNewDoc = true; })" title="Inserir Documento"><i class="icon style1 fa-plus"></i></button>
+                                        </div>
+                                    </ContentTemplate>
+                                </TabItem>
+
+                                @if (utils.CanAccess("ATLA1") == true)
+                                {
+                                    <TabItem>
+                                        <ChildContent>
+                                            <TabHeader Text="Tratamento"></TabHeader>
+                                        </ChildContent>
+                                        <ContentTemplate>
+
+                                            <SfTab>
+                                                <TabItems>
+                                                    <TabItem>
+                                                        <ChildContent>
+                                                            <TabHeader Text="Tempos"></TabHeader>
+                                                        </ChildContent>
+                                                        <ContentTemplate>
+
+                                                            @foreach (ReceitaStepsDTO t in listaTempos.Where(o => !TinasNotShowList.Contains(o.Num.Value)))
+                                                            {
+                                                                <section style="margin-top:2em">
+                                                                    <div class="row uniform">
+
+                                                                        <div class="12u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between;">
+
+                                                                            <div class="5u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                                                <div class="kpi2">
+                                                                                    <div class="kpi2__inside">
+                                                                                        <i style="background-color: @t.CorBanho;" class="kpi2__icon fa text-light">@t.Num</i>
+                                                                                        <div class="kpi2__text">
+                                                                                            <div class="kpi2__title">@t.Designacao</div>
+                                                                                            <div class="kpi2__subtitle">Designação</div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div class="kpi2">
+                                                                                <div class="kpi2__inside">
+                                                                                    <i style="background-color: white;" class="kpi2__icon fa text-light">TP</i>
+                                                                                    <div class="kpi2__text">
+                                                                                        <div class="kpi2__title"><SfMaskedTextBox Mask='000:00' Placeholder="000:00" @bind-Value="@t.T1" Width="42%" style="Height: 30px;"></SfMaskedTextBox></div>
+                                                                                        <div class="kpi2__subtitle">Tempo Permanência</div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div class="kpi2">
+                                                                                <div class="kpi2__inside">
+                                                                                    <i style="background-color: white;" class="kpi2__icon fa text-light">TE</i>
+                                                                                    <div class="kpi2__text">
+                                                                                        <div class="kpi2__title"><SfMaskedTextBox Mask='000:00' Placeholder="000:00" @bind-Value="@t.T2" Width="42%" style="Height: 30px;"></SfMaskedTextBox></div>
+                                                                                        <div class="kpi2__subtitle">Tempo Escorrimento</div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+
+                                                                        </div>
+
+                                                                    </div>
+                                                                </section>
+                                                            }
+
+                                                        </ContentTemplate>
+                                                    </TabItem>
+
+                                                    <TabItem>
+                                                        <ChildContent>
+                                                            <TabHeader Text="Retificadores"></TabHeader>
+                                                        </ChildContent>
+                                                        <ContentTemplate>
+
+                                                            @foreach (ReceitaStepsDTO t in listaTempos.Where(o => TinasRectificadorList.Contains(o.Num.Value)))
+                                                            {
+                                                                <section style="margin-top:2em">
+                                                                    <div class="row uniform">
+                                                                        <div class="12u 12u$(medium) align-self-end" style="display: flex; justify-content: space-between; flex-direction: column">
+                                                                            <div class="kpi2">
+                                                                                <div class="kpi2__inside">
+
+                                                                                    <i style="background-color: @t.CorBanho;" class="kpi2__icon fa text-light">@t.Num</i>
+                                                                                    <div class="kpi2__text">
+                                                                                        <div class="kpi2__title">@t.Designacao</div>
+                                                                                        <div class="kpi2__subtitle">Designação</div>
+                                                                                    </div>
+
+                                                                                    <div class="kpi2__text">
+                                                                                        <div class="kpi2__title"><SfMaskedTextBox Mask='000:00' Placeholder="000:00" @bind-Value="@t.T1min" Width="65%" style="Height: 30px;"></SfMaskedTextBox></div>
+                                                                                        <div class="kpi2__subtitle">Tempo Aceleração</div>
+                                                                                    </div>
+
+                                                                                    <div class="kpi2__text">
+                                                                                        <div class="kpi2__title"><SfMaskedTextBox Mask='000:00' @bind-Value="@t.T1max" Width="65%" style="Height: 30px;"></SfMaskedTextBox></div>
+                                                                                        <div class="kpi2__subtitle">Tempo Desaceleração</div>
+                                                                                    </div>
+
+
+                                                                                    <div class="kpi2__text">
+                                                                                        <div class="kpi2__title"><SfNumericTextBox @bind-Value="@t.Opcao5" Width="65%" Min="0" ShowSpinButton=false style="Height: 30px;"></SfNumericTextBox></div>
+                                                                                        <div class="kpi2__subtitle">Corrente Amp/Kg</div>
+                                                                                    </div>
+
+                                                                                    <div class="kpi2__text">
+                                                                                        <div class="kpi2__title"><SfNumericTextBox @bind-Value="@t.Opcao3" Width="65%" Min="0" ShowSpinButton=false style="Height: 30px;"></SfNumericTextBox></div>
+                                                                                        <div class="kpi2__subtitle">% Final</div>
+                                                                                    </div>
+
+                                                                                    <div class="kpi2__text">
+                                                                                        <div class="kpi2__title"><SfMaskedTextBox Mask='000:00' @bind-Value="@t.T2min" Width="65%" style="Height: 30px;"></SfMaskedTextBox></div>
+                                                                                        <div class="kpi2__subtitle">Tempo Pausa</div>
+                                                                                    </div>
+
+                                                                                    @if (t.Num == 34 || t.Num == 36)
+                                                                                    {
+                                                                                        <div class="kpi2__text">
+                                                                                            <div class="kpi2__title"><SfNumericTextBox Mask='000:00' @bind-Value="@t.D1" Width="65%" ShowSpinButton=false Min="0" Max="25" style="Height: 30px;"></SfNumericTextBox></div>
+                                                                                            <div class="kpi2__subtitle">Tensão Máxima</div>
+                                                                                        </div>
+                                                                                    }
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </section>
+                                                            }
+
+                                                        </ContentTemplate>
+                                                    </TabItem>
+                                                </TabItems>
+                                            </SfTab>
+
+                                        </ContentTemplate>
+                                    </TabItem>
+                                }
+                            </TabItems>
+                        </SfTab>
+                        <SfButton class="button special pull-right" Disabled="@Disabled" OnClick="@(()=> { Save_Artigo(idArtigo); })" style="margin:10px">Guardar</SfButton>
+
+                    </div>
+                </div>
+
+                @*ELIMINAR ARTIGO*@
+                <SfDialog Width="400px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopDelArtigo">
+                    <DialogTemplates>
+                        <Header>Eliminar Artigo</Header>
+                        <Content>
+                            <p>
+                                A eliminação é permanente.<br />
+                                Pretende realmente eliminar o Artigo?
+                            </p>
+                            <SfButton class="button special pull-right" Disabled="@Disabled" @onclick="@(() => { Remove_Artigo(idArtigo); })" style="margin:10px">Sim</SfButton>
+                            <SfButton class="button pull-right" Disabled="@Disabled" @onclick="@(() => { PopDelArtigo = false; })" style="margin:10px">Não</SfButton>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ADICIONAR CARACTERISTICA*@
+                <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupNewCaracteristica">
+                    <DialogTemplates>
+                        <Header>Adicionar Característica</Header>
+                        <Content>
+                            <div class="table-wrapper" style="margin:1em;">
+                                <table>
+                                    <tbody>
+                                        <tr style="border:0px;background-color:#fff">
+                                            <td>Caracteristica</td>
+                                            <td>
+                                                <SfDropDownList Value="@seleCaracteristica.Caracteristica" TValue="string" TItem="Recc" DataSource="categoriasCaracteristicas.AsEnumerable()" Width="100%" Style="height:100%;margin-bottom: 10px">
+                                                    <DropDownListEvents OnValueSelect="@SelCaracteristicas_SelectionChanged" TValue="string" TItem="Recc"></DropDownListEvents>
+                                                    <DropDownListFieldSettings Value="Rec" Text="Rec"></DropDownListFieldSettings>
+                                                </SfDropDownList>
+                                            </td>
+                                        </tr>
+                                        <tr style="border:0px;background-color:#fff">
+                                            <td>Valor</td>
+                                            <td><SfTextBox @bind-Value="@seleCaracteristica.Valor"></SfTextBox></td>
+                                        </tr>
+                                        <tr style="border:0px;background-color:#fff">
+                                            <td>Unidade</td>
+                                            <td><SfTextBox @bind-Value="@seleCaracteristica.Unidade" Enabled="false"></SfTextBox></td>
+                                        </tr>
+                                        <tr style="border:0px;background-color:#fff">
+                                            <td>Observações</td>
+                                            <td><SfTextBox @bind-Value="@seleCaracteristica.Obs"></SfTextBox></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <SfButton class="button special pull-right" @onclick="@(()=> { Add_Caracteristica(idArtigo);  })"
+                                      style="margin:10px">Guardar</SfButton>
+                            <SfButton class="button pull-right"
+                            @onclick="@(()=> { PopupNewCaracteristica = false; idCaracteristica = 0; seleCaracteristica = new pulsar.sv.data.MaterialCaracteristica() { }; })"
+                                      style="margin:10px">Cancelar</SfButton>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*EDITAR CARACTERISTICA*@
+                <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true"
+                @bind-Visible="PopupEditCaracteristica">
+                    <DialogTemplates>
+                        <Header>Editar Característica</Header>
+                        <Content>
+                            <div class="table-wrapper" style="margin:1em;">
+                                <table>
+                                    <tbody>
+                                        <tr style="border:0px;background-color:#fff">
+                                            <td>Caracteristica</td>
+                                            <td>
+                                                <SfDropDownList Value="@seleCaracteristica.Caracteristica" TValue="string"
+                                                                TItem="Recc" DataSource="categoriasCaracteristicas.AsEnumerable()"
+                                                                Width="100%" Style="height:100%;margin-bottom: 10px">
+                                                    <DropDownListEvents OnValueSelect="@SelCaracteristicas_SelectionChanged"
+                                                                        TValue="string" TItem="Recc"></DropDownListEvents>
+                                                    <DropDownListFieldSettings Value="Rec" Text="Rec">
+                                                    </DropDownListFieldSettings>
+                                                </SfDropDownList>
+                                            </td>
+                                        </tr>
+                                        <tr style="border:0px;background-color:#fff">
+                                            <td>Valor</td>
+                                            <td>
+                                                <SfTextBox @bind-Value="@seleCaracteristica.Valor"></SfTextBox>
+                                            </td>
+                                        </tr>
+                                        <tr style="border:0px;background-color:#fff">
+                                            <td>Unidade</td>
+                                            <td>
+                                                <SfTextBox @bind-Value="@seleCaracteristica.Unidade" Enabled="false">
+                                                </SfTextBox>
+                                            </td>
+                                        </tr>
+                                        <tr style="border:0px;background-color:#fff">
+                                            <td>Observações</td>
+                                            <td>
+                                                <SfTextBox @bind-Value="@seleCaracteristica.Obs"></SfTextBox>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <SfButton class="button special pull-right" Disabled = "@Disabled" @onclick="@(()=> { Edit_Caracteristica(idCaracteristica);  })" style="margin:10px">Guardar</SfButton>
+                            <SfButton class="button pull-right" Disabled = "@Disabled" @onclick="@(()=> { PopupEditCaracteristica = false; idCaracteristica = 0; seleCaracteristica = new pulsar.sv.data.MaterialCaracteristica() { }; })" style="margin:10px">Cancelar</SfButton>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ADICIONAR DOCUMENTO*@
+                <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupNewDoc">
+                    <DialogTemplates>
+                        <Header>Inserir Documento</Header>
+                        <Content>
+                            <table>
+                                <tbody>
+                                    <SfUploader @ref="documento" Multiple="false">
+                                        <UploaderEvents ValueChange="@OnChangeDocument" OnRemove="onRemoveDocument">
+                                        </UploaderEvents>
+                                    </SfUploader>
+
+                                    <tr style="border:0px;background-color:#fff">
+                                        <td>Nome</td>
+                                        <td>
+                                            <SfTextBox @bind-Value="@seldoc.Nome" Readonly=true></SfTextBox>
+                                        </td>
+                                    </tr>
+                                    <tr style="border:0px;background-color:#fff">
+                                        <td>Tipo</td>
+                                        <td>
+                                            <SfTextBox @bind-Value="@seldoc.Tipo" Readonly=true></SfTextBox>
+                                        </td>
+                                    </tr>
+                                    <tr style="border:0px;background-color:#fff">
+                                        <td>Tamanho</td>
+                                        <td>
+                                            <SfTextBox @bind-Value="@seldoc.Tamanho" Readonly=true></SfTextBox>
+                                        </td>
+                                    </tr>
+                                    <tr style="border:0px;background-color:#fff">
+                                        <td>Descrição</td>
+                                        <td>
+                                            <SfTextBox @bind-Value="@seldoc.Descricao" Multiline="true"></SfTextBox>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <SfButton class="button special pull-right" @onclick="@(() => { Add_Document(0); })" style="margin:10px" disabled="@PopupSave">Guardar</SfButton>
+                            <SfButton class="button pull-right" @onclick="@(() => { PopupNewDoc = false; idDoc = 0; indoc = new byte[1]; seldoc = new Dcs() { }; })" style="margin:10px">Cancelar</SfButton>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*EDITAR DOCUMENTO*@
+                <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupEditDoc">
+                    <DialogTemplates>
+                        <Header>Editar Documento</Header>
+                        <Content>
+                            <table>
+                                <tbody>
+                                    <SfUploader @ref="documento" Multiple="false">
+                                        <UploaderEvents ValueChange="@OnChangeDocument" OnRemove="onRemoveDocument">
+                                        </UploaderEvents>
+                                    </SfUploader>
+
+                                    <tr style="border:0px;background-color:#fff">
+                                        <td>Nome</td>
+                                        <td>
+                                            <SfTextBox @bind-Value="@seldoc.Nome" Readonly=true></SfTextBox>
+                                        </td>
+                                    </tr>
+                                    <tr style="border:0px;background-color:#fff">
+                                        <td>Tipo</td>
+                                        <td>
+                                            <SfTextBox @bind-Value="@seldoc.Tipo" Readonly=true></SfTextBox>
+                                        </td>
+                                    </tr>
+                                    <tr style="border:0px;background-color:#fff">
+                                        <td>Data</td>
+                                        <td>
+                                            <SfDateTimePicker TValue="DateTime?" @bind-Value='@seldoc.Data' Readonly=true>
+                                            </SfDateTimePicker>
+                                        </td>
+                                    </tr>
+                                    <tr style="border:0px;background-color:#fff">
+                                        <td>Tamanho</td>
+                                        <td>
+                                            <SfTextBox @bind-Value="@seldoc.Tamanho" Readonly=true></SfTextBox>
+                                        </td>
+                                    </tr>
+                                    <tr style="border:0px;background-color:#fff">
+                                        <td>Descrição</td>
+                                        <td>
+                                            <SfTextBox @bind-Value="@seldoc.Descricao" Multiline="true"></SfTextBox>
+                                        </td>
+                                    </tr>
+
+                                </tbody>
+                            </table>
+
+                            <SfButton class="button special pull-left" @onclick="@(() => { PopupDelDoc = true; })"
+                                      style="margin:10px">Eliminar</SfButton>
+                            <SfButton class="button special pull-right" @onclick="@(() => { Add_Document(idDoc); })"
+                                      style="margin:10px" disabled="@PopupSave">Guardar</SfButton>
+                            <SfButton class="button pull-right"
+                            @onclick="@(() => { PopupEditDoc = false; idDoc = 0; indoc = new byte[1]; seldoc = new Dcs() { }; })"
+                                      style="margin:10px">Cancelar</SfButton>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*ELIMINAR DOCUMENTO*@
+                <SfDialog Width="400px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelDoc">
+                    <DialogTemplates>
+                        <Header>Eliminar Documento</Header>
+                        <Content>
+                            <p>
+                                A eliminação do documento é permanente.<br />
+                                Pretende realmente eliminar o documento?
+                            </p>
+                            <SfButton class="button special pull-right" @onclick="@(() => { Delete_Document(idDoc); })"
+                                      style="margin:10px">Sim</SfButton>
+                            <SfButton class="button pull-right" @onclick="@(() => { PopupDelDoc = false; })"
+                                      style="margin:10px">Não</SfButton>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+                @*EDITAR VALORES ARTIGO*@
+                <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopUpChange">
+                    <DialogTemplates>
+                        <Header>Informação</Header>
+                        <Content>
+                            <p>Ao alterar o valor atual, será eliminado permanentemente. Deseja continuar?</p>
+
+                            <SfButton class="button special pull-right" @onclick="@(() => { makeCopy(); })" style="margin:10px">Sim</SfButton>
+                            <SfButton class="button pull-right" @onclick="@(() => { PopUpChange = false; })" style="margin:10px">Não</SfButton>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+
+
+        <div class="col-lg-12 control-section toast-default-section">
+            <SfToast ID="toast_default" @ref="ToastObj"></SfToast>
+        </div>
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+    </div>
+</div>
+
+<style>
+    #toast_default .e-meeting::before {
+        content: "\e705";
+        font-size: 17px;
+    }
+
+    .bootstrap4 #toast_default .e-meeting::before {
+        content: "\e763";
+        font-size: 20px;
+    }
+
+    .e-tab .e-content .e-item {
+        margin: 20px;
+    }
+
+</style>
+
+
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+
+    SfSpinner SpinnerObj = new SfSpinner();
+    SfToast ToastObj = new SfToast();
+    SfGrid<pulsar.sv.data.MaterialCaracteristica>? Grid_;
+    SfGrid<Dcs> GridDocumentos = new SfGrid<Dcs>();
+    SfUploader img = new SfUploader();
+    SfUploader documento = new SfUploader();
+    User who = new User();
+
+    bool dbchecked = false, dbcheckedoff = true, Disabled = false;
+    private bool PopUpChange = false, PopDelArtigo = false;
+    private string ToastContent = "";
+
+    private bool checkArtigo = true;
+    private bool checkTempos = true;
+
+    public Boolean RenderComponent { get; set; } = false;
+    public string stringChecked = "op3";
+
+    public static List<int> TinasNotShowList = new List<int> { 1, 2, 3, 4, 21, 35, 37, 38, 39 };
+    public static List<int> TinasRectificadorList = new List<int>() { 22, 34, 37 }; //não repetir para o mesmo precesso(ex: tina 1 - Zinco e tina 2 - Zinco => fica apenas 1)
+
+    void Renderfiedls()
+    {
+        this.RenderComponent = true;
+    }
+
+    protected override void OnInitialized()
+    {
+        who = (User)utils.f10session["user"];
+        base.OnInitialized();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            SearchArtigo();
+            SearchTempos();
+            SearchDocumentos();
+            SearchCaracteristicas(int.Parse(id));
+            LoadTratamentos();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+
+    private int idArtigo = 0;
+    public byte[] inuser = new byte[1];
+    public pulsar.sv.data.Material seleArtigo = new pulsar.sv.data.Material() { };
+
+    public List<ReceitaStepsDTO> listaTempos = new List<ReceitaStepsDTO>() { };
+    public List<pulsar.sv.data.Tina> Ttinas = new List<pulsar.sv.data.Tina>();
+
+    public List<pulsar.sv.data.ReceitasStep> listaOperacoesTempos = new List<pulsar.sv.data.ReceitasStep>() { };
+    private List<TItem> CustomDataClients { get; set; } = new List<TItem>();
+
+    //private decimal CorrenteTotal { get; set; }
+
+    //TEMPOS
+    private int t1, t2, t1min, t1max, t2min;
+
+    //PASSIVADORES / ZINCOS
+    int tempo9Passivador = 0, tempo12Passivador = 0, tempo15Passivador = 0, tempo18Passivador = 0, tempo34Zinco = 0, tempo36Zinco = 0;
+
+    #region INFORMAÇÕES ARTIGO
+
+    private async void SearchArtigo()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var artigosList = dl.db.Materiais.First(x => x.Id == int.Parse(id));
+        seleArtigo = artigosList;
+        idArtigo = seleArtigo.Id;
+
+        var tinasList = from dt in dl.db.Tinas
+                        select new pulsar.sv.data.Tina { Id = dt.Id, Num = dt.Num, Designacao = dt.Designacao, Tina1 = dt.Tina1, CorBanho = dt.CorBanho };
+
+        Ttinas = tinasList.ToList();
+
+        Clientes = dl.db.Materiais.Select(x => x.Opcao5).Distinct().ToList();
+
+        foreach (var c in Clientes)
+        {
+            TItem s = new TItem()
+                    {
+                        Name = c,
+                        Code = c,
+                    };
+            CustomDataClients.Add(s);
+        }
+
+        try
+        {
+            var alertaOT = dl.db.Configs.First(ot => EF.Functions.Like(ot.Name, "OTEMCURSO"));
+            string[] nomeArtigo = alertaOT.Value.Split('|');
+            var resultado = dl.db.Materiais.First(x => x.Referencia == nomeArtigo[1]);
+
+            if (resultado.Designacao == seleArtigo.Designacao)
+            {
+                await this.ToastObj.ShowAsync(new ToastModel
+                        {
+                            Timeout = 15000,
+                            ShowCloseButton = true,
+                            CssClass = "e-toast-danger",
+                            ContentTemplate =
+    @<div><h2 style='margin:0'><i class='fa fa-warning'></i>Ordem Tratamento</h2><p style='margin-top:1em;margin-bottom:1em'>Atualmente este artigo encontra-se numa OT em curso. Todas as alterações que fizer no presente artigo '@resultado.Referencia' serão refletidas no processo do mesmo.</p><a style='margin:0' href='/linha1/geral'>Saiba Mais</a></div>
+                });
+            }
+        }
+        catch (Exception)
+        {
+        }
+
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+        dl.Dispose();
+    }
+
+    private async void SearchTempos()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        if (seleArtigo.IdTratamento != 0 && seleArtigo.IdTratamento != null)
+        {
+            var doc = dl.db.Receitas.First(x => x.Id == seleArtigo.IdTratamento);
+
+            listaTempos.Clear();
+            var rst = dl.db.ReceitasSteps.Where(x => x.Receitaid == seleArtigo.IdTratamento);
+            foreach (pulsar.sv.data.ReceitasStep rs in rst)
+            {
+                var T1_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T1.Value.TotalSeconds));
+                var T2_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T2.Value.TotalSeconds));
+                var T1min_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T1min.Value.TotalSeconds));
+                var T1max_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T1max.Value.TotalSeconds));
+                var T2min_sec = TimeSpan.FromSeconds(Convert.ToInt32(rs.T2min.Value.TotalSeconds));
+
+                try
+                {
+                    ReceitaStepsDTO s = new ReceitaStepsDTO()
+                        {
+                            Designacao = Ttinas.First(x => x.Num == rs.Tina).Designacao,
+                            Num = Convert.ToInt32(rs.Tina),
+                            T1 = string.Format("{0:D3}:{1:D2}", (int)T1_sec.TotalMinutes, T1_sec.Seconds),
+                            T2 = string.Format("{0:D3}:{1:D2}", (int)T2_sec.TotalMinutes, T2_sec.Seconds),
+                            T1min = string.Format("{0:D3}:{1:D2}", (int)T1min_sec.TotalMinutes, T1min_sec.Seconds),
+                            T1max = string.Format("{0:D3}:{1:D2}", (int)T1max_sec.TotalMinutes, T1max_sec.Seconds),
+                            T2min = string.Format("{0:D3}:{1:D2}", (int)T2min_sec.TotalMinutes, T2min_sec.Seconds),
+                            //Opcao2 = rs.Opcao2,
+                            Opcao3 = int.Parse(rs.Opcao3),
+                            CorBanho = Ttinas.First(x => x.Num == rs.Tina).CorBanho,
+                            D1 = float.Parse(rs.Opcao4),
+                            Opcao5 = float.Parse(rs.Opcao5.Replace(".",",")),
+                            LM = rs.Lm,
+                            SM = rs.Sm
+                        };
+                    listaTempos.Add(s);
+                }
+                catch (Exception ex)
+                {
+
+                }
+            }
+
+            listaTempos = listaTempos.OrderBy(x => x.Num).ToList();
+
+            if ((Convert.ToInt32(listaTempos[34].T1.Substring(listaTempos[34].T1.Length - 2, 2)) + Convert.ToInt32(listaTempos[34].T2.Substring(listaTempos[34].T2.Length - 2, 2)) + Convert.ToInt32(listaTempos[34].T1min.Substring(listaTempos[34].T1min.Length - 2, 2)) + Convert.ToInt32(listaTempos[34].T1max.Substring(listaTempos[34].T1max.Length - 2, 2)) + Convert.ToInt32(listaTempos[34].T2min.Substring(listaTempos[34].T2min.Length - 2, 2))) > 0)
+            {
+                stringChecked = "op1";
+            }
+            if ((Convert.ToInt32(listaTempos[36].T1.Substring(listaTempos[36].T1.Length - 2, 2)) + Convert.ToInt32(listaTempos[36].T2.Substring(listaTempos[36].T2.Length - 2, 2)) + Convert.ToInt32(listaTempos[36].T1min.Substring(listaTempos[36].T1min.Length - 2, 2)) + Convert.ToInt32(listaTempos[36].T1max.Substring(listaTempos[36].T1max.Length - 2, 2)) + Convert.ToInt32(listaTempos[36].T2min.Substring(listaTempos[36].T2min.Length - 2, 2))) > 0)
+            {
+                stringChecked = "op2";
+            }
+
+            listaTempos = listaTempos.OrderBy(x => x.Num).ToList();
+            this.RenderComponent = true;
+        }
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void SearchDocumentos()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            //TABELA
+            var pdocs = from rt in dl.db.Documentos
+                        select new Dcs { Id = rt.Id, Nome = rt.Nome, Descricao = rt.Descricao, Tipo = rt.Tipo, Tamanho = Math.Round((rt.Tamanho / 1024.0) / 1024.0, 2).ToString("0.##"), Data = rt.Data, Utilizador = rt.Utilizador };
+            var dados = await pdocs.Where(x => x.Utilizador == seleArtigo.Referencia).ToListAsync();
+            Documentos = dados;
+        }
+        catch (Exception)
+        {
+
+        }
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    #endregion
+
+    int numPassivadores = 0;
+    int numZinco = 0;
+
+    private async void Save_Artigo(int Id)
+    {
+        Disabled = true;
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        
+        StringBuilder b = new StringBuilder();
+        ToastContent = "";
+
+        if (seleArtigo.IdTratamento != 0 && seleArtigo.IdTratamento != null)
+        {
+            //VALIDA TEMPOS
+            if (ValidaTempos() == true)
+            {
+                checkTempos = true;
+            }
+            else
+            {
+                checkTempos = false;
+                b.Append("Verifique que os campos se encontram devidamente preenchidos.");
+                ToastContent = ToastContent + b;
+                StateHasChanged();
+                await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+            }
+
+            //VERIFICA TEMPOS PASSIVADORES
+            if (CalculaTemposPassivadoresZincos() == true && checkTempos == true)
+            {
+                int p = RetornaNumeroPassivadores();
+                int z = RetornaNumeroZincos();
+
+                if (p != 0 && p != 1 || z != 0 && z != 1)
+                {
+                    checkTempos = false;
+                    ToastContent = "Tratamento - só pode ter tempos num dos Passivadores / Zincos.";
+                    StateHasChanged();
+                    await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+                }
+                else
+                {
+                    //PASSIVADORES
+                    AlteraOpcaoPassivador();
+
+                    //ZINCO
+                    AlteraOpcaoZinco();
+                }
+            }
+        }
+
+        //&& Convert.ToDouble(CorrenteTotal) <= 1000.00
+        if (String.IsNullOrEmpty(seleArtigo.Designacao) == false)
+        {
+            checkArtigo = true;
+        }
+        else
+        {
+            checkArtigo = false;
+            ToastContent = "Artigo - verifique se tem os campos preenchidos corretamente!";
+            StateHasChanged();
+            await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+        }
+
+        var getInfo = dl.db.Materiais.First(x => x.Id == int.Parse(id));
+
+        if (checkArtigo == true && checkTempos == true)
+        {
+            #region Artigo
+
+            var dlArt = dl.db.Materiais.First(x => x.Id == seleArtigo.Id);
+            dlArt.Designacao = seleArtigo.Designacao;
+            dlArt.Opcao5 = seleArtigo.Opcao5;
+            dlArt.Imagem = seleArtigo.Imagem;
+            dlArt.Opcao7 = seleArtigo.Opcao7;
+            dlArt.Opcao8 = seleArtigo.Opcao8;
+            dlArt.PecasCarga = seleArtigo.PecasCarga;
+            dlArt.Opcao3 = seleArtigo.Opcao3;
+            dlArt.Opcao2 = seleArtigo.Opcao2;
+            dlArt.Opcao4 = seleArtigo.Opcao4;
+            dlArt.Obs = seleArtigo.Obs;
+            dlArt.Area = seleArtigo.Area;
+            await dl.db.SaveChangesAsync();
+
+            utils.UserLog($"Alterou o Artigo '{seleArtigo.Referencia}' ", "DataLink_L1");
+
+            #endregion
+
+            #region Tempo
+
+            if (seleArtigo.IdTratamento != 0 && seleArtigo.IdTratamento != null)
+            {
+
+#if DEBUG
+    string connectionstring = DataLink_L1.connStRL1;
+#else
+                string connectionstring = DataLink_L1.connStRL1;
+#endif
+
+                using (SqlConnection connection = new SqlConnection(connectionstring))
+                {
+                    connection.Open();
+
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+
+                    transaction = connection.BeginTransaction();
+
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    #region Tempos
+
+                    try
+                    {
+                        if (utils.CanAccess("ATLA1") == true)
+                        {
+                            for (int i = 0; i < listaTempos.Count; i++)
+                            {
+                                if (listaTempos[i].Num >= 20 && listaTempos[i].Num <= 21)
+                                {
+                                    var data = listaTempos[19];
+                                    t1 = Convert.ToInt16(data.T1.Substring(data.T1.Length - 2, 2)) + Convert.ToInt16(data.T1.Substring(0, data.T1.Length - 2).Replace(":", "")) * 60;
+                                    t2 = Convert.ToInt16(data.T2.Substring(data.T2.Length - 2, 2)) + Convert.ToInt16(data.T2.Substring(0, data.T2.Length - 2).Replace(":", "")) * 60;
+                                    var TINA = listaTempos[i].Num;
+                                    var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+                                    var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+                                    command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "' , T2 = '" + T2 + "' WHERE receitaid = " + getInfo.IdTratamento + " AND tina = " + TINA + "";
+                                    command.ExecuteNonQuery();
+                                }
+                                else if (listaTempos[i].Num == 22)
+                                {
+                                    t1 = Convert.ToInt16(listaTempos[i].T1.Substring(listaTempos[i].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T1.Substring(0, listaTempos[i].T1.Length - 2).Replace(":", "")) * 60;
+                                    t2 = Convert.ToInt16(listaTempos[i].T2.Substring(listaTempos[i].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T2.Substring(0, listaTempos[i].T2.Length - 2).Replace(":", "")) * 60;
+                                    t1min = Convert.ToInt16(listaTempos[i].T1min.Substring(listaTempos[i].T1min.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T1min.Substring(0, listaTempos[i].T1min.Length - 2).Replace(":", "")) * 60;
+                                    t1max = Convert.ToInt16(listaTempos[i].T1max.Substring(listaTempos[i].T1max.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T1max.Substring(0, listaTempos[i].T1max.Length - 2).Replace(":", "")) * 60;
+                                    t2min = Convert.ToInt16(listaTempos[i].T2min.Substring(listaTempos[i].T2min.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T2min.Substring(0, listaTempos[i].T2min.Length - 2).Replace(":", "")) * 60;
+
+                                    var TINA = listaTempos[i].Num;
+                                    var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+                                    var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+                                    var T1MIN = TimeSpan.FromSeconds(Convert.ToInt32(t1min));
+                                    var T1MAX = TimeSpan.FromSeconds(Convert.ToInt32(t1max));
+                                    var T2MIN = TimeSpan.FromSeconds(Convert.ToInt32(t2min));
+                                    var OP5 = listaTempos[i].Opcao5.ToString().Replace(",", ".");
+                                    var OP3 = listaTempos[i].Opcao3.ToString();
+
+                                    command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "', T2 = '" + T2 + "', T1min = '" + T1MIN + "', T1max = '" + T1MAX + "', T2min = '" + T2MIN + "', Opcao5 = " + OP5 + ", Opcao3 =" + OP3 + " WHERE receitaid = " + getInfo.IdTratamento + " AND tina =" + TINA + "";
+                                    command.ExecuteNonQuery();
+                                }
+                                else if (listaTempos[i].Num >= 25 && listaTempos[i].Num <= 28)
+                                {
+                                    var data = listaTempos[25];
+                                    t1 = Convert.ToInt16(data.T1.Substring(data.T1.Length - 2, 2)) + Convert.ToInt16(data.T1.Substring(0, data.T1.Length - 2).Replace(":", "")) * 60;
+                                    t2 = Convert.ToInt16(data.T2.Substring(data.T2.Length - 2, 2)) + Convert.ToInt16(data.T2.Substring(0, data.T2.Length - 2).Replace(":", "")) * 60;
+                                    var TINA = listaTempos[i].Num;
+                                    var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+                                    var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+                                    command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "' , T2 = '" + T2 + "' WHERE receitaid = " + getInfo.IdTratamento + " AND tina = " + TINA + "";
+                                    command.ExecuteNonQuery();
+                                }
+                                else if (listaTempos[i].Num >= 34 && listaTempos[i].Num <= 35)
+                                {
+                                    var data = listaTempos[33];
+                                    t1 = Convert.ToInt16(data.T1.Substring(data.T1.Length - 2, 2)) + Convert.ToInt16(data.T1.Substring(0, data.T1.Length - 2).Replace(":", "")) * 60;
+                                    t2 = Convert.ToInt16(data.T2.Substring(data.T2.Length - 2, 2)) + Convert.ToInt16(data.T2.Substring(0, data.T2.Length - 2).Replace(":", "")) * 60;
+                                    t1min = Convert.ToInt16(data.T1min.Substring(data.T1min.Length - 2, 2)) + Convert.ToInt16(data.T1min.Substring(0, data.T1min.Length - 2).Replace(":", "")) * 60;
+                                    t1max = Convert.ToInt16(data.T1max.Substring(data.T1max.Length - 2, 2)) + Convert.ToInt16(data.T1max.Substring(0, data.T1max.Length - 2).Replace(":", "")) * 60;
+                                    t2min = Convert.ToInt16(data.T2min.Substring(data.T2min.Length - 2, 2)) + Convert.ToInt16(data.T2min.Substring(0, data.T2min.Length - 2).Replace(":", "")) * 60;
+
+                                    var t1_ = 0;
+                                    var t2_ = 0;
+                                    if ((t1 + t2 + t1min + t1max + t2min) > 0)
+                                    {
+                                        t1_ = 1;
+                                        t2_ = 0;
+                                    }
+                                    else
+                                    {
+                                        t1_ = 0;
+                                        t2_ = 0;
+                                    }
+
+                                    var TINA = listaTempos[i].Num;
+                                    var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+                                    var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+                                    var T1MIN = TimeSpan.FromSeconds(Convert.ToInt32(t1min));
+                                    var T1MAX = TimeSpan.FromSeconds(Convert.ToInt32(t1max));
+                                    var T2MIN = TimeSpan.FromSeconds(Convert.ToInt32(t2min));
+                                    var OP5 = data.Opcao5.ToString().Replace(",", ".");
+                                    var OP3 = data.Opcao3.ToString();
+                                    var TENSAO = data.D1.ToString();
+
+                                    command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "', T2 = '" + T2 + "', T1min = '" + T1MIN + "', T1max = '" + T1MAX + "', T2min = '" + T2MIN + "', Opcao5 = " + OP5 + ", Opcao3 =" + OP3 + " , Opcao4 =" + TENSAO + ", LM =" + t1_ + ", SM =" + t2_ + "  WHERE receitaid = " + getInfo.IdTratamento + " AND tina =" + TINA + "";
+                                    command.ExecuteNonQuery();
+
+                                }
+                                else if (listaTempos[i].Num >= 36 && listaTempos[i].Num <= 39)
+                                {
+                                    var data = listaTempos[35];
+                                    t1 = Convert.ToInt16(data.T1.Substring(data.T1.Length - 2, 2)) + Convert.ToInt16(data.T1.Substring(0, data.T1.Length - 2).Replace(":", "")) * 60;
+                                    t2 = Convert.ToInt16(data.T2.Substring(data.T2.Length - 2, 2)) + Convert.ToInt16(data.T2.Substring(0, data.T2.Length - 2).Replace(":", "")) * 60;
+                                    t1min = Convert.ToInt16(data.T1min.Substring(data.T1min.Length - 2, 2)) + Convert.ToInt16(data.T1min.Substring(0, data.T1min.Length - 2).Replace(":", "")) * 60;
+                                    t1max = Convert.ToInt16(data.T1max.Substring(data.T1max.Length - 2, 2)) + Convert.ToInt16(data.T1max.Substring(0, data.T1max.Length - 2).Replace(":", "")) * 60;
+                                    t2min = Convert.ToInt16(data.T2min.Substring(data.T2min.Length - 2, 2)) + Convert.ToInt16(data.T2min.Substring(0, data.T2min.Length - 2).Replace(":", "")) * 60;
+
+                                    var t1_ = 0;
+                                    var t2_ = 0;
+
+                                    if ((t1 + t2 + t1min + t1max + t2min) > 0)
+                                    {
+                                        t1_ = 0;
+                                        t2_ = 1;
+                                    }
+                                    else
+                                    {
+                                        t1_ = 0;
+                                        t2_ = 0;
+                                    }
+
+                                    var TINA = listaTempos[i].Num;
+                                    var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+                                    var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+                                    var T1MIN = TimeSpan.FromSeconds(Convert.ToInt32(t1min));
+                                    var T1MAX = TimeSpan.FromSeconds(Convert.ToInt32(t1max));
+                                    var T2MIN = TimeSpan.FromSeconds(Convert.ToInt32(t2min));
+                                    var OP5 = data.Opcao5.ToString().Replace(",", ".");
+                                    var OP3 = data.Opcao3.ToString();
+                                    var TENSAO = data.D1.ToString();
+
+                                    command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "', T2 = '" + T2 + "', T1min = '" + T1MIN + "', T1max = '" + T1MAX + "', T2min = '" + T2MIN + "', Opcao5 = " + OP5 + ", Opcao3 =" + OP3 + " , Opcao4 =" + TENSAO + ", LM =" + t1_ + ", SM =" + t2_ + " WHERE receitaid = " + getInfo.IdTratamento + " AND tina =" + TINA + "";
+                                    command.ExecuteNonQuery();
+
+                                }
+                                else
+                                {
+                                    t1 = Convert.ToInt16(listaTempos[i].T1.Substring(listaTempos[i].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T1.Substring(0, listaTempos[i].T1.Length - 2).Replace(":", "")) * 60;
+                                    t2 = Convert.ToInt16(listaTempos[i].T2.Substring(listaTempos[i].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[i].T2.Substring(0, listaTempos[i].T2.Length - 2).Replace(":", "")) * 60;
+                                    var TINA = listaTempos[i].Num;
+                                    var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+                                    var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+                                    command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "' , T2 = '" + T2 + "' WHERE receitaid = " + getInfo.IdTratamento + " AND tina = " + TINA + "";
+                                    command.ExecuteNonQuery();
+                                }
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 0; i < listaTempos.Count; i++)
+                            {
+                                if (listaTempos[i].Num >=34 && listaTempos[i].Num <= 35)
+                                {
+                                    var data = listaTempos[33];
+                                    t1 = Convert.ToInt16(data.T1.Substring(data.T1.Length - 2, 2)) + Convert.ToInt16(data.T1.Substring(0, data.T1.Length - 2).Replace(":", "")) * 60;
+                                    t2 = Convert.ToInt16(data.T2.Substring(data.T2.Length - 2, 2)) + Convert.ToInt16(data.T2.Substring(0, data.T2.Length - 2).Replace(":", "")) * 60;
+                                    t1min = Convert.ToInt16(data.T1min.Substring(data.T1min.Length - 2, 2)) + Convert.ToInt16(data.T1min.Substring(0, data.T1min.Length - 2).Replace(":", "")) * 60;
+                                    t1max = Convert.ToInt16(data.T1max.Substring(data.T1max.Length - 2, 2)) + Convert.ToInt16(data.T1max.Substring(0, data.T1max.Length - 2).Replace(":", "")) * 60;
+                                    t2min = Convert.ToInt16(data.T2min.Substring(data.T2min.Length - 2, 2)) + Convert.ToInt16(data.T2min.Substring(0, data.T2min.Length - 2).Replace(":", "")) * 60;
+
+                                    var t1_ = 1;
+                                    var t2_ = 0;
+
+                                    if ((t1 + t2 + t1min + t1max + t2min) > 0)
+                                    {
+                                        t1_ = 1;
+                                        t2_ = 0;
+                                    }
+                                    else
+                                    {
+                                        t1_ = 0;
+                                        t2_ = 0;
+                                    }
+
+                                    var TINA = listaTempos[i].Num;
+                                    var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+                                    var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+                                    var T1MIN = TimeSpan.FromSeconds(Convert.ToInt32(t1min));
+                                    var T1MAX = TimeSpan.FromSeconds(Convert.ToInt32(t1max));
+                                    var T2MIN = TimeSpan.FromSeconds(Convert.ToInt32(t2min));
+                                    var OP5 = data.Opcao5.ToString();
+                                    var OP3 = data.Opcao3.ToString();
+                                    var TENSAO = data.D1.ToString();
+
+                                    command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "', T2 = '" + T2 + "', T1min = '" + T1MIN + "', T1max = '" + T1MAX + "', T2min = '" + T2MIN + "', Opcao5 = " + OP5 + ", Opcao3 =" + OP3 + " , Opcao4 =" + TENSAO + ", LM =" + t1_ + ", SM =" + t2_ + " WHERE receitaid = " + getInfo.IdTratamento + " AND tina =" + TINA + "";
+                                    command.ExecuteNonQuery();
+
+                                }
+                                else if (listaTempos[i].Num >= 36 && listaTempos[i].Num <= 39)
+                                {
+                                    var data = listaTempos[35];
+                                    t1 = Convert.ToInt16(data.T1.Substring(data.T1.Length - 2, 2)) + Convert.ToInt16(data.T1.Substring(0, data.T1.Length - 2).Replace(":", "")) * 60;
+                                    t2 = Convert.ToInt16(data.T2.Substring(data.T2.Length - 2, 2)) + Convert.ToInt16(data.T2.Substring(0, data.T2.Length - 2).Replace(":", "")) * 60;
+                                    t1min = Convert.ToInt16(data.T1min.Substring(data.T1min.Length - 2, 2)) + Convert.ToInt16(data.T1min.Substring(0, data.T1min.Length - 2).Replace(":", "")) * 60;
+                                    t1max = Convert.ToInt16(data.T1max.Substring(data.T1max.Length - 2, 2)) + Convert.ToInt16(data.T1max.Substring(0, data.T1max.Length - 2).Replace(":", "")) * 60;
+                                    t2min = Convert.ToInt16(data.T2min.Substring(data.T2min.Length - 2, 2)) + Convert.ToInt16(data.T2min.Substring(0, data.T2min.Length - 2).Replace(":", "")) * 60;
+
+                                    var t1_ = 0;
+                                    var t2_ = 1;
+
+                                    if ((t1 + t2 + t1min + t1max + t2min) > 0)
+                                    {
+                                        t1_ = 0;
+                                        t2_ = 1;
+                                    }
+                                    else
+                                    {
+                                        t1_ = 0;
+                                        t2_ = 0;
+                                    }
+
+                                    var TINA = listaTempos[i].Num;
+                                    var T1 = TimeSpan.FromSeconds(Convert.ToInt32(t1));
+                                    var T2 = TimeSpan.FromSeconds(Convert.ToInt32(t2));
+                                    var T1MIN = TimeSpan.FromSeconds(Convert.ToInt32(t1min));
+                                    var T1MAX = TimeSpan.FromSeconds(Convert.ToInt32(t1max));
+                                    var T2MIN = TimeSpan.FromSeconds(Convert.ToInt32(t2min));
+                                    var OP5 = data.Opcao5.ToString();
+                                    var OP3 = data.Opcao3.ToString();
+                                    var TENSAO = data.D1.ToString();
+
+                                    command.CommandText = "UPDATE receitas_steps SET T1 = '" + T1 + "', T2 = '" + T2 + "', T1min = '" + T1MIN + "', T1max = '" + T1MAX + "', T2min = '" + T2MIN + "', Opcao5 = " + OP5 + ", Opcao3 =" + OP3 + " , Opcao4 =" + TENSAO + ", LM =" + t1_ + ", SM =" + t2_ + " WHERE receitaid = " + getInfo.IdTratamento + " AND tina =" + TINA + "";
+                                    command.ExecuteNonQuery();
+
+                                }
+                            }
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        try
+                        {
+                            transaction.RollbackAsync();
+                            ToastContent = "Erro ao guardar artigo!";
+                            utils.UserLog("Erro ao guardar artigo" + seleArtigo.Id + " " + ex.Message, "DataLink_L1");
+                            StateHasChanged();
+                            await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+
+                    #endregion
+
+                    connection.Close();
+                }
+            }
+
+            #endregion
+
+            ToastContent = "Artigo guardado com sucesso!";
+            StateHasChanged();
+            await this.ToastObj.ShowAsync(new ToastModel { Title = "Sucesso", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-success" });
+        }
+
+        Disabled = false;
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Remove_Artigo(int id)
+    {
+        Disabled = true;
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        var data = dl.db.Materiais.First(x => x.Id == id);
+        var rt = dl.db.ReferenciaTrabalhos.Count(x => x.Referencia == data.Referencia);
+        if (rt > 0)
+        {
+            ToastContent = "Não é possível remover o artigo pois já foi produzido e é necessário manter os dados para histórico! Por favor desative o artigo para ser removido da lista de artigos ativos.";
+            StateHasChanged();
+            await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+        }
+        else
+        {
+            dl.db.MateriaisCaracteristicas.RemoveRange(dl.db.MateriaisCaracteristicas.Where(x => x.IdMaterial == id));
+            if (data.IdTratamento != 0)
+            {
+                dl.db.Receitas.Remove(dl.db.Receitas.First(m => m.Id == data.IdTratamento));
+                dl.db.ReceitasSteps.RemoveRange(dl.db.ReceitasSteps.Where(m => m.Receitaid == data.IdTratamento));
+            }
+
+            dl.db.Materiais.Remove(dl.db.Materiais.First(x => x.Id == id));
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Removeu o Artigo '{data.Referencia}'", "DataLink_L1");
+            NavigationManager.NavigateTo("/linha1/artigos");
+        }
+
+        Disabled = false;
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    #region TRETAS
+
+    public bool CalculaTemposPassivadoresZincos()
+    {
+        try
+        {
+            var tP9 = Convert.ToInt16(listaTempos[8].T1.Substring(listaTempos[8].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[8].T1.Substring(0, listaTempos[8].T1.Length - 2).Replace(":", "")) * 60;
+            var tE9 = Convert.ToInt16(listaTempos[8].T2.Substring(listaTempos[8].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[8].T2.Substring(0, listaTempos[8].T2.Length - 2).Replace(":", "")) * 60;
+            tempo9Passivador = tP9 + tE9;
+
+            var tP12 = Convert.ToInt16(listaTempos[11].T1.Substring(listaTempos[11].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[11].T1.Substring(0, listaTempos[11].T1.Length - 2).Replace(":", "")) * 60;
+            var tE12 = Convert.ToInt16(listaTempos[11].T2.Substring(listaTempos[11].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[11].T2.Substring(0, listaTempos[11].T2.Length - 2).Replace(":", "")) * 60;
+            tempo12Passivador = tP12 + tE12;
+
+            var tP15 = Convert.ToInt16(listaTempos[14].T1.Substring(listaTempos[14].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[14].T1.Substring(0, listaTempos[14].T1.Length - 2).Replace(":", "")) * 60;
+            var tE15 = Convert.ToInt16(listaTempos[14].T2.Substring(listaTempos[14].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[14].T2.Substring(0, listaTempos[14].T2.Length - 2).Replace(":", "")) * 60;
+            tempo15Passivador = tP15 + tE15;
+
+            var tP18 = Convert.ToInt16(listaTempos[17].T1.Substring(listaTempos[17].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[17].T1.Substring(0, listaTempos[17].T1.Length - 2).Replace(":", "")) * 60;
+            var tE18 = Convert.ToInt16(listaTempos[17].T2.Substring(listaTempos[17].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[17].T2.Substring(0, listaTempos[17].T2.Length - 2).Replace(":", "")) * 60;
+            tempo18Passivador = tP18 + tE18;
+
+            var tP34 = Convert.ToInt16(listaTempos[33].T1.Substring(listaTempos[33].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[33].T1.Substring(0, listaTempos[33].T1.Length - 2).Replace(":", "")) * 60;
+            var tE34 = Convert.ToInt16(listaTempos[33].T2.Substring(listaTempos[33].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[33].T2.Substring(0, listaTempos[33].T2.Length - 2).Replace(":", "")) * 60;
+            var t34max = Convert.ToInt16(listaTempos[33].T1max.Substring(listaTempos[33].T1max.Length - 2, 2)) + Convert.ToInt16(listaTempos[33].T1max.Substring(0, listaTempos[33].T1max.Length - 2).Replace(":", "")) * 60;
+            var t34min = Convert.ToInt16(listaTempos[33].T1min.Substring(listaTempos[33].T1min.Length - 2, 2)) + Convert.ToInt16(listaTempos[33].T1min.Substring(0, listaTempos[33].T1min.Length - 2).Replace(":", "")) * 60;
+            var t34min2 = Convert.ToInt16(listaTempos[33].T2min.Substring(listaTempos[33].T2min.Length - 2, 2)) + Convert.ToInt16(listaTempos[33].T2min.Substring(0, listaTempos[33].T2min.Length - 2).Replace(":", "")) * 60;
+            tempo34Zinco = tP34 + tE34 + t34max + t34min + t34min2 + t34min2;
+
+            var tP36 = Convert.ToInt16(listaTempos[35].T1.Substring(listaTempos[35].T1.Length - 2, 2)) + Convert.ToInt16(listaTempos[35].T1.Substring(0, listaTempos[35].T1.Length - 2).Replace(":", "")) * 60;
+            var tE36 = Convert.ToInt16(listaTempos[35].T2.Substring(listaTempos[35].T2.Length - 2, 2)) + Convert.ToInt16(listaTempos[35].T2.Substring(0, listaTempos[35].T2.Length - 2).Replace(":", "")) * 60;
+            var t36max = Convert.ToInt16(listaTempos[35].T1max.Substring(listaTempos[35].T1max.Length - 2, 2)) + Convert.ToInt16(listaTempos[35].T1max.Substring(0, listaTempos[35].T1max.Length - 2).Replace(":", "")) * 60;
+            var t36min = Convert.ToInt16(listaTempos[35].T1min.Substring(listaTempos[35].T1min.Length - 2, 2)) + Convert.ToInt16(listaTempos[35].T1min.Substring(0, listaTempos[35].T1min.Length - 2).Replace(":", "")) * 60;
+            var t36min2 = Convert.ToInt16(listaTempos[35].T2min.Substring(listaTempos[35].T2min.Length - 2, 2)) + Convert.ToInt16(listaTempos[35].T2min.Substring(0, listaTempos[35].T2min.Length - 2).Replace(":", "")) * 60;
+            tempo36Zinco = tP36 + tE36 + t36max + t36min + t36min2 + t36min2;
+
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+        return true;
+    }
+
+    public bool ValidaTempos()
+    {
+        bool condicao = true;
+
+        for (int i = 0; i < listaTempos.Count; i++)
+        {
+            listaTempos[i].T1 = listaTempos[i].T1.Replace(":", "");
+            listaTempos[i].T2 = listaTempos[i].T2.Replace(":", "");
+            listaTempos[i].T1min = listaTempos[i].T1min.Replace(":", "");
+            listaTempos[i].T1max = listaTempos[i].T1max.Replace(":", "");
+            listaTempos[i].T2min = listaTempos[i].T2min.Replace(":", "");
+
+            if (listaTempos[i].T1.Length >= 5 && listaTempos[i].T2.Length >= 5 && listaTempos[i].T1min.Length >= 5 && listaTempos[i].T1max.Length >= 5 && listaTempos[i].T2min.Length >= 5)
+            {
+                condicao = true;
+            }
+            else
+            {
+                condicao = false;
+                break;
+            }
+        }
+
+        return condicao;
+    }
+
+    public int RetornaNumeroPassivadores()
+    {
+        numPassivadores = 0;
+
+        if (tempo9Passivador > 0)
+        {
+            numPassivadores = numPassivadores + 1;
+        }
+        if (tempo12Passivador > 0)
+        {
+            numPassivadores = numPassivadores + 1;
+        }
+        if (tempo15Passivador > 0)
+        {
+            numPassivadores = numPassivadores + 1;
+        }
+        if (tempo18Passivador > 0)
+        {
+            numPassivadores = numPassivadores + 1;
+        }
+
+        return numPassivadores;
+    }
+
+    public int RetornaNumeroZincos()
+    {
+        numZinco = 0;
+        if (tempo34Zinco > 0)
+        {
+            numZinco = numZinco + 1;
+        }
+        if (tempo36Zinco > 0)
+        {
+            numZinco = numZinco + 1;
+        }
+        return numZinco;
+    }
+
+    public bool AlteraOpcaoPassivador()
+    {
+        //Passivador Preto
+        if (tempo9Passivador > 0)
+        {
+            seleArtigo.Opcao4 = "3";
+        }
+        //Passivador Transparente
+        if (tempo12Passivador > 0)
+        {
+            seleArtigo.Opcao4 = "2";
+        }
+        //Passivador Irisado
+        if (tempo15Passivador > 0)
+        {
+            seleArtigo.Opcao4 = "1";
+        }
+        //Passivador Azul
+        if (tempo18Passivador > 0)
+        {
+            seleArtigo.Opcao4 = "4";
+        }
+        if (tempo9Passivador == 0 && tempo12Passivador == 0 && tempo15Passivador == 0 && tempo18Passivador == 0)
+        {
+            //Sem Passivador
+            seleArtigo.Opcao4 = "0";
+        }
+        return true;
+    }
+
+    public bool AlteraOpcaoZinco()
+    {
+        if (tempo34Zinco > 0)
+        {
+            seleArtigo.Opcao2 = "1";
+        }
+        if (tempo36Zinco > 0)
+        {
+            seleArtigo.Opcao2 = "2";
+        }
+
+        if (tempo34Zinco == 0 && tempo36Zinco == 0)
+        {
+            //Sem Passivador
+            seleArtigo.Opcao2 = "0";
+        }
+
+        return true;
+    }
+
+    private void onChangeRadio(Microsoft.AspNetCore.Components.ChangeEventArgs args)
+    {
+        listaTempos[34].T1 = "000:00";
+        listaTempos[34].T2 = "000:00";
+        listaTempos[34].T1min = "000:00";
+        listaTempos[34].T1max = "000:00";
+        listaTempos[34].T2min = "000:00";
+        //Opcao2 = rs.Opcao2,
+        listaTempos[34].Opcao3 = 0;
+        listaTempos[34].D1 = 0;
+        listaTempos[34].Opcao5 = 0;
+
+        //LIMPAR T41
+        listaTempos[36].T1 = "000:00";
+        listaTempos[36].T2 = "000:00";
+        listaTempos[36].T1min = "000:00";
+        listaTempos[36].T1max = "000:00";
+        listaTempos[36].T2min = "000:00";
+        //Opcao2 = rs.Opcao2,
+        listaTempos[36].Opcao3 = 0;
+        listaTempos[36].D1 = 0;
+        listaTempos[36].Opcao5 = 0;
+
+        StateHasChanged();
+    }
+
+    #endregion
+
+    #region DOCUMENTOS
+
+    public List<Dcs> Documentos = new List<Dcs> { };
+
+    private bool PopupNewDoc = false;
+    private bool PopupEditDoc = false;
+    private bool PopupDelDoc = false;
+    private bool PopupSave = true;
+    private int idDoc = 0;
+    public Dcs seldoc = new Dcs() { };
+    public byte[] indoc = new byte[1];
+
+    private async void Add_Document(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (id == 0)
+        {
+            if (indoc.Length > 1)
+            {
+                dl.db.Documentos.Add(new sv.data.Documento { Nome = seldoc.Nome, Descricao = seldoc.Descricao, Data = (DateTime)seldoc.Data, Tipo = seldoc.Tipo, Utilizador = seldoc.Utilizador, Tamanho = indoc.Length, Ficheiro = indoc });
+                await dl.db.SaveChangesAsync();
+                utils.UserLog($"Inseriu o documento '{seldoc.Nome}' no Artigo '{seleArtigo.Referencia}' ", "DataLink_L1");
+            }
+        }
+        else
+        {
+            if (indoc.Length > 1)
+            {
+                dl.db.Documentos.First(x => x.Id == id).Nome = seldoc.Nome;
+                dl.db.Documentos.First(x => x.Id == id).Tipo = seldoc.Tipo;
+                dl.db.Documentos.First(x => x.Id == id).Tamanho = indoc.Length;
+                dl.db.Documentos.First(x => x.Id == id).Data = (DateTime)seldoc.Data;
+                dl.db.Documentos.First(x => x.Id == id).Utilizador = seldoc.Utilizador;
+                dl.db.Documentos.First(x => x.Id == id).Descricao = seldoc.Descricao;
+                dl.db.Documentos.First(x => x.Id == id).Ficheiro = indoc;
+            }
+            else
+            {
+                dl.db.Documentos.First(x => x.Id == id).Descricao = seldoc.Descricao;
+            }
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Alterou o documento '{seldoc.Nome}' no Artigo '{seleArtigo.Referencia}'", "DataLink_L1");
+        }
+        PopupNewDoc = false;
+        PopupEditDoc = false;
+        indoc = new byte[1];
+        seldoc = new Dcs() { };
+        idDoc = 0;
+
+        await SpinnerObj.HideAsync();
+        SearchDocumentos();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Edit_Document(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var doc = dl.db.Documentos.First(x => x.Id == id);
+        Dcs n = new Dcs() { Data = doc.Data, Descricao = doc.Descricao, Id = doc.Id, Nome = doc.Nome, Tipo = doc.Tipo, Utilizador = doc.Utilizador, Tamanho = Math.Round((doc.Tamanho / 1024.0) / 1024.0, 2).ToString("0.##") };
+        seldoc = n;
+        idDoc = seldoc.Id;
+
+        PopupEditDoc = true;
+        PopupSave = false;
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Delete_Document(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        dl.db.Documentos.Remove(dl.db.Documentos.First(x => x.Id == id));
+        await dl.db.SaveChangesAsync();
+        utils.UserLog($"Eliminou o documento '{seldoc.Nome}' do Artigo '{seleArtigo.Referencia}'", "DataLink_L1");
+
+        PopupNewDoc = false;
+        PopupEditDoc = false;
+        PopupDelDoc = false;
+        indoc = new byte[1];
+        seldoc = new Dcs() { };
+        idDoc = 0;
+
+        await SpinnerObj.HideAsync();
+        SearchDocumentos();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Download_Document(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        string filename = dl.db.Documentos.Where(x => x.Id == id).First().Nome;
+        byte[] file = dl.db.Documentos.Where(x => x.Id == id).First().Ficheiro;
+        //Inicializa uma nova instância não redimensionável da classe MemoryStream com base na matriz de bytes especificada (file)
+        System.IO.MemoryStream ms = new System.IO.MemoryStream(file);
+        JS.SaveAs(filename, ms.ToArray());
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async Task OnChangeDocument(UploadChangeEventArgs args)
+    {
+        byte[] tempdoc = new byte[Convert.ToInt32(args.Files[0].FileInfo.Size)];
+        await  args.Files[0].File.OpenReadStream(long.MaxValue).ReadAsync(tempdoc, 0, Convert.ToInt32(args.Files[0].FileInfo.Size));
+        indoc = tempdoc;
+
+        seldoc.Data = DateTime.Now;
+        seldoc.Nome = args.Files[0].FileInfo.Name;
+        seldoc.Tamanho = Math.Round((indoc.Length / 1024.0) / 1024.0, 2).ToString("0.##");
+        seldoc.Tipo = args.Files[0].FileInfo.Type;
+        seldoc.Utilizador = seleArtigo.Referencia;
+        seldoc.Descricao = "";
+        PopupSave = false;
+    }
+
+    private void onRemoveDocument(RemovingEventArgs args)
+    {
+        indoc = new byte[1];
+        seldoc = new Dcs() { };
+        idDoc = 0;
+        PopupSave = true;
+        PopupEditDoc = false;
+    }
+
+    #endregion
+
+    #region CARACTERISTICAS
+
+    private bool PopupCaracteristica = false;
+    private bool PopupNewCaracteristica = false;
+    private bool PopupEditCaracteristica = false;
+    private int idCaracteristica = 0;
+    private int idMaterial = 0;
+
+    public pulsar.sv.data.MaterialCaracteristica seleCaracteristica = new pulsar.sv.data.MaterialCaracteristica() { };
+    public List<pulsar.sv.data.MaterialCaracteristica> Caracteristica = new List<pulsar.sv.data.MaterialCaracteristica>() { };
+    List<Recc> categoriasCaracteristicas = new List<Recc> { };
+
+    private async void SearchCaracteristicas(int idM)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_MES dl = new DataLink_MES();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        categoriasCaracteristicas.Clear();
+        var dados = await dl.db.Caracteristicas.Where(x => x.Ativo == true).OrderBy(x => x.Caracteristica).ToListAsync();
+        foreach (var item in dados)
+        {
+            categoriasCaracteristicas.Add(new Recc { Id = item.IdCaracteristica, Rec = item.Caracteristica });
+        }
+        dl.Dispose();
+
+        DataLink_L1 DL1 = new DataLink_L1();
+        Caracteristica = DL1.db.MateriaisCaracteristicas.Where(x => x.IdMaterial == idM).OrderBy(x => x.Caracteristica).ToList();
+        DL1.Dispose();
+
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+    }
+
+    private async void loadCaracteristica(int idC)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+        var doc = dl.db.MateriaisCaracteristicas.First(x => x.IdCaracteristica == idC);
+        seleCaracteristica = doc;
+        idCaracteristica = seleCaracteristica.IdCaracteristica;
+        idMaterial = seleCaracteristica.IdMaterial;
+        PopupEditCaracteristica = true;
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Add_Caracteristica(int idM)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (String.IsNullOrEmpty(seleCaracteristica.Caracteristica) == false)
+        {
+            dl.db.MateriaisCaracteristicas.Add(new pulsar.sv.data.MaterialCaracteristica { IdMaterial = idM, Caracteristica = seleCaracteristica.Caracteristica, Valor = seleCaracteristica.Valor, Unidade = seleCaracteristica.Unidade, Obs = seleCaracteristica.Obs });
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Adicionou a caracteristica '{seleCaracteristica.Caracteristica}' ao artigo '{idM}' ", "DataLink_L1");
+        }
+
+        SearchCaracteristicas(idM);
+        PopupNewCaracteristica = false;
+        seleCaracteristica = new pulsar.sv.data.MaterialCaracteristica() { };
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Edit_Caracteristica(int idC)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (String.IsNullOrEmpty(seleCaracteristica.Caracteristica) == false)
+        {
+            dl.db.MateriaisCaracteristicas.First(x => x.IdCaracteristica == idC).Caracteristica = seleCaracteristica.Caracteristica;
+            dl.db.MateriaisCaracteristicas.First(x => x.IdCaracteristica == idC).Valor = seleCaracteristica.Valor;
+            dl.db.MateriaisCaracteristicas.First(x => x.IdCaracteristica == idC).Unidade = seleCaracteristica.Unidade;
+            dl.db.MateriaisCaracteristicas.First(x => x.IdCaracteristica == idC).Obs = seleCaracteristica.Obs;
+
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Alterou a caracteristica '{seleCaracteristica.Caracteristica}' do artigo '{seleCaracteristica.IdMaterial}' ", "DataLink_L1");
+
+            SearchCaracteristicas(seleCaracteristica.IdMaterial);
+            PopupNewCaracteristica = false;
+            PopupEditCaracteristica = false;
+            seleCaracteristica = new pulsar.sv.data.MaterialCaracteristica() { };
+            idCaracteristica = 0;
+        }
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private async void Remove_Caracteristica(int idC, int idM)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        if (idM != 0)
+        {
+            dl.db.MateriaisCaracteristicas.Remove(dl.db.MateriaisCaracteristicas.First(x => x.IdCaracteristica == idC));
+            await dl.db.SaveChangesAsync();
+            SearchCaracteristicas(idM);
+        }
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    public void SelCaracteristicas_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<Recc> args)
+    {
+        DataLink_MES dl = new DataLink_MES();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var doc = dl.db.Caracteristicas.First(x => x.IdCaracteristica == args.ItemData.Id);
+
+        seleCaracteristica.Caracteristica = doc.Caracteristica;
+        seleCaracteristica.Valor = doc.Valor;
+        seleCaracteristica.Unidade = doc.Unidade;
+
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    #endregion
+
+    #region DROPDOWNS
+
+    //PREENCHIMENTO DE DROPDOWN ETC
+    List<pulsar.sv.data.Receita> Tratamentos = new List<pulsar.sv.data.Receita> { };
+    List<Recc> Angulos = new List<Recc> { };
+    List<Recc> TinaDestino = new List<Recc> { };
+    List<string> Clientes = new List<string> { };
+
+    private async void LoadTratamentos()
+    {
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        Tratamentos = await dl.db.Receitas.Where(x => x.IsActive == true && x.IsDeleted == false).OrderBy(x => x.Nome).ToListAsync();
+
+        if (seleArtigo.IdTratamento != null && seleArtigo.IdTratamento != 0)
+        {
+            var data = dl.db.Receitas.First(x => x.Id == seleArtigo.IdTratamento);
+            var output = data.Nome.Substring(data.Nome.IndexOf("*_") + 2, data.Nome.IndexOf("_*") - data.Nome.IndexOf("*_") - 2);
+
+            var existeOUnao = Tratamentos.Find(x => x.Id == int.Parse(output));
+            if (existeOUnao == null)
+            { 
+                     Tratamentos.Add(dl.db.Receitas.First(x => x.Id == Convert.ToInt32(output)));
+            }
+            seleArtigo.IdTratamento = Int32.Parse(output);
+        }
+
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+
+    //FAZ CÓPIA
+    private string toChange = "";
+    List<pulsar.sv.data.ReceitasStep> list = new List<pulsar.sv.data.ReceitasStep>() { };
+
+    private async void makeCopy()
+    {
+        Disabled = true;
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        await using var transaction = await dl.db.Database.BeginTransactionAsync();
+
+        try
+        {
+            if (toChange.Contains("Tratamento"))
+            {
+                toChange = toChange.Replace("Tratamento", "");
+                var getInfo = dl.db.Materiais.First(x => x.Id == int.Parse(id));
+
+                if (seleArtigo.IdTratamento != 0)
+                {
+                    var Trat = dl.db.Receitas.First(x => x.Id == int.Parse(toChange));
+
+                    var dlTrat = dl.db.Receitas.First(x => x.Id == getInfo.IdTratamento);
+                    dlTrat.Nome = Trat.Nome + " (" + seleArtigo.Id + "*_" + toChange + "_*" + ")";
+                    dlTrat.Dtcreated = DateTime.Now;
+                    dlTrat.Whocreated = Trat.Whocreated;
+                    dlTrat.IsDeleted = true;
+                    dlTrat.IsActive = false;
+                    await dl.db.SaveChangesAsync();
+                    //RECEBE OS DADOS DO ID QUE ESCOLHEU E DE SEGUIDA INSERE
+                    dl.db.ReceitasSteps.RemoveRange(dl.db.ReceitasSteps.Where(x => x.Receitaid == getInfo.IdTratamento && (x.Tina < 36 || x.Tina == 40)));
+                    await dl.db.SaveChangesAsync();
+
+                    var tT = from t in dl.db.ReceitasSteps
+                             where t.Receitaid == int.Parse(toChange) && (t.Tina < 36 || t.Tina == 40)
+                             select new pulsar.sv.data.ReceitasStep { Receitaid = dlTrat.Id, Tina = t.Tina, T1 = t.T1, T2 = t.T2, Opcao3 = t.Opcao3, T1min = t.T1min, T1max = t.T1max, T2min = t.T2min, Opcao4 = t.Opcao4, Opcao5 = t.Opcao5, Lm = t.Lm, Sm = t.Sm };
+                    list = await tT.ToListAsync();
+
+                    List<pulsar.sv.data.ReceitasStep> listTemp = new();
+
+                    if (list != null && list.Count > 0)
+                    {
+                        foreach (pulsar.sv.data.ReceitasStep t in list)
+                        {
+                            if (t.Tina < 36 && t.Tina > 39 || t.Tina != 41 || t.Tina != 42)
+                            {
+                                var toAddArtCara = (new f10.pulsar.sv.data.ReceitasStep { Receitaid = dlTrat.Id, Tina = t.Tina, T1 = t.T1, T2 = t.T2, Opcao3 = t.Opcao3, T1min = t.T1min, T1max = t.T1max, T2min = t.T2min, Opcao4 = t.Opcao4, Opcao5 = t.Opcao5, Lm = t.Lm, Sm = t.Sm });
+
+                                listTemp.Add(toAddArtCara);
+                            }
+                        }
+                        await dl.db.ReceitasSteps.AddRangeAsync(listTemp);
+                        await dl.db.SaveChangesAsync();
+                    }
+
+                    //VERIFICA TEMPOS PASSIVADORES
+                    if (CalculaTemposPassivadoresZincos() == true)
+                    {
+                        bool res = AlteraOpcaoPassivador();
+                    }
+
+                    utils.UserLog($"Atualizou o tratamento '{getInfo.IdTratamento}' para '{Trat.Id}'", "DataLink_L1");
+                    dl.db.Materiais.First(x => x.Id == getInfo.Id).Opcao4 = seleArtigo.Opcao4;
+                    await dl.db.SaveChangesAsync();
+
+                    ToastContent = "Tratamento alterado com sucesso!";
+                    StateHasChanged();
+                    await this.ToastObj.ShowAsync(new ToastModel { Title = "Sucesso", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-success" });
+                }
+                else
+                {
+                    var Trat = dl.db.Receitas.First(x => x.Id == int.Parse(toChange));
+
+                    var toAdd = (new f10.pulsar.sv.data.Receita { Nome = Trat.Nome + " (" + seleArtigo.Id + "*_" + toChange + "_*" + ")", Dtcreated = DateTime.Now, Whocreated = Convert.ToInt16(who.id), IsDeleted = true, IsActive = false });
+                    dl.db.Receitas.Add(toAdd);
+                    await dl.db.SaveChangesAsync();
+                    //RECEBE OS DADOS DO ID QUE ESCOLHEU E DE SEGUIDA INSERE
+                    list = await dl.db.ReceitasSteps.Where(x => x.Receitaid == int.Parse(toChange)).ToListAsync();
+
+                    List<pulsar.sv.data.ReceitasStep> listTemp = new();
+
+					if (list != null && list.Count > 0)
+					{
+						foreach (pulsar.sv.data.ReceitasStep t in list)
+						{
+								var toAddArtCara = (new f10.pulsar.sv.data.ReceitasStep { Receitaid = toAdd.Id, Tina = t.Tina, T1 = t.T1, T2 = t.T2, Opcao3 = t.Opcao3, T1min = t.T1min, T1max = t.T1max, T2min = t.T2min, Opcao4 = t.Opcao4, Opcao5 = t.Opcao5, Lm = t.Lm, Sm = t.Sm });
+								listTemp.Add(toAddArtCara);
+						}
+						await dl.db.ReceitasSteps.AddRangeAsync(listTemp);
+						await dl.db.SaveChangesAsync();
+					}
+
+                    //VERIFICA TEMPOS PASSIVADORES
+                    if (CalculaTemposPassivadoresZincos() == true)
+                    {
+                        bool res = AlteraOpcaoPassivador();
+                    }
+
+                    utils.UserLog($"Criou cópia do tratamento '{Trat.Nome}' no artigo '{seleArtigo.Referencia}'", "DataLink_L1");
+                    dl.db.Materiais.First(x => x.Id == getInfo.Id).IdTratamento = toAdd.Id;
+                    dl.db.Materiais.First(x => x.Id == getInfo.Id).Opcao4 = seleArtigo.Opcao4;
+                    dl.db.Materiais.First(x => x.Id == getInfo.Id).Opcao2 = seleArtigo.Opcao2;
+                    await dl.db.SaveChangesAsync();
+                    list.Clear();
+                }
+
+                await transaction.CommitAsync();
+
+                ToastContent = "Alteração no tratamento do artigo feita com sucesso.";
+                await this.ToastObj.ShowAsync(new ToastModel { Title = "Sucesso", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-success" });
+
+                SearchArtigo();
+                SearchTempos();
+                LoadTratamentos();
+            }
+
+        }
+        catch (Exception)
+        {
+            ToastContent = "Erro na alteração no tratamento do artigo, por favor tente novamente.";
+            await this.ToastObj.ShowAsync(new ToastModel { Title = "Erro", Content = ToastContent, Timeout = 15000, ShowCloseButton = true, Icon = "e-meeting", CssClass = "e-toast-danger" });
+            //o rollback está dentro de um try para que a aplicação não "reinicie" se houver erro por falha de conexão
+            try
+            {
+                await transaction.RollbackAsync();
+            }
+            catch (Exception)
+            {
+            }
+        }
+        finally
+        {
+            Disabled = false;
+            PopUpChange = false;
+            toChange = "";
+            await SpinnerObj.HideAsync();
+            StateHasChanged();
+            dl.Dispose();
+        }
+    }
+
+    public void SeleTratamentos_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<pulsar.sv.data.Receita> args)
+    {
+        toChange = "Tratamento" + args.ItemData.Id;
+        PopUpChange = true;
+    }
+
+
+    public void SeleClientes_SelectionChanged(@Syncfusion.Blazor.DropDowns.SelectEventArgs<Recc> args)
+    {
+        seleArtigo.Opcao5 = args.ItemData.Id.ToString();
+    }
+
+    #endregion
+
+    #region IMAGEM
+
+    private async void OnChange(UploadChangeEventArgs args)
+    {
+        byte[] tempimg = new byte[Convert.ToInt32(args.Files[0].FileInfo.Size)];
+        await args.Files[0].File.OpenReadStream(long.MaxValue).ReadAsync(tempimg, 0, Convert.ToInt32(args.Files[0].FileInfo.Size));
+        inuser = tempimg;
+        seleArtigo.Imagem = inuser;
+        StateHasChanged();
+    }
+
+    private void onRemove(RemovingEventArgs args)
+    {
+        inuser = new byte[1];
+        seleArtigo.Imagem = null;
+    }
+
+    private string picture(Byte[] imagem)
+    {
+        if (imagem != null)
+        {
+            return "data:image/png;base64," + Convert.ToBase64String(imagem);
+        }
+        else
+        {
+            return "data:image/png;base64,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";
+        }
+    }
+
+    #endregion
+
+    #region Classes
+
+    public class Recc
+    {
+        public int Id { get; set; }
+        public string Rec { get; set; }
+    }
+
+    public class Dcs
+    {
+        public int Id { get; set; }
+        public string Nome { get; set; }
+        public string? Descricao { get; set; }
+        public string Tipo { get; set; }
+        public string Tamanho { get; set; }
+        public DateTime? Data { get; set; }
+        public string Utilizador { get; set; }
+    }
+
+    public class TItem
+    {
+        public string Name { get; set; }
+        public string Code { get; set; }
+    }
+
+    #endregion
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/artigos");
+    }
+
+}

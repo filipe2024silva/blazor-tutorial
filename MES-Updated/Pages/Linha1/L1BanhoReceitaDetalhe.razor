@@ -1,0 +1,81 @@
+﻿@page "/linha1/banhosreceitas/{ReceitaId:int}"
+
+@using f10.pulsar.mes.Components
+@using f10.pulsar.mes.Enums
+@using pulsar.sv.data
+
+@inject Utils Utils
+@inject NavigationManager NavigationManager
+@inject IBanhoReceitaRepository ReceitaService
+
+<BasePage State="State"
+          LoadingText="A carregar receita..."
+          OnReload="LoadAsync">
+
+    <div class="row">
+        <div class="10u">
+            <h1>@Receita?.Name</h1>
+        </div>
+        <div class="2u" style="text-align:right">
+            <button class="noprint" @onclick="Back" title="Voltar"><i class="icon style1 fa-arrow-left"></i></button>
+        </div>
+    </div>
+
+    <SfTab>
+        <TabItems>
+            <TabItem>
+                <ChildContent>
+                    <TabHeader Text="Parâmetros" />
+                </ChildContent>
+                <ContentTemplate>
+
+                    <BanhoReceitaParametros ReceitaId="ReceitaId" />
+
+                </ContentTemplate>
+            </TabItem>
+        </TabItems>
+    </SfTab>
+
+</BasePage>
+
+@code {
+
+    [Parameter]
+    public int ReceitaId { get; set; }
+
+    PageState State = PageState.Loading;
+
+    BanhoReceita? Receita;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Utils.CanAccess("B"))
+        {
+            State = PageState.NoAccess;
+            return;
+        }
+
+        await LoadAsync();
+
+    }
+
+    async Task LoadAsync()
+    {
+        try
+        {
+            State = PageState.Loading;
+            Receita = await ReceitaService.GetByIdAsync(ReceitaId);
+            State = PageState.Ready;
+        }
+        catch
+        {
+            State = PageState.Error;
+        }
+
+        StateHasChanged();
+    }
+
+    void Back() => NavigationManager.NavigateTo("/linha1/banhosreceitas");
+}

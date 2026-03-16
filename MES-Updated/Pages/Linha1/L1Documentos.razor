@@ -1,0 +1,457 @@
+﻿@page "/linha1/documentos"
+@using System.Diagnostics
+
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject Utils utils
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="()=> { dbcheckedoff = false; GetDB();}" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("DCL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - Gestão de Documentos</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium)" style="display: flex;justify-content:flex-end;">
+                        <button class="noprint" @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button class="noprint" onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                        <button @onclick="@(() => { PopupNewDoc = true; })" title="Inserir Documento"><i class="icon style1 fa-plus"></i></button>
+                    </div>
+                </div>
+
+                @if (bigdocument == false)
+                {
+                    @if (Documentos != null && Documentos.Count > 0)
+                    {
+                        @*TABELA*@
+                        <div>
+                            <SfGrid @ref="@Grid" DataSource="@Documentos" AllowFiltering="true" AllowSorting="true" AllowGrouping="true" AllowPaging="true">
+                                <GridPageSettings PageSize="20" />
+                                <GridColumns>
+                                    <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="100">
+                                        <Template>
+                                            @{
+                                                var whois = (context as Dcs);
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <p @onclick="@(() => { downloaddoc(whois.Id); })" class="icon style1 fa-download" style="margin:0.3em;cursor:pointer"><span class="label">Download Documento</span></p>
+                                                    <p @onclick="@(() => { editdoc(whois.Id); })" class="icon style1 fa-edit" style="margin:0.3em;cursor:pointer"><span class="label">Editar</span></p>
+                                                </div>
+                                            }
+                                        </Template>
+                                    </GridColumn>
+                                    <GridColumn Field="Tipo" HeaderText="Tipo" Width="70" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                    <GridColumn Field="Nome" HeaderText="Nome"></GridColumn>
+                                    <GridColumn Field="Data" HeaderText="Data" Format="G" Type="ColumnType.Date" HideAtMedia="(min-width: 700px)" Width="200"></GridColumn>
+                                    <GridColumn Field="Descricao" HeaderText="Descrição" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                    <GridColumn Field="Tamanho" HeaderText="Mb" Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="100"></GridColumn>
+                                </GridColumns>
+                            </SfGrid>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row uniform" style="margin-top:20px">
+                            <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                                <div class="card text-dark bg-light">
+                                    <div class="card-body">
+                                        <p style="margin:0;">Sem documentos para apresentar.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+               
+                @*ADICIONAR*@
+                <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupNewDoc">
+                    <DialogTemplates>
+                        <Header>Gerir Documento</Header>
+                        <Content>
+                            <SfUploader @ref="upiroca" AllowMultiple="false" MaxFileSize="@(MAX_SIZE_ALLOWED - (1025 * 512))">
+                                <UploaderEvents ValueChange="OnChange" OnRemove="onRemove"></UploaderEvents>
+                            </SfUploader>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6em;margin:0">Nome</p>
+                                <p style="margin:0">@seldoc.Nome</p>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6em;margin:0">Data</p>
+                                <p style="margin:0">@seldoc.Data</p>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6em;margin:0">Tipo</p>
+                                <p style="margin:0">@seldoc.Tipo</p>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6em;margin:0">Tamanho</p>
+                                <p style="margin:0">@seldoc.Tamanho</p>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6em;margin:0">Utilizador</p>
+                                <p style="margin:0">@seldoc.Utilizador</p>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6.5em;margin:0">Descrição</p>
+                                <SfTextBox Multiline="true" Placeholder="" @bind-Value="@seldoc.Descricao" style="height:100px;margin-left:10px;padding:0"></SfTextBox>
+                            </div>
+                        
+                            <button class="button special pull-right" @onclick="@(() => { Add_Doc(0); })" style="margin:10px">Guardar</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupNewDoc = false; idDoc = 0; indoc = new byte[1]; seldoc = new Dcs() { }; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                    <div style="display: flex; justify-content: center; margin:0.5em">
+                        <p style="margin-top:10px;color:red">@Erromsg</p>
+                    </div>
+                </SfDialog>
+                @*EDITAR*@
+                <SfDialog Target="#target" Width="500px" ShowCloseIcon="false" IsModal="true" @bind-Visible="PopupEditDoc">
+                    <DialogTemplates>
+                        <Header>Editar Documento</Header>
+                        <Content>
+                            <SfUploader AllowMultiple="false" MaxFileSize="@(MAX_SIZE_ALLOWED - (1025 * 512))">
+                                <UploaderEvents ValueChange="OnChange" OnRemove="onRemove"></UploaderEvents>
+                            </SfUploader>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6em;margin:0">Nome</p>
+                                <p style="margin:0">@seldoc.Nome</p>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6em;margin:0">Data</p>
+                                <p style="margin:0">@seldoc.Data</p>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6em;margin:0">Tipo</p>
+                                <p style="margin:0">@seldoc.Tipo</p>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6em;margin:0">Tamanho</p>
+                                <p style="margin:0">@seldoc.Tamanho</p>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6em;margin:0">Utilizador</p>
+                                <p style="margin:0">@seldoc.Utilizador</p>
+                            </div>
+                            <div style="display: flex; justify-content: left; margin:0.5em">
+                                <p style="width:6.5em;margin:0">Descrição</p>
+                                <SfTextBox Multiline="true" Placeholder="" @bind-Value="@seldoc.Descricao" style="height:100px;margin-left:10px;padding:0"></SfTextBox>
+                            </div>
+                            <div style="display: flex; justify-content: center; margin:0.5em">
+                                <p style="margin-top:10px;color:red">@Erromsg</p>
+                            </div>
+                            <button class="button special pull-left" @onclick="@(() => { PopupDelDoc = true; })" style="margin:10px">Eliminar</button>
+                            <button class="button special pull-right" @onclick="@(() => { Add_Doc(idDoc); })" style="margin:10px">Guardar</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupEditDoc = false; idDoc = 0; indoc = new byte[1]; seldoc = new Dcs() { }; })" style="margin:10px">Cancelar</button>
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+                <SfDialog Width="400px" ShowCloseIcon="false" IsModal="true" @bind-Visible="@PopupDelDoc">
+                    <DialogTemplates>
+                        <Header>Eliminar Documento</Header>
+                        <Content>
+                            <p>
+                                A eliminação do documento é permanente.<br />
+                                Pretende realmente eliminar o documento?
+                            </p>
+                            <button class="button special pull-right" @onclick="@(() => { Del_Doc(idDoc); })" style="margin:10px">Sim</button>
+                            <button class="button pull-right" @onclick="@(() => { PopupDelDoc = false; })" style="margin:10px">Não</button> 
+                        </Content>
+                    </DialogTemplates>
+                </SfDialog>
+
+
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+
+@code {
+    SfGrid<Dcs> Grid;
+    SfSpinner SpinnerObj = new SfSpinner();
+    SfUploader upiroca = new SfUploader();
+
+    bool dbchecked = false, dbcheckedoff = false;
+    private bool bigdocument = false;
+    public List<Dcs> Documentos = new List<Dcs>() { };
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            SearchDocs();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+    private async void SearchDocs()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        try
+        {
+            //TABELA
+            var pdocs = from rt in dl.db.Documentos
+                        select new Dcs { Id = rt.Id, Nome = rt.Nome, Descricao = rt.Descricao, Tipo = rt.Tipo, Tamanho = Math.Round((rt.Tamanho / 1024.0) / 1024.0, 2).ToString("0.##"), Data = rt.Data, Utilizador = rt.Utilizador };
+            var dados = await pdocs.ToListAsync();
+            Documentos = dados;
+        }
+        finally
+        {
+            await SpinnerObj.HideAsync();
+            dl.Dispose();
+            StateHasChanged();
+        }
+    }
+
+    private async void downloaddoc(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        byte[] file = dl.db.Documentos.Where(x => x.Id == id).First().Ficheiro;
+        MemoryStream ms = new MemoryStream(file);
+        JS.SaveAs(dl.db.Documentos.Where(x => x.Id == id).First().Nome + "." + dl.db.Documentos.Where(x => x.Id == id).First().Tipo, ms.ToArray());
+
+        await SpinnerObj.HideAsync();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private bool PopupNewDoc = false;
+    private bool PopupEditDoc = false;
+    private bool PopupDelDoc = false;
+    private int idDoc = 0;
+    public Dcs seldoc = new Dcs() { };
+    public byte[] indoc = new byte[1]; // Documento em bytes
+    private const int MAX_SIZE_ALLOWED = 5 * 1024 * 1024; // 5mb
+    private string Erromsg = string.Empty;
+
+    /// <summary>
+    /// Edita um documento.
+    /// </summary>
+    private async void editdoc(int id)
+    {
+        await SpinnerObj.ShowAsync(); // Mostra o spinner de carregamento
+        DataLink_L1 dl = new DataLink_L1(); // Cria uma instância de DataLink_L1
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking; // Desabilita o rastreamento de mudanças no base de dados
+
+        // Obtém o documento a ser editado a partir na base de dados
+        var doc = dl.db.Documentos.First(x => x.Id == id);
+        // Cria uma nova instância de Dcs com os dados do documento
+        Dcs n = new Dcs() { Data = doc.Data, Descricao = doc.Descricao, Id = doc.Id, Nome = doc.Nome, Tipo = doc.Tipo, Utilizador = doc.Utilizador, Tamanho = Math.Round((doc.Tamanho / 1024.0) / 1024.0, 2).ToString("0.##") };
+        seldoc = n; // Atribui o documento selecionado à propriedade seldoc
+        idDoc = seldoc.Id; // Define o ID do documento selecionado
+
+        PopupEditDoc = true; // Mostra o popup de edição de documento
+
+        await SpinnerObj.HideAsync(); // Esconde o spinner de carregamento
+        StateHasChanged(); // Notifica o framework Blazor sobre a mudança de estado
+        dl.Dispose(); // Liberta o objeto DataLink_L1
+    }
+
+    private async Task OnChange(UploadChangeEventArgs args)
+    {
+        try
+        {
+            var file = args.Files[0];
+
+            using var stream = file.File.OpenReadStream(MAX_SIZE_ALLOWED);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            indoc = ms.ToArray();
+
+            seldoc.Data = DateTime.Now;
+            seldoc.Nome = args.Files[0].FileInfo.Name;
+            seldoc.Tamanho = Math.Round((indoc.Length / 1024.0) / 1024.0, 2).ToString("0.##");
+            seldoc.Tipo = args.Files[0].FileInfo.Type;
+            seldoc.Utilizador = "";
+
+            if (utils.f10session.ContainsKey("user") == true)
+            {
+                var who = (User)utils.f10session["user"];
+                seldoc.Utilizador = who.name;
+            }
+        }
+        catch (Exception ex)
+        {
+            Erromsg = "Erro ao carregar ficheiro.";
+            Debug.WriteLine($"Upload ficheiro: {ex.InnerException}");
+        }
+
+    }
+
+    /// <summary>
+    /// Evento de remoção no uploader.
+    /// </summary>
+    private void onRemove(RemovingEventArgs args)
+    {
+        indoc = new byte[1]; // Reset no documento em bytes
+        seldoc = new Dcs() { }; // Reset no documento selecionado
+        idDoc = 0; // Reset no ID do documento
+        PopupEditDoc = false; // Esconde o popup de edição de documento
+    }
+
+    private async void Add_Doc(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        if (id == 0)
+        {
+            if (indoc.Length > 1)
+            {
+                dl.db.Documentos.Add(new sv.data.Documento { Nome = seldoc.Nome, Descricao = seldoc.Descricao, Data = (DateTime)seldoc.Data, Tipo = seldoc.Tipo, Utilizador = seldoc.Utilizador, Tamanho = indoc.Length, Ficheiro = indoc });
+                await dl.db.SaveChangesAsync();
+                utils.UserLog($"Inseriu o documento '{seldoc.Nome}'", "DataLink_L1");
+            }
+        }
+        else
+        {
+            if (indoc.Length > 1)
+            {
+                dl.db.Documentos.First(x => x.Id == id).Nome = seldoc.Nome;
+                dl.db.Documentos.First(x => x.Id == id).Tipo = seldoc.Tipo;
+                dl.db.Documentos.First(x => x.Id == id).Tamanho = indoc.Length;
+                dl.db.Documentos.First(x => x.Id == id).Data = (DateTime)seldoc.Data;
+                dl.db.Documentos.First(x => x.Id == id).Utilizador = seldoc.Utilizador;
+                dl.db.Documentos.First(x => x.Id == id).Descricao = seldoc.Descricao;
+                dl.db.Documentos.First(x => x.Id == id).Ficheiro = indoc;
+            }
+            else
+            {
+                dl.db.Documentos.First(x => x.Id == id).Descricao = seldoc.Descricao;
+            }
+            await dl.db.SaveChangesAsync();
+            utils.UserLog($"Alterou o documento '{seldoc.Nome}'", "DataLink_L1");
+        }
+        PopupNewDoc = false;
+        PopupEditDoc = false;
+        indoc = new byte[1];
+        seldoc = new Dcs() { };
+        idDoc = 0;
+
+        await SpinnerObj.HideAsync();
+        SearchDocs();
+        StateHasChanged();
+        dl.Dispose();
+    }
+    private async void Del_Doc(int id)
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+
+        dl.db.Documentos.Remove(dl.db.Documentos.First(x => x.Id == id));
+        await dl.db.SaveChangesAsync();
+        utils.UserLog($"Eliminou o documento '{seldoc.Nome}'", "DataLink_L1");
+
+        PopupNewDoc = false;
+        PopupEditDoc = false;
+        PopupDelDoc = false;
+        indoc = new byte[1];
+        seldoc = new Dcs() { };
+        idDoc = 0;
+
+        await SpinnerObj.HideAsync();
+        SearchDocs();
+        StateHasChanged();
+        dl.Dispose();
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+
+    public class Dcs
+    {
+        public int Id { get; set; }
+        public string Nome { get; set; }
+        public string Descricao { get; set; }
+        public string Tipo { get; set; }
+        public string Tamanho { get; set; }
+        public DateTime? Data { get; set; }
+        public string Utilizador { get; set; }
+    }
+
+}

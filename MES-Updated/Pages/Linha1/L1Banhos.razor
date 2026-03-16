@@ -1,0 +1,302 @@
+﻿@page "/linha1/banhos"
+@using MySqlConnector
+@using f10.pulsar.mes.Components
+@using f10.pulsar.mes.DTOs
+@using f10.pulsar.mes.Enums
+
+@inject NavigationManager NavigationManager
+@inject Utils Utils
+@inject IBanhosService BanhosService
+
+<BasePage State="State" LoadingText="A carregar banhos..." OnReload="LoadAsync">
+
+    <!-- HEADER -->
+    <div class="row">
+        <div class="8u">
+            <h1>Gestão de Banhos</h1>
+        </div>
+        <div class="4u" style="display:flex;justify-content:flex-end;">
+            <button @onclick="BackStreetButton" title="Voltar">
+                <i class="icon fa-arrow-left"></i>
+            </button>
+            <button @onclick="ReceitasBanhosButton" title="Receitas Banhos">
+                <i class="fa fa-list-ul"></i>
+            </button>
+            <button onclick="window.print()" title="Imprimir">
+                <i class="icon fa-print"></i>
+            </button>
+            <button @onclick="NewBanho" title="Adicionar">
+                <i class="icon fa-plus"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <SfTab>
+        <TabEvents Selected="OnTabSelected" />
+        <TabItems>
+            <TabItem><TabHeader Text="Ativos" /></TabItem>
+            <TabItem><TabHeader Text="Inativos" /></TabItem>
+        </TabItems>
+    </SfTab>
+
+    <!-- GRID -->
+    <SfGrid DataSource="@BanhosFiltrados"
+            AllowFiltering="true"
+            AllowSorting="true"
+            AllowPaging="true">
+
+        <GridPageSettings PageSize="20" />
+
+        <GridColumns>
+            <GridColumn Width="80">
+                <Template>
+                    @{
+                        var b = context as BanhoDTO;
+                        <i class="icon fa-edit"
+                           style="cursor:pointer"
+                           @onclick="() => EditBanho(b.Id)" />
+                    }
+                </Template>
+            </GridColumn>
+
+            
+            <GridColumn Field="Name" HeaderText="Nome Banho"/>
+            <GridColumn Field="TinaNum" HeaderText="Tina"/>
+              
+
+            <GridColumn HeaderText="Estado">
+                <Template>
+                    @{
+                        var b = context as BanhoDTO;
+                    }
+                    <span style="
+                    background:@b.CorEstado;
+                    color:white;
+                    padding:4px 8px;
+                    border-radius:6px;
+                    font-weight:600">
+                        @b.Estado.ToString()
+                    </span>
+                </Template>
+            </GridColumn>
+
+            <!-- KPI crítico -->
+            <GridColumn HeaderText="Temp (°C)" Width="120" TextAlign="TextAlign.Right" >
+                <Template>
+                    @{
+                        var b = context as BanhoDTO;
+                        var alerta = b.TemperaturaAtual < TemperaturasRange.Item1 || b.TemperaturaAtual > TemperaturasRange.Item2;
+                    }
+                    <span style="color:@(alerta ? "red" : "inherit")">
+                        @b.TemperaturaAtual
+                    </span>
+                </Template>
+            </GridColumn>
+        </GridColumns>
+
+       
+
+        <GridTemplates>
+            <EmptyRecordTemplate>
+                <p style="margin:1em">Sem banhos registados.</p>
+            </EmptyRecordTemplate>
+        </GridTemplates>
+
+    </SfGrid>
+
+    <!-- POPUP ADD / EDIT -->
+    <SfDialog Width="500px" IsModal="true" ShowCloseIcon="false" Visible="@PopupVisible">
+
+        <DialogTemplates>
+            <Header>@PopupTitle</Header>
+
+            <Content>
+                <div class="row">
+                    <div style="display: flex; justify-content: left; margin:0.5em">
+                        <p style="width:8em;margin:0;margin-top:10px;">Nome Banho</p>
+                        <SfTextBox @bind-Value="EditModel.Name" />
+                    </div>
+                </div>
+
+              
+                @if (IsEdit)
+                {
+                    <div class="row">
+                        <div style="display: flex; justify-content: left; margin:0.5em">
+                            <p style="width:6.5em;margin:0;margin-top:10px;">Ativo</p>
+                            <SfSwitch @bind-Checked="EditModel.IsActive" />
+                        </div>
+                    </div>
+                }
+
+                <div style="margin-top:1em;text-align:right">
+                    <SfButton class="button special pull-right" style="margin:10px" @onclick="SaveBanho">Guardar</SfButton>
+                    <SfButton class="button pull-right" style="margin:10px" @onclick="ClosePopup">Cancelar</SfButton>
+                </div>
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
+
+</BasePage>
+
+@code {
+
+    // DATA
+    List<BanhoDTO> Banhos = new();
+
+    bool ShowActive = true;
+
+    IEnumerable<BanhoDTO> BanhosFiltrados => Banhos.Where(b => b.IsActive == ShowActive);
+
+    // POPUP
+    enum EditMode { None, New, Edit }
+    EditMode Mode = EditMode.None;
+
+    bool PopupVisible => Mode != EditMode.None;
+    bool IsEdit => Mode == EditMode.Edit;
+
+    string PopupTitle =>
+        Mode == EditMode.New ? "Adicionar Banho" : "Editar Banho";
+
+    pulsar.sv.data.Banho EditModel = new();
+
+    // PAGE
+    PageState State = PageState.Loading;
+
+    public (decimal,decimal) TemperaturasRange = (0,0);
+    public (decimal,decimal) PHRange = (0,0);
+
+    // Pegar limites da temperatura da receita
+    // Pegar limites do ph da receita
+    // 
+
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!Utils.CanAccess("B"))
+        {
+            State = PageState.NoAccess;
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    async Task LoadAsync()
+    {
+        try
+        {
+            State = PageState.Loading;
+            Banhos = new List<BanhoDTO>
+                {
+                    new()
+                    {
+                        Id = 1,
+                        Name = "Banho Níquel",
+                        Estado = EstadoBanhoMES.Running,
+                        IsActive = true,
+                        TinaNum = 5,
+                        CorEstado = "#28a745",
+                        TemperaturaAtual = 58.5m,
+                        PhAtual = 4.8m,
+                        AmperesAtuais = 120.3m,
+                        NumeroCargas = 12,
+                        UltimoEvento = "Carga iniciada",
+                        DateCreated = DateTime.Now.AddHours(-2)
+                    },
+                    new()
+                    {
+                        Id = 2,
+                        Name = "Banho Zinco",
+                        IsActive = false,
+                        TinaNum = 10,
+                        Estado = EstadoBanhoMES.Alarm,
+                        CorEstado = "#dc3545",
+                        TemperaturaAtual = 23.0m,
+                        PhAtual = 7.1m,
+                        AmperesAtuais = 0,
+                        NumeroCargas = 8,
+                        UltimoEvento = "pH fora de limite",
+                        DateCreated = DateTime.Now.AddHours(-6)
+                    }
+                };
+
+            //Banhos = await BanhosService.GetAllAsync();
+            State = PageState.Ready;
+        }
+        catch (MySqlException)
+        {
+            State = PageState.NoDatabase;
+        }
+        catch
+        {
+            State = PageState.Error;
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    // TABS
+    void OnTabSelected(SelectEventArgs args)
+    {
+        ShowActive = args.SelectedIndex == 0;
+    }
+
+    // POPUP ACTIONS
+    void NewBanho()
+    {
+        EditModel = new() { IsActive = true };
+        Mode = EditMode.New;
+    }
+
+    async void EditBanho(int id)
+    {
+        sv.data.Banho? banho = await BanhosService.GetByIdAsync(id);
+
+        EditModel = new()
+        {
+            // Id = banho.Id,
+            // Name = banho.Name,
+            // IsActive = banho.IsActive
+        };
+        Mode = EditMode.Edit;
+    }
+
+    async Task SaveBanho()
+    {
+        try
+        {
+            State = PageState.Loading;
+            await BanhosService.SaveBanhoAsync(EditModel);
+            Mode = EditMode.None;
+            await LoadAsync();
+        }
+        catch
+        {
+            State = PageState.Error;
+        }
+    }
+
+    void ClosePopup()
+    {
+        Mode = EditMode.None;
+        EditModel = new();
+    }
+
+    void OnRowSelected(RowSelectEventArgs<pulsar.sv.data.Banho> args)
+    {
+        NavigationManager.NavigateTo($"/linha1/banhos/{args.Data.Id}");
+    }
+
+    void BackStreetButton() => NavigationManager.NavigateTo("/");
+    void ReceitasBanhosButton() => NavigationManager.NavigateTo("/linha1/banhosreceitas");
+
+
+    
+}

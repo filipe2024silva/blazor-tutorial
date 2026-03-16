@@ -1,0 +1,33 @@
+﻿@page "/formulario-semvalidacao"
+@rendermode InteractiveServer
+
+<h3>Registo de Alunos</h3>
+
+<EditForm Model="@aluno" OnSubmit="Enviar">
+	<label for="nome">Nome:</label>
+	<InputText id="nome" @bind-Value="aluno.Nome" />
+	<br />
+	<label for="email">Email:</label>
+	<InputText id="email" @bind-Value="aluno.Email" />
+	<br />
+	<label for="idade">Idade:</label>
+	<InputNumber id="idade" @bind-Value="aluno.Idade" />
+	<br />
+	<input type="submit" value="Enviar" class="btn btn-primary"/>
+</EditForm>
+
+@code {
+	Aluno aluno = new();
+
+	private void Enviar(EditContext context)
+	{
+		if(context.Validate())
+		{
+			Console.WriteLine($"Nome: {aluno.Nome} - Email: {aluno.Email} - Idade: {aluno.Idade}");
+		}
+		else
+		{
+			Console.WriteLine("Formulário inválido!");
+		}
+	}
+}

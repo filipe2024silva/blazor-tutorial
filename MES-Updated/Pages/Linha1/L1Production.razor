@@ -1,0 +1,678 @@
+﻿@page "/linha1/producao"
+@using System.Diagnostics
+@inject NavigationManager NavigationManager
+@inject Utils utils
+@inject IJSRuntime JSRuntime
+
+<div id="main">
+    <div class="inner">
+
+        @if (dbchecked == false)
+        {
+            <div class="row uniform" style="margin-top:20px">
+                <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                    <div class="card text-dark bg-light">
+                        <div class="card-body">
+                            @if (dbcheckedoff == false)
+                            {
+                                <div>
+                                    <div class="bounceball"></div>
+                                    <div class="bounceballtext">A verificar ligação à base de dados</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h3 style="margin:0;">Sem ligação à base de dados da Linha 1.</h3>
+                                <p style="margin:0;">Operações recomendadas:</p>
+                                <ul>
+                                    <li>Verifique se a linha se encontra em funcionamento</li>
+                                    <li>Verifique o estado dos cabos no switch da linha, e se necessário reinicie o switch</li>
+                                    <li>Verifique o estado dos cabos no switch do bastidor de rede, e se necessário reinicie o switch</li>
+                                </ul>
+                                <div class="row" style="margin-top:1em">
+                                    <div class="12u$" style="display: flex;justify-content:flex-start;">
+                                        <button @onclick="() => { dbcheckedoff = false; GetDB(); }" title="Voltar a testar a ligação"><i class="icon style1 fa-refresh"></i></button>
+                                        <a href="/" class="special button" style="margin-left:0.5em">Voltar</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (utils.CanAccess("PL1") == true)
+            {
+                <div class="row">
+                    <div class="8u 12u$(medium)">
+                        <h1>LINHA 1 - PRODUÇÃO</h1>
+                        @*<span class="image main"><img src="images/pic13.jpg" alt="" /></span>*@
+                    </div>
+                    <div class="4u 12u$(medium) noprint" style="display: flex;justify-content:flex-end;">
+                        <button @onclick="BackStreetButton" title="Voltar atrás"><i class="icon style1 fa-arrow-left"></i></button>
+                        <button onclick="window.print()" title="Imprimir"><i class="icon style1 fa-print"></i></button>
+                    </div>
+                </div>
+
+                <div class="row uniform">
+                    <div class="4u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Inicio' @bind-Value="dti"></SfDatePicker>
+                    </div>
+                    <div class="4u 12u$(medium)">
+                        <SfDatePicker TValue="DateTime?" Placeholder='Data de Fim' @bind-Value="dtf"></SfDatePicker>
+                    </div>
+                    <div class="4u 12u$(medium)">
+                        <SfButton @onclick="SearchData">Pesquisar</SfButton>
+                    </div>
+                </div>
+                @if (RefsTrabalho != null && RefsTrabalho.Count > 0)
+                {
+                    @*GRÁFICO*@
+                    <div class="row uniform">
+                        <div class="3u 12u$(medium)" style="height:450px;">
+                            @if (RefsTrabalho != null)
+                            {
+                                <SfAccumulationChart Title="Produção" Width="100%" Height="400" Theme="@utils.ctheme">
+                                    <AccumulationChartLegendSettings Visible="true" Position="Syncfusion.Blazor.Charts.LegendPosition.Bottom">
+                                    </AccumulationChartLegendSettings>
+                                    <AccumulationChartTooltipSettings Enable="false"></AccumulationChartTooltipSettings>
+                                    <AccumulationChartSeriesCollection>
+                                        <AccumulationChartSeries DataSource="@RoundChartData" XName="Dia" YName="Num" Radius="70%" InnerRadius="0%" Explode="true" ExplodeOffset="10%" ExplodeIndex="3">
+                                            <AccumulationDataLabelSettings Visible="true" Name="text">
+                                                <AccumulationChartDataLabelFont FontWeight="600" Color="auto"></AccumulationChartDataLabelFont>
+                                            </AccumulationDataLabelSettings>
+                                        </AccumulationChartSeries>
+                                    </AccumulationChartSeriesCollection>
+                                </SfAccumulationChart>
+                            }
+                        </div>
+                        <div class="7u 12u$(medium)" style="height:450px;">
+                            @if (RefsTrabalho != null)
+                            {
+                                <SfChart Title="Histórico de Produção" Width="100%" Height="400" Theme="@utils.ctheme">
+                                    <ChartTitleStyle Color="@utils.cthemetitle"></ChartTitleStyle>
+                                    <ChartTooltipSettings Enable="true" Shared="true" Header="Nº Cargas" Format="<b>${point.x} : ${point.y} cargas</b>"></ChartTooltipSettings>
+                                    <ChartPrimaryXAxis Title="Dia" ValueType="Syncfusion.Blazor.Charts.ValueType.Category">
+                                    </ChartPrimaryXAxis>
+                                    <ChartPrimaryYAxis Title="Número de Cargas" LabelFormat="{value}">
+                                    </ChartPrimaryYAxis>
+                                    <ChartSeriesCollection>
+                                        <ChartSeries DataSource="@ChartData" Name="Cargas" XName="Dia" YName="Num" Type="ChartSeriesType.Column">
+                                            @if(ChartData.Count > 1)
+                                            {
+                                                <ChartTrendlines>
+                                                    <ChartTrendline Type="TrendlineTypes.Linear" Width="1" Name="Tendência" Fill="#000000">
+                                                    </ChartTrendline>
+                                                </ChartTrendlines>
+                                            }
+                                        </ChartSeries>
+                                        @* <ChartSeries DataSource="@ChartDataVazias" Name="Vazias - Falta de Peças" XName="Dia" YName="Num" Type="ChartSeriesType.Column"></ChartSeries> *@
+                                        <ChartSeries DataSource="@ChartDataVazias2" Name="Vazias - Outro" XName="Dia" YName="Num" Type="ChartSeriesType.Column"></ChartSeries>
+                                    </ChartSeriesCollection>
+                                </SfChart>
+                            }
+                        </div>
+                    </div>
+                    <div class="row uniform" style="margin:1em">
+
+                        @if (RefsTrabalho != null)
+                        {
+                            <blockquote class="4u 12u$(medium)" style="padding: 0em 0 0em 1em;">
+                                Cargas: @RefsTrabalho.Count()
+                            </blockquote>
+                            @* <blockquote class="4u 12u$(medium)" style="padding: 0em 0 0em 1em;">
+								Passivador Preto: @passivador9 Cargas
+							</blockquote>
+							<blockquote class="4u 12u$(medium)" style="padding: 0em 0 0em 1em;">
+								Passivador Transparente: @passivador12 Cargas
+							</blockquote>
+							<blockquote class="4u 12u$(medium)" style="padding: 0em 0 0em 1em;">
+								Passivador Azul: @passivador15 Cargas
+							</blockquote>
+							<blockquote class="4u 12u$(medium)" style="padding: 0em 0 0em 1em;">
+								Passivador Iridescente: @passivador18 Cargas
+							</blockquote>
+							<blockquote class="4u 12u$(medium)" style="padding: 0em 0 0em 1em;">
+								Sem Passivador: @passivador0 Cargas
+							</blockquote> *@
+                        }
+                    </div>
+
+                    @*TABELA*@
+                    <div>
+                        @if (RefsTrabalho != null)
+                        {
+                            <SfGrid @ref="@Grid" DataSource="@RefsTrabalho" AllowFiltering="true" AllowSorting="true" AllowGrouping="true" AllowResizing="true" AllowExcelExport="true" AllowPaging="true">
+                                <GridPageSettings PageSize="20" />
+                                <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                                <GridEvents OnRecordDoubleClick="RecordDoubleClickHandler" TValue="Dadosrt"></GridEvents>
+                                <GridColumns>
+                                    <GridColumn HeaderText="" TextAlign="TextAlign.Left" Width="50">
+                                        <Template>
+                                            @{
+                                                var whois = (context as Dadosrt);
+                                                <a href="@($"/linha1/relatorio/{whois.Id}")" class="icon style1 fa-folder-open"><span class="label">Abrir Relatório</span></a>
+                                            }
+                                        </Template>
+                                    </GridColumn>
+                                    <GridColumn Field="Lote" HeaderText="Lote" Width="160"></GridColumn>
+                                    <GridColumn Field="Referencia" HeaderText="Código">
+                                        <FilterTemplate>
+                                            <SfDropDownList Placeholder="Código" ID="Referencia" @bind-Value="@((context as PredicateModel<string>).Value)" TItem="string" TValue="string" DataSource="@(Materiais)">
+                                                <DropDownListFieldSettings Value="Referencia" Text="Referencia"></DropDownListFieldSettings>
+                                            </SfDropDownList>
+                                        </FilterTemplate>
+                                        <Template>
+                                            @{
+                                                var whois = (context as Dadosrt);
+                                                if (whois.Referencia == "" && whois.Vazia != "" && whois.Vazia != null)
+                                                {
+                                                    @(whois.Referencia + " - " + whois.Vazia)
+                                                }
+                                                else
+                                                {
+                                                    @(whois.Referencia)
+                                                }
+                                            }
+                                        </Template>
+                                    </GridColumn>
+                                    <GridColumn Field="Inicio" HeaderText="Inicio" Format="G" Type="ColumnType.Date" HideAtMedia="(min-width: 700px)" Width="160"></GridColumn>
+                                    <GridColumn Field="Fim" HeaderText="Fim" Format="G" Type="ColumnType.Date" HideAtMedia="(min-width: 700px)" Width="160"></GridColumn>
+                                    <GridColumn Field="Tempo" HeaderText="Tempo" Format="t" HideAtMedia="(min-width: 700px)" Width="100"></GridColumn>
+                                    <GridColumn Field="Unidades" HeaderText="Un." Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="70"></GridColumn>
+                                    <GridColumn Field="Boas" HeaderText="Conf." Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="70"></GridColumn>
+                                    <GridColumn Field="Mas" HeaderText="N/Conf." Type="ColumnType.Number" HideAtMedia="(min-width: 700px)" Width="70"></GridColumn>
+                                    <GridColumn Field="Operador" HeaderText="Operador" HideAtMedia="(min-width: 700px)"></GridColumn>
+                                    <GridColumn Field="Programa" HeaderText="Programa"></GridColumn>
+                                </GridColumns>
+                            </SfGrid>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="row uniform" style="margin-top:20px">
+                        <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                            <div class="card text-dark bg-light">
+                                <div class="card-body">
+                                    <p style="margin:0;">Sem dados para apresentar relativamente ao período de tempo selecionado.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+            }
+            else
+            {
+                <div class="row uniform" style="margin-top:20px">
+                    <div class="12u 12u$(medium)" style="display: flex;justify-content:space-between;flex-direction:column">
+                        <div class="card text-dark bg-light">
+                            <div class="card-body">
+                                <p style="margin:0;">Não tem permissões para aceder a esta funcionalidade.</p>
+                                <a href="/">Voltar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @*LOADING*@
+        <SfSpinner @ref="SpinnerObj" Type="SpinnerType.Material"></SfSpinner>
+
+    </div>
+</div>
+
+@code {
+    SfGrid<Dadosrt> Grid;
+    SfSpinner SpinnerObj = new SfSpinner();
+
+    bool dbchecked = false, dbcheckedoff = false;
+    public DateTime? dti { get; set; } = DateTime.Today.AddDays(-7);
+    public DateTime? dtf { get; set; } = DateTime.Today;
+
+    public List<Dadosrt> RefsTrabalho = new List<Dadosrt>() { };
+    public List<string> Materiais = new List<string>() { };
+    public List<AreaChartData> ChartData = new List<AreaChartData> { };
+    public List<AreaChartData> ChartDataVazias = new List<AreaChartData> { };
+    public List<AreaChartData> ChartDataVazias2 = new List<AreaChartData> { };
+    public List<AreaChartData> ChartDataDecapagem = new List<AreaChartData> { };
+    public List<AreaChartData> RoundChartData = new List<AreaChartData> { };
+    public int passivador0 = 0;
+    public int passivador9 = 0;
+    public int passivador15 = 0;
+    public int passivador12 = 0;
+    public int passivador18 = 0;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            if (utils.f10session.ContainsKey("reportPdateini") == true && utils.f10session.ContainsKey("reportPdatefin") == true)
+            {
+                dti = (DateTime)utils.f10session["reportPdateini"];
+                dtf = (DateTime)utils.f10session["reportPdatefin"];
+            }
+
+            GetDB();
+        }
+        base.OnAfterRender(firstRender);
+    }
+    private async void GetDB()
+    {
+        DataLink_L1 DL1 = new DataLink_L1();
+
+        if (await DL1.db.Database.CanConnectAsync())
+        {
+            utils.L1ON = true;
+            dbchecked = true;
+            dbcheckedoff = false;
+            DL1.Dispose();
+            StateHasChanged();
+            await SearchData();
+            await PopulateMateriais();
+        }
+        else
+        {
+            utils.L1ON = false;
+            dbchecked = false;
+            dbcheckedoff = true;
+            DL1.Dispose();
+            StateHasChanged();
+        }
+    }
+
+    private async Task SearchData()
+    {
+        await SpinnerObj.ShowAsync();
+
+        if (utils.f10session.ContainsKey("prodList") && !utils.Refresh)
+        {
+            if (utils.f10session["prodList"].GetType() == RefsTrabalho.GetType())
+            {
+                RefsTrabalho = (List<Dadosrt>)utils.f10session["prodList"];
+                if (RefsTrabalho.Count != 0 && (DateTime)utils.f10session["reportPdateini"] == dti.Value && (DateTime)utils.f10session["reportPdatefin"] == dtf.Value.AddDays(1))
+                {
+                    GetChartsData(RefsTrabalho);
+                    utils.Refresh = true;//obriga a voltar a pesquisar os dados se não vier dos report detalhes
+                    await SpinnerObj.HideAsync();
+                    StateHasChanged();
+                    return;
+                }
+            }
+        }
+
+        DataLink_L1 dl = new DataLink_L1();
+
+        try
+        {
+            //TABELA
+            var phistory = from rt in dl.db.ReferenciaTrabalhos
+                           join prg in dl.db.PlcProgramas on rt.Campo1 equals prg.Num.ToString()
+                           join reg in dl.db.Registos on rt.Lote equals reg.Lote
+                           group reg by new
+                           {
+                               rt.Id,
+                               rt.Lote,
+                               rt.Referencia,
+                               rt.Ordemfabrico,
+                               rt.Suspensao,
+                               rt.Operador,
+                               rt.Unidades,
+                               rt.UnidadesMas,
+                               rt.UnidadesTeoricas,
+                               rt.AreaTotal,
+                               rt.Descarga,
+                               rt.Notas,
+                               prg.Nome,
+                               rt.Opcao1,
+                               rt.Opcao2,
+                               rt.Opcao4
+                           } into gr
+                           where gr.Max(t => t.TempoFinal) >= dti && gr.Max(t => t.TempoFinal) <= dtf.Value.AddDays(1)
+                           orderby gr.Max(t => t.TempoFinal) descending
+                           select new Dadosrt
+                           {
+                               Id = gr.Key.Id.ToString(),
+                               Lote = gr.Key.Lote,
+                               OF = gr.Key.Ordemfabrico,
+                               Suspensao = gr.Key.Suspensao,
+                               Referencia = gr.Key.Referencia,
+                               Operador = gr.Key.Operador,
+                               Inicio = gr.Min(t => t.TempoInicial),
+                               Fim = gr.Max(t => t.TempoFinal),
+                               Tempo = (gr.Max(t => t.TempoFinal).Value.Subtract(gr.Min(t => t.TempoInicial).Value)).ToString(@"dd\:hh\:mm\:ss"),
+                               Unidades = gr.Key.Unidades,
+                               Boas = gr.Key.Unidades - gr.Key.UnidadesMas,
+                               Mas = gr.Key.UnidadesMas,
+                               Teoricas = gr.Key.UnidadesTeoricas,
+                               Area = gr.Key.AreaTotal,
+                               Programa = gr.Key.Nome,
+                               Estado = (gr.Count(t => t.Estado == "Manual") > 0 ? "Manual" : "Automático"),
+                               Notas = gr.Key.Notas,
+                               Maintenance = gr.Key.Opcao1,
+                               Reprocessed = gr.Key.Opcao2,
+                               Vazia = gr.Key.Opcao4,
+                               Descarga = gr.Key.Descarga
+                           };
+
+            var dados = await phistory.ToListAsync();
+
+            RefsTrabalho = dados;
+
+            if (utils.f10session.ContainsKey("prodList"))
+            {
+                utils.f10session["prodList"] = RefsTrabalho;
+            }
+            else
+            {
+                utils.f10session.Add("prodList", RefsTrabalho);
+            }
+
+            GetChartsData(dados);
+
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"{DateTime.Now} - Erro ao carregar dados: {ex.Message} \n {ex.StackTrace}");
+        }
+        finally
+        {
+            StateHasChanged();
+            await SpinnerObj.HideAsync();
+            dl.Dispose();
+        }
+
+
+    }
+
+    void GetChartsData(List<Dadosrt> dados)
+    {
+
+        //GRÁFICO NUMERO DE BARRAS POR DIA
+        List<AreaChartData> ac = new List<AreaChartData>() { };
+        var dadosdia = dados.Where(ca => ca.Referencia != "" && ca.Referencia != "60" && ca.Programa != "Decapagem" && ca.Descarga == true).OrderBy(or => or.Fim).GroupBy(gr => gr.Fim.Value.Date.ToShortDateString());
+        foreach (var item in dadosdia)
+        {
+            AreaChartData aci = new AreaChartData()
+            {
+                Dia = item.Key,
+                Num = item.Count(),
+            };
+            ac.Add(aci);
+        }
+
+        // List<AreaChartData> acvazias = new List<AreaChartData>() { };
+        // var dadosdiavazias = dados.Where(ca => ca.Referencia == "" && ca.Notas == "Falta de Peças").OrderBy(or => or.Fim).GroupBy(gr => gr.Fim.Value.Date.ToShortDateString());
+        // foreach (var item in dadosdiavazias)
+        // {
+        // 	AreaChartData aci = new AreaChartData()
+        // 		{
+        // 			Dia = item.Key,
+        // 			Num = item.Count(),
+        // 		};
+        // 	acvazias.Add(aci);
+        // }
+        List<AreaChartData> acvazias2 = new List<AreaChartData>() { };
+        var dadosdiavazias2 = dados.Where(ca => ca.Referencia == "" && (ca.Notas == "Outro" || string.IsNullOrEmpty(ca.Notas)) && ca.Descarga == true).OrderBy(or => or.Fim).GroupBy(gr => gr.Fim.Value.Date.ToShortDateString());
+        foreach (var item in dadosdiavazias2)
+        {
+            AreaChartData aci = new AreaChartData()
+            {
+                Dia = item.Key,
+                Num = item.Count(),
+            };
+            acvazias2.Add(aci);
+        }
+        // List<AreaChartData> acdecapagem = new List<AreaChartData>() { };
+        // var dadosdiadecapagem = dados.Where(ca => ca.Referencia == "60" || ca.Programa == "Decapagem").OrderBy(or => or.Fim).GroupBy(gr => gr.Fim.Value.Date.ToShortDateString());
+        // foreach (var item in dadosdiadecapagem)
+        // {
+        //     AreaChartData aci = new AreaChartData()
+        //     {
+        //         Dia = item.Key,
+        //         Num = item.Count(),
+        //     };
+        //     acdecapagem.Add(aci);
+        // }
+        foreach (var item in ac)
+        {
+            // if (acvazias.Where(ch => ch.Dia == item.Dia).Count() == 0)
+            // {
+            // 	AreaChartData aci = new AreaChartData()
+            // 		{
+            // 			Dia = item.Dia,
+            // 			Num = 0,
+            // 		};
+            // 	acvazias.Add(aci);
+            // }
+            if (acvazias2.Where(ch => ch.Dia == item.Dia).Count() == 0)
+            {
+                AreaChartData aci = new AreaChartData()
+                {
+                    Dia = item.Dia,
+                    Num = 0,
+                };
+                acvazias2.Add(aci);
+            }
+            // if (acdecapagem.Where(ch => ch.Dia == item.Dia).Count() == 0)
+            // {
+            //     AreaChartData aci = new AreaChartData()
+            //     {
+            //         Dia = item.Dia,
+            //         Num = 0,
+            //     };
+            //     acdecapagem.Add(aci);
+            // }
+        }
+        // foreach (var item in acvazias)
+        // {
+        // 	if (ac.Where(ch => ch.Dia == item.Dia).Count() == 0)
+        // 	{
+        // 		AreaChartData aci = new AreaChartData()
+        // 			{
+        // 				Dia = item.Dia,
+        // 				Num = 0,
+        // 			};
+        // 		ac.Add(aci);
+        // 	}
+        // 	if (acvazias2.Where(ch => ch.Dia == item.Dia).Count() == 0)
+        // 	{
+        // 		AreaChartData aci = new AreaChartData()
+        // 			{
+        // 				Dia = item.Dia,
+        // 				Num = 0,
+        // 			};
+        // 		acvazias2.Add(aci);
+        // 	}
+        // 	if (acdecapagem.Where(ch => ch.Dia == item.Dia).Count() == 0)
+        // 	{
+        // 		AreaChartData aci = new AreaChartData()
+        // 			{
+        // 				Dia = item.Dia,
+        // 				Num = 0,
+        // 			};
+        // 		acdecapagem.Add(aci);
+        // 	}
+        // }
+        foreach (var item in acvazias2)
+        {
+            if (ac.Where(ch => ch.Dia == item.Dia).Count() == 0)
+            {
+                AreaChartData aci = new AreaChartData()
+                {
+                    Dia = item.Dia,
+                    Num = 0,
+                };
+                ac.Add(aci);
+            }
+            // if (acvazias.Where(ch => ch.Dia == item.Dia).Count() == 0)
+            // {
+            // 	AreaChartData aci = new AreaChartData()
+            // 		{
+            // 			Dia = item.Dia,
+            // 			Num = 0,
+            // 		};
+            // 	acvazias.Add(aci);
+            // }
+            // if (acdecapagem.Where(ch => ch.Dia == item.Dia).Count() == 0)
+            // {
+            //     AreaChartData aci = new AreaChartData()
+            //     {
+            //         Dia = item.Dia,
+            //         Num = 0,
+            //     };
+            //     acdecapagem.Add(aci);
+            // }
+        }
+        // foreach (var item in acdecapagem)
+        // {
+        //     // if (acvazias.Where(ch => ch.Dia == item.Dia).Count() == 0)
+        //     // {
+        //     // 	AreaChartData aci = new AreaChartData()
+        //     // 		{
+        //     // 			Dia = item.Dia,
+        //     // 			Num = 0,
+        //     // 		};
+        //     // 	acvazias.Add(aci);
+        //     // }
+        //     if (acvazias2.Where(ch => ch.Dia == item.Dia).Count() == 0)
+        //     {
+        //         AreaChartData aci = new AreaChartData()
+        //         {
+        //             Dia = item.Dia,
+        //             Num = 0,
+        //         };
+        //         acvazias2.Add(aci);
+        //     }
+        //     if (ac.Where(ch => ch.Dia == item.Dia).Count() == 0)
+        //     {
+        //         AreaChartData aci = new AreaChartData()
+        //         {
+        //             Dia = item.Dia,
+        //             Num = 0,
+        //         };
+        //         ac.Add(aci);
+        //     }
+        // }
+        ChartData = ac.OrderBy(or => DateTime.Parse(or.Dia).Date).ToList();
+        //ChartDataVazias = acvazias.OrderBy(or => DateTime.Parse(or.Dia).Date).ToList();
+        ChartDataVazias2 = acvazias2.OrderBy(or => DateTime.Parse(or.Dia).Date).ToList();
+        //ChartDataDecapagem = acdecapagem.OrderBy(or => DateTime.Parse(or.Dia).Date).ToList();
+        passivador0 = dados.Where(p => p.Passivador == "Sem Passivador").Count();
+        passivador9 = dados.Where(p => p.Passivador == "Passivador Preto").Count();
+        passivador12 = dados.Where(p => p.Passivador == "Passivador Transparente").Count();
+        passivador15 = dados.Where(p => p.Passivador == "Passivador Azul").Count();
+        passivador18 = dados.Where(p => p.Passivador == "Passivador Iridescente").Count();
+
+
+        //GRÁFICO PRODUÇÃO
+        //List<AreaChartData> finalist = new List<AreaChartData>();
+        //bboas = dados.Where(ca => ca.Referencia != "").Count();
+        //bbmas = dados.Where(ca => ca.Referencia == "").Count();
+        //if (bboas == 0 && bbmas == 0)
+        //{
+        //    bboas = dados.Count();
+        //}
+        //finalist.Add(new AreaChartData { Dia = "Cargas", Num = bboas });
+        //finalist.Add(new AreaChartData { Dia = "Vazias", Num = bbmas });
+        //RoundChartData = finalist;
+
+
+        //GRÁFICO PRODUÇÃO
+        List<AreaChartData> finalist = new List<AreaChartData>();
+        //finalist.Add(new AreaChartData { Ordem = 1, Hora = "Cargas", Num = dados.Where(w => w.Referencia != "").Count() });
+        var progs = dados.Where(w => w.Referencia != "" && w.Referencia != "60" && w.Programa != "Decapagem" && w.Descarga == true).Select(s => s.Programa).Distinct();
+        foreach (var item in progs)
+        {
+            finalist.Add(new AreaChartData { Dia = item, Num = dados.Where(w => w.Referencia != "" && w.Referencia != "60" && w.Programa == item && w.Descarga == true).Count() });
+        }
+        //finalist.Add(new AreaChartData { Dia = "Vazias - Falta de Peças", Num = dados.Where(w => w.Referencia == "" && w.Vazia == "Falta de Peças").Count() });
+        finalist.Add(new AreaChartData { Dia = "Vazias - Outro", Num = dados.Where(w => w.Referencia == "" && (w.Vazia == "Outro" || w.Vazia == "" || w.Vazia == null) && w.Descarga == true).Count() });
+        RoundChartData = finalist;
+
+        utils.f10session["reportPdateini"] = dti;
+        utils.f10session["reportPdatefin"] = dtf.Value.AddDays(1);
+    }
+
+
+
+    private async Task PopulateMateriais()
+    {
+        await SpinnerObj.ShowAsync();
+        DataLink_L1 dl = new DataLink_L1();
+        dl.db.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        var pMateriais = (from ta in dl.db.ReferenciaTrabalhos
+                          select ta.Referencia.ToString()).Distinct();
+        var dadosmat = await pMateriais.ToListAsync();
+
+        Materiais = dadosmat;
+        Materiais.Insert(0, "Todos");
+        StateHasChanged();
+        await SpinnerObj.HideAsync();
+    }
+
+    public void Filtro(@Syncfusion.Blazor.DropDowns.SelectEventArgs<string>
+    args)
+    {
+        if (args.ItemData.ToString() == "Todos")
+        {
+            Grid.ClearFiltering();
+        }
+        else
+        {
+            Grid.FilterByColumn("Referencia", "contains", args.ItemData.ToString());
+        }
+    }
+
+    public void RecordDoubleClickHandler(RecordDoubleClickEventArgs<Dadosrt>
+        args)
+    {
+        NavigationManager.NavigateTo("/linha1/relatorio/" + args.RowData.Id);
+        StateHasChanged();
+    }
+
+    private void BackStreetButton()
+    {
+        NavigationManager.NavigateTo("/linha1/");
+    }
+
+
+    public class Dadosrt
+    {
+        public string Id { get; set; }
+        public string Lote { get; set; }
+        public string OF { get; set; }
+        public string Suspensao { get; set; }
+        public string Referencia { get; set; }
+        public string Operador { get; set; }
+        public DateTime? Inicio { get; set; }
+        public DateTime? Fim { get; set; }
+        public string? Tempo { get; set; }
+        public int? Unidades { get; set; }
+        public int? Boas { get; set; }
+        public int? Mas { get; set; }
+        public int? Teoricas { get; set; }
+        public decimal? Area { get; set; }
+        public string Programa { get; set; }
+        public string Passivador { get; set; }
+        public string Estado { get; set; }
+        public string Notas { get; set; }
+        public bool Maintenance { get; set; }
+        public bool Reprocessed { get; set; }
+        public string Vazia { get; set; }
+        public bool? Descarga { get; set; }
+    }
+
+    public class AreaChartData
+    {
+        public string Dia { get; set; }
+        public int Num { get; set; }
+    }
+
+}
+
